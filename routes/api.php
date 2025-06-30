@@ -5,21 +5,19 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\CityController;
 use App\Http\Controllers\Api\GardenController;
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
+use App\Http\Controllers\Api\AuthController;
 
-Route::get('/test-array', function () {
-    return [
-        'status'  => 'success',
-        'message' => 'This is a test response',
-        'data'    => [
-            'foo' => 'bar',
-            'baz' => 'qux',
-        ],
-    ];
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
 });
 
 Route::get('/gardens', [GardenController::class, 'index']);
 
 Route::get('/cities', [CityController::class, 'index']);
+
+// Route::get('/user', function (Request $request) {
+//     return $request->user();
+// })->middleware('auth:sanctum');
