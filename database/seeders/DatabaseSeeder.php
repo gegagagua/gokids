@@ -13,7 +13,8 @@ class DatabaseSeeder extends Seeder
             CitySeeder::class,
             GardenSeeder::class,
             GardenGroupSeeder::class,
-            CardSeeder::class
+            CardSeeder::class,
+            ParentModelSeeder::class,
         ]);
     }
 }

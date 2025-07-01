@@ -8,7 +8,7 @@ use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GardenGroupController;
 use App\Http\Controllers\Api\CardController;
-
+use App\Http\Controllers\Api\ParentModelController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -24,6 +24,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
 
     Route::apiResource('garden-groups', GardenGroupController::class);
     Route::apiResource('cards', CardController::class);
+    Route::apiResource('parents', ParentModelController::class);
 });
 
 // Route::get('/user', function (Request $request) {

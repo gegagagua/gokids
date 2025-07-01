@@ -5,20 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Card extends Model
+class ParentModel extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'child_first_name',
-        'child_last_name',
-        'father_name',
-        'parent_first_name',
-        'parent_last_name',
-        'phone',
+        'first_name',
+        'last_name',
         'status',
+        'phone',
+        'code',
         'group_id',
-        'parent_code',
+        'card_id',
     ];
 
     public function group()
@@ -26,8 +24,8 @@ class Card extends Model
         return $this->belongsTo(GardenGroup::class);
     }
 
-    public function parents()
+    public function card()
     {
-        return $this->hasMany(ParentModel::class);
+        return $this->belongsTo(Card::class);
     }
 }
