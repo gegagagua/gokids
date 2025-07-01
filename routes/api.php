@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\GardenController;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GardenGroupController;
+use App\Http\Controllers\Api\CardController;
 
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
@@ -22,6 +23,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/cities', [CityController::class, 'index']);
 
     Route::apiResource('garden-groups', GardenGroupController::class);
+    Route::apiResource('cards', CardController::class);
 });
 
 // Route::get('/user', function (Request $request) {

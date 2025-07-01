@@ -15,4 +15,9 @@ class GardenGroup extends Model
     {
         return $this->belongsTo(Garden::class);
     }
+
+    public function cards()
+    {
+        return $this->hasMany(Card::class);
+    }
 }

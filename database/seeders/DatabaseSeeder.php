@@ -12,7 +12,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CitySeeder::class,
             GardenSeeder::class,
-            GardenGroupSeeder::class
+            GardenGroupSeeder::class,
+            CardSeeder::class
         ]);
     }
 }
