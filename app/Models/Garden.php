@@ -7,7 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class Garden extends Model
 {
     protected $fillable = [
-        'name', 'address', 'tax_id', 'city_id', 'phone', 'email', 'password',
+        'name',
+        'address',
+        'tax_id',
+        'city_id',
+        'phone',
+        'email',
+        'password',
     ];
 
     protected $hidden = ['password'];
@@ -15,5 +21,10 @@ class Garden extends Model
     public function city()
     {
         return $this->belongsTo(City::class);
+    }
+
+    public function groups()
+    {
+        return $this->hasMany(GardenGroup::class);
     }
 }
