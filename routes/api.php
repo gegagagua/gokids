@@ -18,7 +18,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
     });
 
-    Route::get('/gardens', [GardenController::class, 'index']);
+    Route::apiResource('gardens', GardenController::class);
 
     Route::get('/cities', [CityController::class, 'index']);
 

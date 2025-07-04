@@ -43,11 +43,26 @@
                     }
                 },
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "User registered"
                     },
                     "422": {
-                        "description": "Validation error"
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -106,6 +121,731 @@
                 ]
             }
         },
+        "/api/cards": {
+            "get": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Get all cards",
+                "description": "Retrieve a list of all child cards with their associated group information",
+                "operationId": "getCards",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "child_first_name": {
+                                                "type": "string",
+                                                "example": "Giorgi"
+                                            },
+                                            "child_last_name": {
+                                                "type": "string",
+                                                "example": "Davitashvili"
+                                            },
+                                            "father_name": {
+                                                "type": "string",
+                                                "example": "Davit"
+                                            },
+                                            "parent_first_name": {
+                                                "type": "string",
+                                                "example": "Nino"
+                                            },
+                                            "parent_last_name": {
+                                                "type": "string",
+                                                "example": "Davitashvili"
+                                            },
+                                            "phone": {
+                                                "type": "string",
+                                                "example": "+995599123456"
+                                            },
+                                            "status": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "pending",
+                                                    "active",
+                                                    "inactive"
+                                                ],
+                                                "example": "active"
+                                            },
+                                            "group_id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "parent_code": {
+                                                "type": "string",
+                                                "example": "ABC123",
+                                                "nullable": true
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "group": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Group A"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Create a new card",
+                "description": "Create a new child card with the provided information",
+                "operationId": "createCard",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "child_first_name",
+                                    "child_last_name",
+                                    "father_name",
+                                    "parent_first_name",
+                                    "parent_last_name",
+                                    "phone",
+                                    "status",
+                                    "group_id"
+                                ],
+                                "properties": {
+                                    "child_first_name": {
+                                        "description": "Child's first name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Giorgi"
+                                    },
+                                    "child_last_name": {
+                                        "description": "Child's last name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Davitashvili"
+                                    },
+                                    "father_name": {
+                                        "description": "Father's name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Davit"
+                                    },
+                                    "parent_first_name": {
+                                        "description": "Parent's first name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Nino"
+                                    },
+                                    "parent_last_name": {
+                                        "description": "Parent's last name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Davitashvili"
+                                    },
+                                    "phone": {
+                                        "description": "Contact phone number",
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "example": "+995599123456"
+                                    },
+                                    "status": {
+                                        "description": "Card status",
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "active",
+                                            "inactive"
+                                        ],
+                                        "example": "active"
+                                    },
+                                    "group_id": {
+                                        "description": "ID of the associated garden group",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "parent_code": {
+                                        "description": "Optional parent access code",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "ABC123",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Card created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "child_first_name": {
+                                            "type": "string",
+                                            "example": "Giorgi"
+                                        },
+                                        "child_last_name": {
+                                            "type": "string",
+                                            "example": "Davitashvili"
+                                        },
+                                        "father_name": {
+                                            "type": "string",
+                                            "example": "Davit"
+                                        },
+                                        "parent_first_name": {
+                                            "type": "string",
+                                            "example": "Nino"
+                                        },
+                                        "parent_last_name": {
+                                            "type": "string",
+                                            "example": "Davitashvili"
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599123456"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "active"
+                                        },
+                                        "group_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "parent_code": {
+                                            "type": "string",
+                                            "example": "ABC123",
+                                            "nullable": true
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "child_first_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "child_last_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "father_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "parent_first_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "parent_last_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "status": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "group_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/cards/{id}": {
+            "get": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Get a specific card",
+                "description": "Retrieve detailed information about a specific child card",
+                "operationId": "getCard",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Card ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "child_first_name": {
+                                            "type": "string",
+                                            "example": "Giorgi"
+                                        },
+                                        "child_last_name": {
+                                            "type": "string",
+                                            "example": "Davitashvili"
+                                        },
+                                        "father_name": {
+                                            "type": "string",
+                                            "example": "Davit"
+                                        },
+                                        "parent_first_name": {
+                                            "type": "string",
+                                            "example": "Nino"
+                                        },
+                                        "parent_last_name": {
+                                            "type": "string",
+                                            "example": "Davitashvili"
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599123456"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "pending",
+                                                "active",
+                                                "inactive"
+                                            ],
+                                            "example": "active"
+                                        },
+                                        "group_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "parent_code": {
+                                            "type": "string",
+                                            "example": "ABC123",
+                                            "nullable": true
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "group": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Group A"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Card not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\Card]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Update a card",
+                "description": "Update an existing child card with new information",
+                "operationId": "updateCard",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Card ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "child_first_name": {
+                                        "description": "Child's first name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Updated Giorgi"
+                                    },
+                                    "child_last_name": {
+                                        "description": "Child's last name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Updated Davitashvili"
+                                    },
+                                    "father_name": {
+                                        "description": "Father's name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Updated Davit"
+                                    },
+                                    "parent_first_name": {
+                                        "description": "Parent's first name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Updated Nino"
+                                    },
+                                    "parent_last_name": {
+                                        "description": "Parent's last name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Updated Davitashvili"
+                                    },
+                                    "phone": {
+                                        "description": "Contact phone number",
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "example": "+995599654321"
+                                    },
+                                    "status": {
+                                        "description": "Card status",
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "active",
+                                            "inactive"
+                                        ],
+                                        "example": "inactive"
+                                    },
+                                    "group_id": {
+                                        "description": "ID of the associated garden group",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "parent_code": {
+                                        "description": "Optional parent access code",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "XYZ789",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Card updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "child_first_name": {
+                                            "type": "string",
+                                            "example": "Updated Giorgi"
+                                        },
+                                        "child_last_name": {
+                                            "type": "string",
+                                            "example": "Updated Davitashvili"
+                                        },
+                                        "father_name": {
+                                            "type": "string",
+                                            "example": "Updated Davit"
+                                        },
+                                        "parent_first_name": {
+                                            "type": "string",
+                                            "example": "Updated Nino"
+                                        },
+                                        "parent_last_name": {
+                                            "type": "string",
+                                            "example": "Updated Davitashvili"
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599654321"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "inactive"
+                                        },
+                                        "group_id": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "parent_code": {
+                                            "type": "string",
+                                            "example": "XYZ789",
+                                            "nullable": true
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Card not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\Card]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "child_first_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "child_last_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "father_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "parent_first_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "parent_last_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "status": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "group_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Delete a card",
+                "description": "Permanently delete a child card",
+                "operationId": "deleteCard",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Card ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Card deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Card not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\Card]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/cities": {
             "get": {
                 "summary": "Get all cities",
@@ -119,11 +859,1734 @@
         },
         "/api/gardens": {
             "get": {
+                "tags": [
+                    "Gardens"
+                ],
                 "summary": "Get all gardens",
-                "operationId": "a3f9faf0beafefd7e7245f0c12975f4f",
+                "description": "Retrieve a list of all gardens with their associated city information",
+                "operationId": "getGardens",
                 "responses": {
                     "200": {
-                        "description": "List of gardens"
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Sunshine Garden"
+                                            },
+                                            "address": {
+                                                "type": "string",
+                                                "example": "123 Main Street"
+                                            },
+                                            "tax_id": {
+                                                "type": "string",
+                                                "example": "123456789"
+                                            },
+                                            "city_id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "phone": {
+                                                "type": "string",
+                                                "example": "+995599123456"
+                                            },
+                                            "email": {
+                                                "type": "string",
+                                                "example": "sunshine@garden.ge"
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "city": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Tbilisi"
+                                                    },
+                                                    "region": {
+                                                        "type": "string",
+                                                        "example": "Tbilisi"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Create a new garden",
+                "description": "Create a new garden with the provided information",
+                "operationId": "createGarden",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "address",
+                                    "tax_id",
+                                    "city_id",
+                                    "phone",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "Garden name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "New Garden"
+                                    },
+                                    "address": {
+                                        "description": "Garden address",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "456 Oak Avenue"
+                                    },
+                                    "tax_id": {
+                                        "description": "Tax identification number",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "987654321"
+                                    },
+                                    "city_id": {
+                                        "description": "ID of the associated city",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "phone": {
+                                        "description": "Contact phone number",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "+995599654321"
+                                    },
+                                    "email": {
+                                        "description": "Contact email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "newgarden@garden.ge"
+                                    },
+                                    "password": {
+                                        "description": "Garden access password",
+                                        "type": "string",
+                                        "minLength": 6,
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Garden created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "New Garden"
+                                        },
+                                        "address": {
+                                            "type": "string",
+                                            "example": "456 Oak Avenue"
+                                        },
+                                        "tax_id": {
+                                            "type": "string",
+                                            "example": "987654321"
+                                        },
+                                        "city_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599654321"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "newgarden@garden.ge"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "address": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "tax_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "city_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "password": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/gardens/{id}": {
+            "get": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Get a specific garden",
+                "description": "Retrieve detailed information about a specific garden",
+                "operationId": "getGarden",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Garden ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Sunshine Garden"
+                                        },
+                                        "address": {
+                                            "type": "string",
+                                            "example": "123 Main Street"
+                                        },
+                                        "tax_id": {
+                                            "type": "string",
+                                            "example": "123456789"
+                                        },
+                                        "city_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599123456"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "sunshine@garden.ge"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "city": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Tbilisi"
+                                                },
+                                                "region": {
+                                                    "type": "string",
+                                                    "example": "Tbilisi"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Garden not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\Garden]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Update a garden",
+                "description": "Update an existing garden with new information",
+                "operationId": "updateGarden",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Garden ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "Garden name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Updated Garden"
+                                    },
+                                    "address": {
+                                        "description": "Garden address",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "789 Pine Street"
+                                    },
+                                    "tax_id": {
+                                        "description": "Tax identification number",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "111222333"
+                                    },
+                                    "city_id": {
+                                        "description": "ID of the associated city",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "phone": {
+                                        "description": "Contact phone number",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "+995599111222"
+                                    },
+                                    "email": {
+                                        "description": "Contact email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "updated@garden.ge"
+                                    },
+                                    "password": {
+                                        "description": "Garden access password",
+                                        "type": "string",
+                                        "minLength": 6,
+                                        "example": "newpassword123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Garden updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Updated Garden"
+                                        },
+                                        "address": {
+                                            "type": "string",
+                                            "example": "789 Pine Street"
+                                        },
+                                        "tax_id": {
+                                            "type": "string",
+                                            "example": "111222333"
+                                        },
+                                        "city_id": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599111222"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "updated@garden.ge"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Garden not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\Garden]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "address": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "tax_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "city_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "password": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Delete a garden",
+                "description": "Permanently delete a garden",
+                "operationId": "deleteGarden",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Garden ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Garden deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Garden deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Garden not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\Garden]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/garden-groups": {
+            "get": {
+                "tags": [
+                    "Garden Groups"
+                ],
+                "summary": "Get all garden groups",
+                "description": "Retrieve a list of all garden groups with their associated garden information",
+                "operationId": "getGardenGroups",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Group A"
+                                            },
+                                            "garden_id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "garden": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Sunshine Garden"
+                                                    },
+                                                    "address": {
+                                                        "type": "string",
+                                                        "example": "123 Main St"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Garden Groups"
+                ],
+                "summary": "Create a new garden group",
+                "description": "Create a new garden group with the provided information",
+                "operationId": "createGardenGroup",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "garden_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "description": "Name of the garden group",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Group B"
+                                    },
+                                    "garden_id": {
+                                        "description": "ID of the associated garden",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Garden group created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Group B"
+                                        },
+                                        "garden_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "garden_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/garden-groups/{id}": {
+            "get": {
+                "tags": [
+                    "Garden Groups"
+                ],
+                "summary": "Get a specific garden group",
+                "description": "Retrieve detailed information about a specific garden group",
+                "operationId": "getGardenGroup",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Garden group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Group A"
+                                        },
+                                        "garden_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "garden": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Sunshine Garden"
+                                                },
+                                                "address": {
+                                                    "type": "string",
+                                                    "example": "123 Main St"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Garden group not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\GardenGroup]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Garden Groups"
+                ],
+                "summary": "Update a garden group",
+                "description": "Update an existing garden group with new information",
+                "operationId": "updateGardenGroup",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Garden group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "Name of the garden group",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Updated Group A"
+                                    },
+                                    "garden_id": {
+                                        "description": "ID of the associated garden",
+                                        "type": "integer",
+                                        "example": 2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Garden group updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Updated Group A"
+                                        },
+                                        "garden_id": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Garden group not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\GardenGroup]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "garden_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Garden Groups"
+                ],
+                "summary": "Delete a garden group",
+                "description": "Permanently delete a garden group",
+                "operationId": "deleteGardenGroup",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Garden group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Garden group deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Garden group not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\GardenGroup]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/parents": {
+            "get": {
+                "tags": [
+                    "Parents"
+                ],
+                "summary": "Get all parents",
+                "description": "Retrieve a list of all parents with their associated group and card information",
+                "operationId": "getParents",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "first_name": {
+                                                "type": "string",
+                                                "example": "Nino"
+                                            },
+                                            "last_name": {
+                                                "type": "string",
+                                                "example": "Davitashvili"
+                                            },
+                                            "status": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "active",
+                                                    "inactive",
+                                                    "blocked"
+                                                ],
+                                                "example": "active"
+                                            },
+                                            "phone": {
+                                                "type": "string",
+                                                "example": "+995599123456"
+                                            },
+                                            "code": {
+                                                "type": "string",
+                                                "example": "PARENT001",
+                                                "nullable": true
+                                            },
+                                            "group_id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "card_id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "group": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Group A"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "card": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "child_first_name": {
+                                                        "type": "string",
+                                                        "example": "Giorgi"
+                                                    },
+                                                    "child_last_name": {
+                                                        "type": "string",
+                                                        "example": "Davitashvili"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Parents"
+                ],
+                "summary": "Create a new parent",
+                "description": "Create a new parent with the provided information",
+                "operationId": "createParent",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "status",
+                                    "phone",
+                                    "group_id",
+                                    "card_id"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "description": "Parent's first name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Nino"
+                                    },
+                                    "last_name": {
+                                        "description": "Parent's last name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Davitashvili"
+                                    },
+                                    "status": {
+                                        "description": "Parent status",
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive",
+                                            "blocked"
+                                        ],
+                                        "example": "active"
+                                    },
+                                    "phone": {
+                                        "description": "Contact phone number",
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "example": "+995599123456"
+                                    },
+                                    "code": {
+                                        "description": "Optional parent code",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "PARENT001",
+                                        "nullable": true
+                                    },
+                                    "group_id": {
+                                        "description": "ID of the associated garden group",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "card_id": {
+                                        "description": "ID of the associated child card",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Parent created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "first_name": {
+                                            "type": "string",
+                                            "example": "Nino"
+                                        },
+                                        "last_name": {
+                                            "type": "string",
+                                            "example": "Davitashvili"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "active"
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599123456"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "example": "PARENT001",
+                                            "nullable": true
+                                        },
+                                        "group_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "card_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "first_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "last_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "status": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "group_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "card_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/parents/{id}": {
+            "get": {
+                "tags": [
+                    "Parents"
+                ],
+                "summary": "Get a specific parent",
+                "description": "Retrieve detailed information about a specific parent",
+                "operationId": "getParent",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Parent ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "first_name": {
+                                            "type": "string",
+                                            "example": "Nino"
+                                        },
+                                        "last_name": {
+                                            "type": "string",
+                                            "example": "Davitashvili"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "active",
+                                                "inactive",
+                                                "blocked"
+                                            ],
+                                            "example": "active"
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599123456"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "example": "PARENT001",
+                                            "nullable": true
+                                        },
+                                        "group_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "card_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "group": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Group A"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "card": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "child_first_name": {
+                                                    "type": "string",
+                                                    "example": "Giorgi"
+                                                },
+                                                "child_last_name": {
+                                                    "type": "string",
+                                                    "example": "Davitashvili"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Parent not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\ParentModel]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Parents"
+                ],
+                "summary": "Update a parent",
+                "description": "Update an existing parent with new information",
+                "operationId": "updateParent",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Parent ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "description": "Parent's first name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Updated Nino"
+                                    },
+                                    "last_name": {
+                                        "description": "Parent's last name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Updated Davitashvili"
+                                    },
+                                    "status": {
+                                        "description": "Parent status",
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive",
+                                            "blocked"
+                                        ],
+                                        "example": "inactive"
+                                    },
+                                    "phone": {
+                                        "description": "Contact phone number",
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "example": "+995599654321"
+                                    },
+                                    "code": {
+                                        "description": "Optional parent code",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "UPDATED001",
+                                        "nullable": true
+                                    },
+                                    "group_id": {
+                                        "description": "ID of the associated garden group",
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "card_id": {
+                                        "description": "ID of the associated child card",
+                                        "type": "integer",
+                                        "example": 2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Parent updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "first_name": {
+                                            "type": "string",
+                                            "example": "Updated Nino"
+                                        },
+                                        "last_name": {
+                                            "type": "string",
+                                            "example": "Updated Davitashvili"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "inactive"
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599654321"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "example": "UPDATED001",
+                                            "nullable": true
+                                        },
+                                        "group_id": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "card_id": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Parent not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\ParentModel]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "first_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "last_name": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "status": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "group_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "card_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Parents"
+                ],
+                "summary": "Delete a parent",
+                "description": "Permanently delete a parent",
+                "operationId": "deleteParent",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Parent ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Parent deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Parent deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Parent not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\ParentModel]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -139,5 +2602,23 @@
                 }
             }
         }
-    }
+    },
+    "tags": [
+        {
+            "name": "Cards",
+            "description": "API Endpoints for managing child cards"
+        },
+        {
+            "name": "Gardens",
+            "description": "API Endpoints for managing gardens"
+        },
+        {
+            "name": "Garden Groups",
+            "description": "API Endpoints for managing garden groups"
+        },
+        {
+            "name": "Parents",
+            "description": "API Endpoints for managing parent models"
+        }
+    ]
 }
