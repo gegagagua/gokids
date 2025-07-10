@@ -9,8 +9,10 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\GardenGroupController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\ParentModelController;
+use App\Http\Controllers\Api\PersonTypeController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
+    Route::get('/person-types', [PersonTypeController::class, 'index']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 

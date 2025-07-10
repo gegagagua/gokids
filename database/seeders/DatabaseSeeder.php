@@ -10,11 +10,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            CitySeeder::class,
-            GardenSeeder::class,
-            GardenGroupSeeder::class,
-            CardSeeder::class,
-            ParentModelSeeder::class,
+            // CitySeeder::class,
+            // GardenSeeder::class,
+            // GardenGroupSeeder::class,
+            // CardSeeder::class,
+            // ParentModelSeeder::class,
+            PersonTypeSeeder::class
         ]);
     }
 }
