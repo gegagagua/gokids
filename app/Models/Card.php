@@ -30,4 +30,9 @@ class Card extends Model
     {
         return $this->hasMany(ParentModel::class);
     }
+
+    public function people()
+    {
+        return $this->hasMany(People::class);
+    }
 }

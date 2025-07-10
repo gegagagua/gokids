@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\GardenGroupController;
 use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\ParentModelController;
 use App\Http\Controllers\Api\PersonTypeController;
+use App\Http\Controllers\Api\PeopleController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/person-types', [PersonTypeController::class, 'index']);
@@ -27,6 +28,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::apiResource('garden-groups', GardenGroupController::class);
     Route::apiResource('cards', CardController::class);
     Route::apiResource('parents', ParentModelController::class);
+    Route::apiResource('people', PeopleController::class);
 });
 
 // Route::get('/user', function (Request $request) {
