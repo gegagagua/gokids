@@ -20,7 +20,28 @@ class CardController extends Controller
      *     operationId="getCards",
      *     tags={"Cards"},
      *     summary="Get all cards",
-     *     description="Retrieve a list of all child cards with their associated group information",
+     *     description="Retrieve a list of all child cards with their associated group information. Supports filtering by child_first_name, child_last_name, and group_id.",
+     *     @OA\Parameter(
+     *         name="child_first_name",
+     *         in="query",
+     *         required=false,
+     *         description="Filter by child's first name",
+     *         @OA\Schema(type="string", example="Giorgi")
+     *     ),
+     *     @OA\Parameter(
+     *         name="child_last_name",
+     *         in="query",
+     *         required=false,
+     *         description="Filter by child's last name",
+     *         @OA\Schema(type="string", example="Davitashvili")
+     *     ),
+     *     @OA\Parameter(
+     *         name="group_id",
+     *         in="query",
+     *         required=false,
+     *         description="Filter by group ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -52,9 +73,19 @@ class CardController extends Controller
      * )
      */
     // ყველა ბარათის წამოღება
-    public function index()
+    public function index(Request $request)
     {
-        return Card::with('group')->get();
+        $query = Card::with('group');
+        if ($request->filled('child_first_name')) {
+            $query->where('child_first_name', 'like', '%' . $request->query('child_first_name') . '%');
+        }
+        if ($request->filled('child_last_name')) {
+            $query->where('child_last_name', 'like', '%' . $request->query('child_last_name') . '%');
+        }
+        if ($request->filled('group_id')) {
+            $query->where('group_id', $request->query('group_id'));
+        }
+        return $query->get();
     }
 
     /**

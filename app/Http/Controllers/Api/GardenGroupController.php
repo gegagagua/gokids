@@ -20,7 +20,21 @@ class GardenGroupController extends Controller
      *     operationId="getGardenGroups",
      *     tags={"Garden Groups"},
      *     summary="Get all garden groups",
-     *     description="Retrieve a list of all garden groups with their associated garden information",
+     *     description="Retrieve a list of all garden groups with their associated garden information. Supports filtering by name and garden_id.",
+     *     @OA\Parameter(
+     *         name="name",
+     *         in="query",
+     *         required=false,
+     *         description="Filter by group name",
+     *         @OA\Schema(type="string", example="Group A")
+     *     ),
+     *     @OA\Parameter(
+     *         name="garden_id",
+     *         in="query",
+     *         required=false,
+     *         description="Filter by garden ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -45,9 +59,16 @@ class GardenGroupController extends Controller
      *     )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
-        return GardenGroup::with('garden')->get();
+        $query = GardenGroup::with('garden');
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->query('name') . '%');
+        }
+        if ($request->filled('garden_id')) {
+            $query->where('garden_id', $request->query('garden_id'));
+        }
+        return $query->get();
     }
 
     /**

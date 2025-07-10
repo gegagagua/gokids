@@ -127,8 +127,40 @@
                     "Cards"
                 ],
                 "summary": "Get all cards",
-                "description": "Retrieve a list of all child cards with their associated group information",
+                "description": "Retrieve a list of all child cards with their associated group information. Supports filtering by child_first_name, child_last_name, and group_id.",
                 "operationId": "getCards",
+                "parameters": [
+                    {
+                        "name": "child_first_name",
+                        "in": "query",
+                        "description": "Filter by child's first name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Giorgi"
+                        }
+                    },
+                    {
+                        "name": "child_last_name",
+                        "in": "query",
+                        "description": "Filter by child's last name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Davitashvili"
+                        }
+                    },
+                    {
+                        "name": "group_id",
+                        "in": "query",
+                        "description": "Filter by group ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -1487,8 +1519,30 @@
                     "Garden Groups"
                 ],
                 "summary": "Get all garden groups",
-                "description": "Retrieve a list of all garden groups with their associated garden information",
+                "description": "Retrieve a list of all garden groups with their associated garden information. Supports filtering by name and garden_id.",
                 "operationId": "getGardenGroups",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Filter by group name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Group A"
+                        }
+                    },
+                    {
+                        "name": "garden_id",
+                        "in": "query",
+                        "description": "Filter by garden ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -2591,6 +2645,49 @@
                 }
             }
         },
+        "/api/person-types": {
+            "get": {
+                "tags": [
+                    "Person Types"
+                ],
+                "summary": "Get all person types",
+                "description": "Retrieve a list of all person types",
+                "operationId": "getPersonTypes",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Parent"
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/users": {
             "get": {
                 "summary": "Get all users",
@@ -2619,6 +2716,10 @@
         {
             "name": "Parents",
             "description": "API Endpoints for managing parent models"
+        },
+        {
+            "name": "Person Types",
+            "description": "API Endpoints for managing person types"
         }
     ]
 }
