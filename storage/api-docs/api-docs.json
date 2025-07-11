@@ -44,7 +44,41 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "User registered"
+                        "description": "User registered",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@example.com"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "user"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "1|abc123..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "422": {
                         "description": "Validation error",
@@ -97,7 +131,41 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Login successful"
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@example.com"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "garden"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "1|abc123..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Invalid credentials"
@@ -1044,41 +1112,71 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "id": {
-                                            "type": "integer",
-                                            "example": 2
+                                        "garden": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "New Garden"
+                                                },
+                                                "address": {
+                                                    "type": "string",
+                                                    "example": "456 Oak Avenue"
+                                                },
+                                                "tax_id": {
+                                                    "type": "string",
+                                                    "example": "987654321"
+                                                },
+                                                "city_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599654321"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "newgarden@garden.ge"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
                                         },
-                                        "name": {
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "New Garden"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "newgarden@garden.ge"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "garden"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "message": {
                                             "type": "string",
-                                            "example": "New Garden"
-                                        },
-                                        "address": {
-                                            "type": "string",
-                                            "example": "456 Oak Avenue"
-                                        },
-                                        "tax_id": {
-                                            "type": "string",
-                                            "example": "987654321"
-                                        },
-                                        "city_id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "phone": {
-                                            "type": "string",
-                                            "example": "+995599654321"
-                                        },
-                                        "email": {
-                                            "type": "string",
-                                            "example": "newgarden@garden.ge"
-                                        },
-                                        "created_at": {
-                                            "type": "string",
-                                            "format": "date-time"
-                                        },
-                                        "updated_at": {
-                                            "type": "string",
-                                            "format": "date-time"
+                                            "example": "Garden and user account created successfully"
                                         }
                                     },
                                     "type": "object"

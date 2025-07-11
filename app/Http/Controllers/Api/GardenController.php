@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Garden;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * @OA\Tag(
@@ -130,15 +132,24 @@ class GardenController extends Controller
      *         description="Garden created successfully",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="id", type="integer", example=2),
-     *             @OA\Property(property="name", type="string", example="New Garden"),
-     *             @OA\Property(property="address", type="string", example="456 Oak Avenue"),
-     *             @OA\Property(property="tax_id", type="string", example="987654321"),
-     *             @OA\Property(property="city_id", type="integer", example=1),
-     *             @OA\Property(property="phone", type="string", example="+995599654321"),
-     *             @OA\Property(property="email", type="string", example="newgarden@garden.ge"),
-     *             @OA\Property(property="created_at", type="string", format="date-time"),
-     *             @OA\Property(property="updated_at", type="string", format="date-time")
+     *             @OA\Property(property="garden", type="object",
+     *                 @OA\Property(property="id", type="integer", example=2),
+     *                 @OA\Property(property="name", type="string", example="New Garden"),
+     *                 @OA\Property(property="address", type="string", example="456 Oak Avenue"),
+     *                 @OA\Property(property="tax_id", type="string", example="987654321"),
+     *                 @OA\Property(property="city_id", type="integer", example=1),
+     *                 @OA\Property(property="phone", type="string", example="+995599654321"),
+     *                 @OA\Property(property="email", type="string", example="newgarden@garden.ge"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             ),
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="New Garden"),
+     *                 @OA\Property(property="email", type="string", example="newgarden@garden.ge"),
+     *                 @OA\Property(property="type", type="string", example="garden")
+     *             ),
+     *             @OA\Property(property="message", type="string", example="Garden and user account created successfully")
      *         )
      *     ),
      *     @OA\Response(
@@ -169,16 +180,33 @@ class GardenController extends Controller
             'tax_id' => 'required|string|max:255',
             'city_id' => 'required|exists:cities,id',
             'phone' => 'required|string|max:255',
-            'email' => 'required|email|unique:gardens,email',
+            'email' => 'required|email|unique:gardens,email|unique:users,email',
             'password' => 'required|string|min:6',
         ]);
 
-        // Hash the password before storing
-        $validated['password'] = bcrypt($validated['password']);
+        // Create user for the garden
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'type' => 'garden',
+        ]);
 
-        $garden = Garden::create($validated);
+        // Create garden
+        $gardenData = $validated;
+        $gardenData['password'] = bcrypt($validated['password']);
+        $garden = Garden::create($gardenData);
 
-        return response()->json($garden, 201);
+        return response()->json([
+            'garden' => $garden,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'type' => $user->type,
+            ],
+            'message' => 'Garden and user account created successfully'
+        ], 201);
     }
 
     /**

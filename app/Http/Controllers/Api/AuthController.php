@@ -23,7 +23,18 @@ class AuthController extends Controller
      *             @OA\Property(property="password_confirmation", type="string", format="password")
      *         )
      *     ),
-     *     @OA\Response(response=200, description="User registered"),
+     *     @OA\Response(response=200, description="User registered",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="email", type="string", example="john@example.com"),
+     *                 @OA\Property(property="type", type="string", example="user")
+     *             ),
+     *             @OA\Property(property="token", type="string", example="1|abc123...")
+     *         )
+     *     ),
      *     @OA\Response(
      *         response=422,
      *         description="Validation error",
@@ -46,12 +57,18 @@ class AuthController extends Controller
             'name' => $fields['name'],
             'email' => $fields['email'],
             'password' => bcrypt($fields['password']),
+            'type' => 'user', // Default type for regular users
         ]);
 
         $token = $user->createToken('api_token')->plainTextToken;
   
         return response()->json([
-            'user' => $user,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'type' => $user->type,
+            ],
             'token' => $token,
         ], 200);
     }
@@ -68,7 +85,18 @@ class AuthController extends Controller
      *             @OA\Property(property="password", type="string", format="password")
      *         )
      *     ),
-     *     @OA\Response(response=200, description="Login successful"),
+     *     @OA\Response(response=200, description="Login successful",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="email", type="string", example="john@example.com"),
+     *                 @OA\Property(property="type", type="string", example="garden")
+     *             ),
+     *             @OA\Property(property="token", type="string", example="1|abc123...")
+     *         )
+     *     ),
      *     @OA\Response(response=401, description="Invalid credentials")
      * )
      */
@@ -88,7 +116,12 @@ class AuthController extends Controller
         $token = $user->createToken('api_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'type' => $user->type,
+            ],
             'token' => $token,
         ], 200);
     }
