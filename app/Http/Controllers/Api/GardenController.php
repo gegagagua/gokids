@@ -22,39 +22,80 @@ class GardenController extends Controller
      *     operationId="getGardens",
      *     tags={"Gardens"},
      *     summary="Get all gardens",
-     *     description="Retrieve a list of all gardens with their associated city information",
+     *     description="Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, city_id, tax_id, phone, email.",
      *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="name", in="query", required=false, description="Filter by garden name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="address", in="query", required=false, description="Filter by address", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="city_id", in="query", required=false, description="Filter by city ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="tax_id", in="query", required=false, description="Filter by tax ID", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="email", in="query", required=false, description="Filter by email", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
      *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(
-     *                 type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="name", type="string", example="Sunshine Garden"),
-     *                 @OA\Property(property="address", type="string", example="123 Main Street"),
-     *                 @OA\Property(property="tax_id", type="string", example="123456789"),
-     *                 @OA\Property(property="city_id", type="integer", example=1),
-     *                 @OA\Property(property="phone", type="string", example="+995599123456"),
-     *                 @OA\Property(property="email", type="string", example="sunshine@garden.ge"),
-     *                 @OA\Property(property="created_at", type="string", format="date-time"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
-     *                 @OA\Property(
-     *                     property="city",
+     *             type="object",
+     *             @OA\Property(property="current_page", type="integer", example=1),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
      *                     type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="name", type="string", example="Tbilisi"),
-     *                     @OA\Property(property="region", type="string", example="Tbilisi")
+     *                     @OA\Property(property="name", type="string", example="Sunshine Garden"),
+     *                     @OA\Property(property="address", type="string", example="123 Main Street"),
+     *                     @OA\Property(property="tax_id", type="string", example="123456789"),
+     *                     @OA\Property(property="city_id", type="integer", example=1),
+     *                     @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                     @OA\Property(property="email", type="string", example="sunshine@garden.ge"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                     @OA\Property(property="city", type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Tbilisi"),
+     *                         @OA\Property(property="region", type="string", example="Tbilisi")
+     *                     ),
+     *                     @OA\Property(property="images", type="array",
+     *                         @OA\Items(
+     *                             type="object",
+     *                             @OA\Property(property="id", type="integer", example=1),
+     *                             @OA\Property(property="title", type="string", example="Main Entrance"),
+     *                             @OA\Property(property="image", type="string", example="garden_images/abc123.jpg")
+     *                         )
+     *                     )
      *                 )
-     *             )
+     *             ),
+     *             @OA\Property(property="last_page", type="integer", example=5),
+     *             @OA\Property(property="per_page", type="integer", example=15),
+     *             @OA\Property(property="total", type="integer", example=50)
      *         )
      *     )
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Garden::with(['city', 'images'])->get();
+        $query = Garden::with(['city', 'images']);
+
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->query('name') . '%');
+        }
+        if ($request->filled('address')) {
+            $query->where('address', 'like', '%' . $request->query('address') . '%');
+        }
+        if ($request->filled('city_id')) {
+            $query->where('city_id', $request->query('city_id'));
+        }
+        if ($request->filled('tax_id')) {
+            $query->where('tax_id', $request->query('tax_id'));
+        }
+        if ($request->filled('phone')) {
+            $query->where('phone', 'like', '%' . $request->query('phone') . '%');
+        }
+        if ($request->filled('email')) {
+            $query->where('email', 'like', '%' . $request->query('email') . '%');
+        }
+
+        $perPage = $request->query('per_page', 15);
+        return $query->paginate($perPage);
     }
 
     /**

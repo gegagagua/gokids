@@ -20,55 +20,48 @@ class CardController extends Controller
      *     operationId="getCards",
      *     tags={"Cards"},
      *     summary="Get all cards",
-     *     description="Retrieve a list of all child cards with their associated group information. Supports filtering by child_first_name, child_last_name, and group_id.",
+     *     description="Retrieve a paginated list of all child cards with their associated group information. Supports filtering by child_first_name, child_last_name, father_name, parent_first_name, parent_last_name, phone, status, group_id, parent_code.",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(
-     *         name="child_first_name",
-     *         in="query",
-     *         required=false,
-     *         description="Filter by child's first name",
-     *         @OA\Schema(type="string", example="Giorgi")
-     *     ),
-     *     @OA\Parameter(
-     *         name="child_last_name",
-     *         in="query",
-     *         required=false,
-     *         description="Filter by child's last name",
-     *         @OA\Schema(type="string", example="Davitashvili")
-     *     ),
-     *     @OA\Parameter(
-     *         name="group_id",
-     *         in="query",
-     *         required=false,
-     *         description="Filter by group ID",
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
+     *     @OA\Parameter(name="child_first_name", in="query", required=false, description="Filter by child's first name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="child_last_name", in="query", required=false, description="Filter by child's last name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="father_name", in="query", required=false, description="Filter by father's name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="parent_first_name", in="query", required=false, description="Filter by parent's first name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="parent_last_name", in="query", required=false, description="Filter by parent's last name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Filter by status", @OA\Schema(type="string", enum={"pending","active","inactive"})),
+     *     @OA\Parameter(name="group_id", in="query", required=false, description="Filter by group ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="parent_code", in="query", required=false, description="Filter by parent code", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
      *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(
-     *                 type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="child_first_name", type="string", example="Giorgi"),
-     *                 @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
-     *                 @OA\Property(property="father_name", type="string", example="Davit"),
-     *                 @OA\Property(property="parent_first_name", type="string", example="Nino"),
-     *                 @OA\Property(property="parent_last_name", type="string", example="Davitashvili"),
-     *                 @OA\Property(property="phone", type="string", example="+995599123456"),
-     *                 @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}),
-     *                 @OA\Property(property="group_id", type="integer", example=1),
-     *                 @OA\Property(property="parent_code", type="string", example="ABC123", nullable=true),
-     *                 @OA\Property(property="created_at", type="string", format="date-time"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
-     *                 @OA\Property(
-     *                     property="group",
+     *             type="object",
+     *             @OA\Property(property="current_page", type="integer", example=1),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
      *                     type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="name", type="string", example="Group A")
+     *                     @OA\Property(property="child_first_name", type="string", example="Giorgi"),
+     *                     @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
+     *                     @OA\Property(property="father_name", type="string", example="Davit"),
+     *                     @OA\Property(property="parent_first_name", type="string", example="Nino"),
+     *                     @OA\Property(property="parent_last_name", type="string", example="Davitashvili"),
+     *                     @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                     @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}),
+     *                     @OA\Property(property="group_id", type="integer", example=1),
+     *                     @OA\Property(property="parent_code", type="string", example="ABC123", nullable=true),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                     @OA\Property(property="group", type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Group A")
+     *                     )
      *                 )
-     *             )
+     *             ),
+     *             @OA\Property(property="last_page", type="integer", example=5),
+     *             @OA\Property(property="per_page", type="integer", example=15),
+     *             @OA\Property(property="total", type="integer", example=50)
      *         )
      *     )
      * )
@@ -83,10 +76,29 @@ class CardController extends Controller
         if ($request->filled('child_last_name')) {
             $query->where('child_last_name', 'like', '%' . $request->query('child_last_name') . '%');
         }
+        if ($request->filled('father_name')) {
+            $query->where('father_name', 'like', '%' . $request->query('father_name') . '%');
+        }
+        if ($request->filled('parent_first_name')) {
+            $query->where('parent_first_name', 'like', '%' . $request->query('parent_first_name') . '%');
+        }
+        if ($request->filled('parent_last_name')) {
+            $query->where('parent_last_name', 'like', '%' . $request->query('parent_last_name') . '%');
+        }
+        if ($request->filled('phone')) {
+            $query->where('phone', 'like', '%' . $request->query('phone') . '%');
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->query('status'));
+        }
         if ($request->filled('group_id')) {
             $query->where('group_id', $request->query('group_id'));
         }
-        return $query->get();
+        if ($request->filled('parent_code')) {
+            $query->where('parent_code', $request->query('parent_code'));
+        }
+        $perPage = $request->query('per_page', 15);
+        return $query->paginate($perPage);
     }
 
     /**

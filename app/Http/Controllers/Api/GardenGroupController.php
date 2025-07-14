@@ -20,42 +20,35 @@ class GardenGroupController extends Controller
      *     operationId="getGardenGroups",
      *     tags={"Garden Groups"},
      *     summary="Get all garden groups",
-     *     description="Retrieve a list of all garden groups with their associated garden information. Supports filtering by name and garden_id.",
+     *     description="Retrieve a paginated list of all garden groups with their associated garden information. Supports filtering by name and garden_id.",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(
-     *         name="name",
-     *         in="query",
-     *         required=false,
-     *         description="Filter by group name",
-     *         @OA\Schema(type="string", example="Group A")
-     *     ),
-     *     @OA\Parameter(
-     *         name="garden_id",
-     *         in="query",
-     *         required=false,
-     *         description="Filter by garden ID",
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
+     *     @OA\Parameter(name="name", in="query", required=false, description="Filter by group name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="garden_id", in="query", required=false, description="Filter by garden ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
      *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(
-     *                 type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="name", type="string", example="Group A"),
-     *                 @OA\Property(property="garden_id", type="integer", example=1),
-     *                 @OA\Property(property="created_at", type="string", format="date-time"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
-     *                 @OA\Property(
-     *                     property="garden",
+     *             type="object",
+     *             @OA\Property(property="current_page", type="integer", example=1),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
      *                     type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="name", type="string", example="Sunshine Garden"),
-     *                     @OA\Property(property="address", type="string", example="123 Main St")
+     *                     @OA\Property(property="name", type="string", example="Group A"),
+     *                     @OA\Property(property="garden_id", type="integer", example=1),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                     @OA\Property(property="garden", type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Sunshine Garden"),
+     *                         @OA\Property(property="address", type="string", example="123 Main St")
+     *                     )
      *                 )
-     *             )
+     *             ),
+     *             @OA\Property(property="last_page", type="integer", example=5),
+     *             @OA\Property(property="per_page", type="integer", example=15),
+     *             @OA\Property(property="total", type="integer", example=50)
      *         )
      *     )
      * )
@@ -70,7 +63,6 @@ class GardenGroupController extends Controller
             if ($garden) {
                 $query->where('garden_id', $garden->id);
             } else {
-                // თუ ბაღი ვერ მოიძებნა, ცარიელი დააბრუნოს
                 return collect([]);
             }
         } else if ($request->filled('garden_id')) {
@@ -81,7 +73,8 @@ class GardenGroupController extends Controller
             $query->where('name', 'like', '%' . $request->query('name') . '%');
         }
 
-        return $query->get();
+        $perPage = $request->query('per_page', 15);
+        return $query->paginate($perPage);
     }
 
     /**

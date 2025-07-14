@@ -288,13 +288,174 @@
                 ]
             }
         },
+        "/api/request-password-reset": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Request password reset (send OTP)",
+                "description": "Send OTP code to user's email for password reset.",
+                "operationId": "requestPasswordReset",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OTP sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "OTP sent to email."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/reset-password": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Reset password with OTP",
+                "description": "Reset password using email, OTP code, new password and confirmation.",
+                "operationId": "resetPassword",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "otp",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "otp": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "minLength": 6,
+                                        "example": "newpassword123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "minLength": 6,
+                                        "example": "newpassword123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password reset successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Password reset successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid OTP or expired",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid or expired OTP."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/cards": {
             "get": {
                 "tags": [
                     "Cards"
                 ],
                 "summary": "Get all cards",
-                "description": "Retrieve a list of all child cards with their associated group information. Supports filtering by child_first_name, child_last_name, and group_id.",
+                "description": "Retrieve a paginated list of all child cards with their associated group information. Supports filtering by child_first_name, child_last_name, father_name, parent_first_name, parent_last_name, phone, status, group_id, parent_code.",
                 "operationId": "getCards",
                 "parameters": [
                     {
@@ -303,8 +464,7 @@
                         "description": "Filter by child's first name",
                         "required": false,
                         "schema": {
-                            "type": "string",
-                            "example": "Giorgi"
+                            "type": "string"
                         }
                     },
                     {
@@ -313,8 +473,57 @@
                         "description": "Filter by child's last name",
                         "required": false,
                         "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "father_name",
+                        "in": "query",
+                        "description": "Filter by father's name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "parent_first_name",
+                        "in": "query",
+                        "description": "Filter by parent's first name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "parent_last_name",
+                        "in": "query",
+                        "description": "Filter by parent's last name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "Filter by phone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
                             "type": "string",
-                            "example": "Davitashvili"
+                            "enum": [
+                                "pending",
+                                "active",
+                                "inactive"
+                            ]
                         }
                     },
                     {
@@ -323,8 +532,26 @@
                         "description": "Filter by group ID",
                         "required": false,
                         "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "parent_code",
+                        "in": "query",
+                        "description": "Filter by parent code",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page (pagination)",
+                        "required": false,
+                        "schema": {
                             "type": "integer",
-                            "example": 1
+                            "default": 15
                         }
                     }
                 ],
@@ -334,79 +561,100 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "child_first_name": {
-                                                "type": "string",
-                                                "example": "Giorgi"
-                                            },
-                                            "child_last_name": {
-                                                "type": "string",
-                                                "example": "Davitashvili"
-                                            },
-                                            "father_name": {
-                                                "type": "string",
-                                                "example": "Davit"
-                                            },
-                                            "parent_first_name": {
-                                                "type": "string",
-                                                "example": "Nino"
-                                            },
-                                            "parent_last_name": {
-                                                "type": "string",
-                                                "example": "Davitashvili"
-                                            },
-                                            "phone": {
-                                                "type": "string",
-                                                "example": "+995599123456"
-                                            },
-                                            "status": {
-                                                "type": "string",
-                                                "enum": [
-                                                    "pending",
-                                                    "active",
-                                                    "inactive"
-                                                ],
-                                                "example": "active"
-                                            },
-                                            "group_id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "parent_code": {
-                                                "type": "string",
-                                                "example": "ABC123",
-                                                "nullable": true
-                                            },
-                                            "created_at": {
-                                                "type": "string",
-                                                "format": "date-time"
-                                            },
-                                            "updated_at": {
-                                                "type": "string",
-                                                "format": "date-time"
-                                            },
-                                            "group": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
                                                 "properties": {
                                                     "id": {
                                                         "type": "integer",
                                                         "example": 1
                                                     },
-                                                    "name": {
+                                                    "child_first_name": {
                                                         "type": "string",
-                                                        "example": "Group A"
+                                                        "example": "Giorgi"
+                                                    },
+                                                    "child_last_name": {
+                                                        "type": "string",
+                                                        "example": "Davitashvili"
+                                                    },
+                                                    "father_name": {
+                                                        "type": "string",
+                                                        "example": "Davit"
+                                                    },
+                                                    "parent_first_name": {
+                                                        "type": "string",
+                                                        "example": "Nino"
+                                                    },
+                                                    "parent_last_name": {
+                                                        "type": "string",
+                                                        "example": "Davitashvili"
+                                                    },
+                                                    "phone": {
+                                                        "type": "string",
+                                                        "example": "+995599123456"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "pending",
+                                                            "active",
+                                                            "inactive"
+                                                        ],
+                                                        "example": "active"
+                                                    },
+                                                    "group_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "parent_code": {
+                                                        "type": "string",
+                                                        "example": "ABC123",
+                                                        "nullable": true
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "group": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Group A"
+                                                            }
+                                                        },
+                                                        "type": "object"
                                                     }
                                                 },
                                                 "type": "object"
                                             }
                                         },
-                                        "type": "object"
-                                    }
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 15
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 50
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
@@ -1087,54 +1335,88 @@
                     "Gardens"
                 ],
                 "summary": "Get all gardens",
-                "description": "Retrieve a list of all gardens with their associated city information",
+                "description": "Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, city_id, tax_id, phone, email.",
                 "operationId": "getGardens",
+                "parameters": [
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Filter by garden name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "in": "query",
+                        "description": "Filter by address",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "city_id",
+                        "in": "query",
+                        "description": "Filter by city ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "tax_id",
+                        "in": "query",
+                        "description": "Filter by tax ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "Filter by phone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Filter by email",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page (pagination)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successful operation",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Sunshine Garden"
-                                            },
-                                            "address": {
-                                                "type": "string",
-                                                "example": "123 Main Street"
-                                            },
-                                            "tax_id": {
-                                                "type": "string",
-                                                "example": "123456789"
-                                            },
-                                            "city_id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "phone": {
-                                                "type": "string",
-                                                "example": "+995599123456"
-                                            },
-                                            "email": {
-                                                "type": "string",
-                                                "example": "sunshine@garden.ge"
-                                            },
-                                            "created_at": {
-                                                "type": "string",
-                                                "format": "date-time"
-                                            },
-                                            "updated_at": {
-                                                "type": "string",
-                                                "format": "date-time"
-                                            },
-                                            "city": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
                                                 "properties": {
                                                     "id": {
                                                         "type": "integer",
@@ -1142,18 +1424,91 @@
                                                     },
                                                     "name": {
                                                         "type": "string",
-                                                        "example": "Tbilisi"
+                                                        "example": "Sunshine Garden"
                                                     },
-                                                    "region": {
+                                                    "address": {
                                                         "type": "string",
-                                                        "example": "Tbilisi"
+                                                        "example": "123 Main Street"
+                                                    },
+                                                    "tax_id": {
+                                                        "type": "string",
+                                                        "example": "123456789"
+                                                    },
+                                                    "city_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "phone": {
+                                                        "type": "string",
+                                                        "example": "+995599123456"
+                                                    },
+                                                    "email": {
+                                                        "type": "string",
+                                                        "example": "sunshine@garden.ge"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "city": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Tbilisi"
+                                                            },
+                                                            "region": {
+                                                                "type": "string",
+                                                                "example": "Tbilisi"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "images": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "title": {
+                                                                    "type": "string",
+                                                                    "example": "Main Entrance"
+                                                                },
+                                                                "image": {
+                                                                    "type": "string",
+                                                                    "example": "garden_images/abc123.jpg"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
                                                     }
                                                 },
                                                 "type": "object"
                                             }
                                         },
-                                        "type": "object"
-                                    }
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 15
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 50
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
@@ -1766,7 +2121,7 @@
                     "Garden Groups"
                 ],
                 "summary": "Get all garden groups",
-                "description": "Retrieve a list of all garden groups with their associated garden information. Supports filtering by name and garden_id.",
+                "description": "Retrieve a paginated list of all garden groups with their associated garden information. Supports filtering by name and garden_id.",
                 "operationId": "getGardenGroups",
                 "parameters": [
                     {
@@ -1775,8 +2130,7 @@
                         "description": "Filter by group name",
                         "required": false,
                         "schema": {
-                            "type": "string",
-                            "example": "Group A"
+                            "type": "string"
                         }
                     },
                     {
@@ -1785,8 +2139,17 @@
                         "description": "Filter by garden ID",
                         "required": false,
                         "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page (pagination)",
+                        "required": false,
+                        "schema": {
                             "type": "integer",
-                            "example": 1
+                            "default": 15
                         }
                     }
                 ],
@@ -1796,30 +2159,14 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Group A"
-                                            },
-                                            "garden_id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "created_at": {
-                                                "type": "string",
-                                                "format": "date-time"
-                                            },
-                                            "updated_at": {
-                                                "type": "string",
-                                                "format": "date-time"
-                                            },
-                                            "garden": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
                                                 "properties": {
                                                     "id": {
                                                         "type": "integer",
@@ -1827,18 +2174,55 @@
                                                     },
                                                     "name": {
                                                         "type": "string",
-                                                        "example": "Sunshine Garden"
+                                                        "example": "Group A"
                                                     },
-                                                    "address": {
+                                                    "garden_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "created_at": {
                                                         "type": "string",
-                                                        "example": "123 Main St"
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "garden": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Sunshine Garden"
+                                                            },
+                                                            "address": {
+                                                                "type": "string",
+                                                                "example": "123 Main St"
+                                                            }
+                                                        },
+                                                        "type": "object"
                                                     }
                                                 },
                                                 "type": "object"
                                             }
                                         },
-                                        "type": "object"
-                                    }
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 15
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 50
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
