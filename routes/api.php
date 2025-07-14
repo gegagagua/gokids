@@ -18,11 +18,14 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/person-types', [PersonTypeController::class, 'index']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/request-password-reset', [AuthController::class, 'requestPasswordReset']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::apiResource('gardens', GardenController::class);
     Route::apiResource('garden-images', GardenImageController::class);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
+        Route::post('/change-password', [AuthController::class, 'changePassword']);
         Route::apiResource('garden-groups', GardenGroupController::class);
         Route::apiResource('cards', CardController::class);
         Route::apiResource('parents', ParentModelController::class);
