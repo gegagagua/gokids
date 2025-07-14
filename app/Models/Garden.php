@@ -27,4 +27,9 @@ class Garden extends Model
     {
         return $this->hasMany(GardenGroup::class);
     }
+
+    public function images()
+    {
+        return $this->hasMany(\App\Models\GardenImage::class);
+    }
 }

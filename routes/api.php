@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\CardController;
 use App\Http\Controllers\Api\ParentModelController;
 use App\Http\Controllers\Api\PersonTypeController;
 use App\Http\Controllers\Api\PeopleController;
+use App\Http\Controllers\Api\GardenImageController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/cities', [CityController::class, 'index']);
@@ -18,6 +19,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::apiResource('gardens', GardenController::class);
+    Route::apiResource('garden-images', GardenImageController::class);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);

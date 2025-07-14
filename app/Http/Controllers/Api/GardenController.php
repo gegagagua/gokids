@@ -54,7 +54,7 @@ class GardenController extends Controller
      */
     public function index()
     {
-        return Garden::with('city')->get();
+        return Garden::with(['city', 'images'])->get();
     }
 
     /**
@@ -106,7 +106,7 @@ class GardenController extends Controller
      */
     public function show($id)
     {
-        return Garden::with('city')->findOrFail($id);
+        return Garden::with(['city', 'images'])->findOrFail($id);
     }
 
     /**

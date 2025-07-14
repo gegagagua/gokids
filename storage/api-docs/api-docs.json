@@ -2143,6 +2143,109 @@
                 ]
             }
         },
+        "/api/garden-images": {
+            "post": {
+                "tags": [
+                    "Garden Images"
+                ],
+                "summary": "Upload a new garden image",
+                "description": "Upload a new image for a garden. Requires authentication.",
+                "operationId": "createGardenImage",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "garden_id",
+                                    "image"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Main Entrance"
+                                    },
+                                    "garden_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "image": {
+                                        "description": "Image file (jpg, png, etc.)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Garden image uploaded successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "example": "Main Entrance"
+                                        },
+                                        "garden_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "image": {
+                                            "type": "string",
+                                            "example": "garden_images/abc123.jpg"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/parents": {
             "get": {
                 "tags": [
@@ -3559,6 +3662,10 @@
         {
             "name": "Garden Groups",
             "description": "API Endpoints for managing garden groups"
+        },
+        {
+            "name": "Garden Images",
+            "description": "API Endpoints for managing garden images"
         },
         {
             "name": "Parents",
