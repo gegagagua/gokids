@@ -21,6 +21,7 @@ class ParentModelController extends Controller
      *     tags={"Parents"},
      *     summary="Get all parents",
      *     description="Retrieve a list of all parents with their associated group and card information",
+     *     security={{"sanctum":{}}},
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -68,6 +69,7 @@ class ParentModelController extends Controller
      *     tags={"Parents"},
      *     summary="Get a specific parent",
      *     description="Retrieve detailed information about a specific parent",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -126,6 +128,7 @@ class ParentModelController extends Controller
      *     tags={"Parents"},
      *     summary="Create a new parent",
      *     description="Create a new parent with the provided information",
+     *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -197,6 +200,7 @@ class ParentModelController extends Controller
      *     tags={"Parents"},
      *     summary="Update a parent",
      *     description="Update an existing parent with new information",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -285,6 +289,7 @@ class ParentModelController extends Controller
      *     tags={"Parents"},
      *     summary="Delete a parent",
      *     description="Permanently delete a parent",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",

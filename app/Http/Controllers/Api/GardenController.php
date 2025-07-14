@@ -23,6 +23,7 @@ class GardenController extends Controller
      *     tags={"Gardens"},
      *     summary="Get all gardens",
      *     description="Retrieve a list of all gardens with their associated city information",
+     *     security={{"sanctum":{}}},
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -63,6 +64,7 @@ class GardenController extends Controller
      *     tags={"Gardens"},
      *     summary="Get a specific garden",
      *     description="Retrieve detailed information about a specific garden",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -114,6 +116,7 @@ class GardenController extends Controller
      *     tags={"Gardens"},
      *     summary="Create a new garden",
      *     description="Create a new garden with the provided information",
+     *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -216,6 +219,7 @@ class GardenController extends Controller
      *     tags={"Gardens"},
      *     summary="Update a garden",
      *     description="Update an existing garden with new information",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -309,6 +313,7 @@ class GardenController extends Controller
      *     tags={"Gardens"},
      *     summary="Delete a garden",
      *     description="Permanently delete a garden",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",

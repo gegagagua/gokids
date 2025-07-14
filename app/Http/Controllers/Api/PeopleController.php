@@ -21,6 +21,7 @@ class PeopleController extends Controller
      *     tags={"People"},
      *     summary="Get all people",
      *     description="Retrieve a list of all people with their associated person type and card information. Supports filtering by first_name, last_name, person_type_id, and card_id.",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="first_name",
      *         in="query",
@@ -109,6 +110,7 @@ class PeopleController extends Controller
      *     tags={"People"},
      *     summary="Get a specific person",
      *     description="Retrieve detailed information about a specific person",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -165,6 +167,7 @@ class PeopleController extends Controller
      *     tags={"People"},
      *     summary="Create a new person",
      *     description="Create a new person with the provided information",
+     *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -231,6 +234,7 @@ class PeopleController extends Controller
      *     tags={"People"},
      *     summary="Update a person",
      *     description="Update an existing person with new information",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -312,6 +316,7 @@ class PeopleController extends Controller
      *     tags={"People"},
      *     summary="Delete a person",
      *     description="Permanently delete a person",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",

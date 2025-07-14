@@ -21,6 +21,7 @@ class GardenGroupController extends Controller
      *     tags={"Garden Groups"},
      *     summary="Get all garden groups",
      *     description="Retrieve a list of all garden groups with their associated garden information. Supports filtering by name and garden_id.",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="name",
      *         in="query",
@@ -62,12 +63,24 @@ class GardenGroupController extends Controller
     public function index(Request $request)
     {
         $query = GardenGroup::with('garden');
+
+        $user = $request->user();
+        if ($user && $user->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $user->email)->first();
+            if ($garden) {
+                $query->where('garden_id', $garden->id);
+            } else {
+                // თუ ბაღი ვერ მოიძებნა, ცარიელი დააბრუნოს
+                return collect([]);
+            }
+        } else if ($request->filled('garden_id')) {
+            $query->where('garden_id', $request->query('garden_id'));
+        }
+
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->query('name') . '%');
         }
-        if ($request->filled('garden_id')) {
-            $query->where('garden_id', $request->query('garden_id'));
-        }
+
         return $query->get();
     }
 
@@ -78,6 +91,7 @@ class GardenGroupController extends Controller
      *     tags={"Garden Groups"},
      *     summary="Create a new garden group",
      *     description="Create a new garden group with the provided information",
+     *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -130,6 +144,7 @@ class GardenGroupController extends Controller
      *     tags={"Garden Groups"},
      *     summary="Get a specific garden group",
      *     description="Retrieve detailed information about a specific garden group",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -177,6 +192,7 @@ class GardenGroupController extends Controller
      *     tags={"Garden Groups"},
      *     summary="Update a garden group",
      *     description="Update an existing garden group with new information",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -246,6 +262,7 @@ class GardenGroupController extends Controller
      *     tags={"Garden Groups"},
      *     summary="Delete a garden group",
      *     description="Permanently delete a garden group",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",

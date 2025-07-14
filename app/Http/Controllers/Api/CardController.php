@@ -21,6 +21,7 @@ class CardController extends Controller
      *     tags={"Cards"},
      *     summary="Get all cards",
      *     description="Retrieve a list of all child cards with their associated group information. Supports filtering by child_first_name, child_last_name, and group_id.",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="child_first_name",
      *         in="query",
@@ -95,6 +96,7 @@ class CardController extends Controller
      *     tags={"Cards"},
      *     summary="Get a specific card",
      *     description="Retrieve detailed information about a specific child card",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -149,6 +151,7 @@ class CardController extends Controller
      *     tags={"Cards"},
      *     summary="Create a new card",
      *     description="Create a new child card with the provided information",
+     *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -231,6 +234,7 @@ class CardController extends Controller
      *     tags={"Cards"},
      *     summary="Update a card",
      *     description="Update an existing child card with new information",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -328,6 +332,7 @@ class CardController extends Controller
      *     tags={"Cards"},
      *     summary="Delete a card",
      *     description="Permanently delete a child card",
+     *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",

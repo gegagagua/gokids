@@ -13,24 +13,18 @@ use App\Http\Controllers\Api\PersonTypeController;
 use App\Http\Controllers\Api\PeopleController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
+    Route::get('/cities', [CityController::class, 'index']);
     Route::get('/person-types', [PersonTypeController::class, 'index']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::apiResource('gardens', GardenController::class);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
+        Route::apiResource('garden-groups', GardenGroupController::class);
+        Route::apiResource('cards', CardController::class);
+        Route::apiResource('parents', ParentModelController::class);
+        Route::apiResource('people', PeopleController::class);
     });
-
-    Route::apiResource('gardens', GardenController::class);
-
-    Route::get('/cities', [CityController::class, 'index']);
-
-    Route::apiResource('garden-groups', GardenGroupController::class);
-    Route::apiResource('cards', CardController::class);
-    Route::apiResource('parents', ParentModelController::class);
-    Route::apiResource('people', PeopleController::class);
 });
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
