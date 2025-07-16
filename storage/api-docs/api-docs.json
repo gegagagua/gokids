@@ -3300,6 +3300,53 @@
                 ]
             }
         },
+        "/api/garden-images/{id}": {
+            "delete": {
+                "tags": [
+                    "Garden Images"
+                ],
+                "summary": "Delete a garden image",
+                "description": "Deletes a garden image by ID. Requires authentication.",
+                "operationId": "deleteGardenImage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the garden image to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Garden image deleted successfully"
+                    },
+                    "404": {
+                        "description": "Garden image not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Garden image not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/parents": {
             "get": {
                 "tags": [

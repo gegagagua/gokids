@@ -101,10 +101,44 @@ class GardenImageController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * @OA\Delete(
+     *     path="/api/garden-images/{id}",
+     *     operationId="deleteGardenImage",
+     *     tags={"Garden Images"},
+     *     summary="Delete a garden image",
+     *     description="Deletes a garden image by ID. Requires authentication.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the garden image to delete",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=204,
+     *         description="Garden image deleted successfully"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Garden image not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Garden image not found.")
+     *         )
+     *     )
+     * )
      */
     public function destroy(string $id)
     {
-        //
+        $gardenImage = GardenImage::find($id);
+        if (!$gardenImage) {
+            return response()->json(['message' => 'Garden image not found.'], 404);
+        }
+        // Remove image file from storage
+        if ($gardenImage->image && \Storage::disk('public')->exists($gardenImage->image)) {
+            \Storage::disk('public')->delete($gardenImage->image);
+        }
+        $gardenImage->delete();
+        return response()->noContent();
     }
 }
