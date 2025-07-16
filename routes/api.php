@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\ParentModelController;
 use App\Http\Controllers\Api\PersonTypeController;
 use App\Http\Controllers\Api\PeopleController;
 use App\Http\Controllers\Api\GardenImageController;
+use App\Http\Controllers\Api\DeviceController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/cities', [CityController::class, 'index']);
@@ -30,6 +31,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::apiResource('cards', CardController::class);
         Route::apiResource('parents', ParentModelController::class);
         Route::apiResource('people', PeopleController::class);
+        Route::apiResource('devices', DeviceController::class);
     });
 });
 
