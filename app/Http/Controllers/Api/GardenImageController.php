@@ -81,7 +81,10 @@ class GardenImageController extends Controller
             'image' => $path,
         ]);
 
-        return response()->json($gardenImage, 201);
+        $response = $gardenImage->toArray();
+        $response['image_url'] = $gardenImage->image_url;
+
+        return response()->json($response, 201);
     }
 
     /**

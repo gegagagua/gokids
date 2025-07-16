@@ -16,4 +16,12 @@ class GardenImage extends Model
     {
         return $this->belongsTo(Garden::class);
     }
+
+    public function getImageUrlAttribute()
+    {
+        if ($this->image) {
+            return asset('storage/' . $this->image);
+        }
+        return null;
+    }
 }
