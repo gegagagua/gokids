@@ -117,7 +117,7 @@ class AuthController extends Controller
 
         $token = $user->createToken('api_token')->plainTextToken;
 
-        return response()->json([
+        $response = [
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -125,7 +125,16 @@ class AuthController extends Controller
                 'type' => $user->type,
             ],
             'token' => $token,
-        ], 200);
+        ];
+
+        if ($user->type === 'garden') {
+            $garden = \App\Models\Garden::with(['city', 'images'])->where('email', $user->email)->first();
+            if ($garden) {
+                $response['garden'] = $garden;
+            }
+        }
+
+        return response()->json($response, 200);
     }
 
     /**
