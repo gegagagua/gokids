@@ -18,6 +18,7 @@ class Card extends Model
         'phone',
         'status',
         'group_id',
+        'person_type_id',
         'parent_code',
         'image_path',
     ];
@@ -35,5 +36,10 @@ class Card extends Model
     public function people()
     {
         return $this->hasMany(People::class);
+    }
+
+    public function personType()
+    {
+        return $this->belongsTo(\App\Models\PersonType::class);
     }
 }

@@ -69,21 +69,17 @@ class CardController extends Controller
     // ყველა ბარათის წამოღება
     public function index(Request $request)
     {
-        $query = Card::with('group');
-        if ($request->filled('child_first_name')) {
-            $query->where('child_first_name', 'like', '%' . $request->query('child_first_name') . '%');
-        }
-        if ($request->filled('child_last_name')) {
-            $query->where('child_last_name', 'like', '%' . $request->query('child_last_name') . '%');
-        }
-        if ($request->filled('father_name')) {
-            $query->where('father_name', 'like', '%' . $request->query('father_name') . '%');
-        }
-        if ($request->filled('parent_first_name')) {
-            $query->where('parent_first_name', 'like', '%' . $request->query('parent_first_name') . '%');
-        }
-        if ($request->filled('parent_last_name')) {
-            $query->where('parent_last_name', 'like', '%' . $request->query('parent_last_name') . '%');
+        $query = Card::with(['group', 'personType']);
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->where(function($q) use ($search) {
+                $q->where('child_first_name', 'like', "%$search%")
+                  ->orWhere('child_last_name', 'like', "%$search%")
+                  ->orWhere('father_name', 'like', "%$search%")
+                  ->orWhere('parent_first_name', 'like', "%$search%")
+                  ->orWhere('parent_last_name', 'like', "%$search%")
+                ;
+            });
         }
         if ($request->filled('phone')) {
             $query->where('phone', 'like', '%' . $request->query('phone') . '%');
@@ -93,6 +89,9 @@ class CardController extends Controller
         }
         if ($request->filled('group_id')) {
             $query->where('group_id', $request->query('group_id'));
+        }
+        if ($request->filled('person_type_id')) {
+            $query->where('person_type_id', $request->query('person_type_id'));
         }
         if ($request->filled('parent_code')) {
             $query->where('parent_code', $request->query('parent_code'));
@@ -153,7 +152,7 @@ class CardController extends Controller
     // ერთი ბარათის დეტალები
     public function show($id)
     {
-        return Card::with('group')->findOrFail($id);
+        return Card::with(['group', 'personType'])->findOrFail($id);
     }
 
     /**
@@ -231,6 +230,7 @@ class CardController extends Controller
             'phone' => 'required|string|max:20',
             'status' => 'required|string|in:pending,active,inactive',
             'group_id' => 'required|exists:garden_groups,id',
+            'person_type_id' => 'nullable|exists:person_types,id',
             'parent_code' => 'nullable|string|max:255',
         ]);
 
