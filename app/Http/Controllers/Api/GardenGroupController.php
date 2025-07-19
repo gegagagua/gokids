@@ -74,7 +74,13 @@ class GardenGroupController extends Controller
         }
 
         $perPage = $request->query('per_page', 15);
-        return $query->paginate($perPage);
+        $groups = $query->withCount('cards')->paginate($perPage);
+        // დაამატე cards_count ველი
+        $groups->getCollection()->transform(function ($group) {
+            $group->cards_count = $group->cards_count ?? 0;
+            return $group;
+        });
+        return $groups;
     }
 
     /**

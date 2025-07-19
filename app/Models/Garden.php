@@ -14,9 +14,18 @@ class Garden extends Model
         'phone',
         'email',
         'password',
+        'referral_code',
     ];
 
     protected $hidden = ['password'];
+
+    public static function generateUniqueReferralCode()
+    {
+        do {
+            $code = strtoupper(uniqid('REF'));
+        } while (self::where('referral_code', $code)->exists());
+        return $code;
+    }
 
     public function city()
     {

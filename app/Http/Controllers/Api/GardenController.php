@@ -95,7 +95,13 @@ class GardenController extends Controller
         }
 
         $perPage = $request->query('per_page', 15);
-        return $query->paginate($perPage);
+        $gardens = $query->paginate($perPage);
+        // დაამატე referral_code ყველა garden-ს
+        $gardens->getCollection()->transform(function ($garden) {
+            $garden->makeVisible('referral_code');
+            return $garden;
+        });
+        return $gardens;
     }
 
     /**
@@ -147,7 +153,9 @@ class GardenController extends Controller
      */
     public function show($id)
     {
-        return Garden::with(['city', 'images'])->findOrFail($id);
+        $garden = Garden::with(['city', 'images'])->findOrFail($id);
+        $garden->makeVisible('referral_code');
+        return $garden;
     }
 
     /**
@@ -239,6 +247,7 @@ class GardenController extends Controller
         // Create garden
         $gardenData = $validated;
         $gardenData['password'] = bcrypt($validated['password']);
+        $gardenData['referral_code'] = \App\Models\Garden::generateUniqueReferralCode();
         $garden = Garden::create($gardenData);
 
         return response()->json([
