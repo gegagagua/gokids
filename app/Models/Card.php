@@ -19,6 +19,7 @@ class Card extends Model
         'status',
         'group_id',
         'parent_code',
+        'image_path',
     ];
 
     public function group()

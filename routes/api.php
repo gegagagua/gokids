@@ -23,6 +23,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::apiResource('gardens', GardenController::class);
     Route::apiResource('garden-images', GardenImageController::class);
+    Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);

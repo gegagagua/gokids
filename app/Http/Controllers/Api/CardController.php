@@ -376,4 +376,72 @@ class CardController extends Controller
 
         return response()->json(['message' => 'Card deleted']);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/cards/{id}/image",
+     *     operationId="uploadCardImage",
+     *     tags={"Cards"},
+     *     summary="Upload or replace card image",
+     *     description="Upload a new image for the card. If an image already exists, it will be replaced.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Card ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="image",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="Image file"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Image uploaded successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="image_path", type="string", example="cards/12345.jpg")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Card not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
+     */
+    public function uploadImage(Request $request, $id)
+    {
+        $card = \App\Models\Card::findOrFail($id);
+
+        $request->validate([
+            'image' => 'required|image|max:2048', // 2MB max
+        ]);
+
+        // წაშალე ძველი სურათი თუ არსებობს
+        if ($card->image_path && \Storage::disk('public')->exists($card->image_path)) {
+            \Storage::disk('public')->delete($card->image_path);
+        }
+
+        // ატვირთე ახალი სურათი
+        $path = $request->file('image')->store('cards', 'public');
+        $card->image_path = $path;
+        $card->save();
+
+        $fullUrl = asset('storage/' . $path);
+        return response()->json(['image_path' => $fullUrl]);
+    }
 }
