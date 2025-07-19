@@ -455,49 +455,13 @@
                     "Cards"
                 ],
                 "summary": "Get all cards",
-                "description": "Retrieve a paginated list of all child cards with their associated group information. Supports filtering by child_first_name, child_last_name, father_name, parent_first_name, parent_last_name, phone, status, group_id, parent_code.",
+                "description": "Retrieve a paginated list of all child cards with their associated group and person type information. Supports filtering by search (child's or parent's name fields), phone, status, group_id, person_type_id, parent_code.",
                 "operationId": "getCards",
                 "parameters": [
                     {
-                        "name": "child_first_name",
+                        "name": "search",
                         "in": "query",
-                        "description": "Filter by child's first name",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "child_last_name",
-                        "in": "query",
-                        "description": "Filter by child's last name",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "father_name",
-                        "in": "query",
-                        "description": "Filter by father's name",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "parent_first_name",
-                        "in": "query",
-                        "description": "Filter by parent's first name",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "parent_last_name",
-                        "in": "query",
-                        "description": "Filter by parent's last name",
+                        "description": "Search in child's and parent's name fields",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -530,6 +494,15 @@
                         "name": "group_id",
                         "in": "query",
                         "description": "Filter by group ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "person_type_id",
+                        "in": "query",
+                        "description": "Filter by person type ID",
                         "required": false,
                         "schema": {
                             "type": "integer"
@@ -611,6 +584,11 @@
                                                         "type": "integer",
                                                         "example": 1
                                                     },
+                                                    "person_type_id": {
+                                                        "type": "integer",
+                                                        "example": 1,
+                                                        "nullable": true
+                                                    },
                                                     "parent_code": {
                                                         "type": "string",
                                                         "example": "ABC123",
@@ -633,6 +611,19 @@
                                                             "name": {
                                                                 "type": "string",
                                                                 "example": "Group A"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "personType": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "ბავშვი"
                                                             }
                                                         },
                                                         "type": "object"
@@ -740,6 +731,12 @@
                                         "type": "integer",
                                         "example": 1
                                     },
+                                    "person_type_id": {
+                                        "description": "Person type ID from person-types",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
                                     "parent_code": {
                                         "description": "Optional parent access code",
                                         "type": "string",
@@ -795,6 +792,11 @@
                                         "group_id": {
                                             "type": "integer",
                                             "example": 1
+                                        },
+                                        "person_type_id": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
                                         },
                                         "parent_code": {
                                             "type": "string",
@@ -870,6 +872,12 @@
                                                     }
                                                 },
                                                 "group_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "person_type_id": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"

@@ -20,16 +20,13 @@ class CardController extends Controller
      *     operationId="getCards",
      *     tags={"Cards"},
      *     summary="Get all cards",
-     *     description="Retrieve a paginated list of all child cards with their associated group information. Supports filtering by child_first_name, child_last_name, father_name, parent_first_name, parent_last_name, phone, status, group_id, parent_code.",
+     *     description="Retrieve a paginated list of all child cards with their associated group and person type information. Supports filtering by search (child's or parent's name fields), phone, status, group_id, person_type_id, parent_code.",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="child_first_name", in="query", required=false, description="Filter by child's first name", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="child_last_name", in="query", required=false, description="Filter by child's last name", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="father_name", in="query", required=false, description="Filter by father's name", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="parent_first_name", in="query", required=false, description="Filter by parent's first name", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="parent_last_name", in="query", required=false, description="Filter by parent's last name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Search in child's and parent's name fields", @OA\Schema(type="string")),
      *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by status", @OA\Schema(type="string", enum={"pending","active","inactive"})),
      *     @OA\Parameter(name="group_id", in="query", required=false, description="Filter by group ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="person_type_id", in="query", required=false, description="Filter by person type ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="parent_code", in="query", required=false, description="Filter by parent code", @OA\Schema(type="string")),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
      *     @OA\Response(
@@ -50,12 +47,17 @@ class CardController extends Controller
      *                     @OA\Property(property="phone", type="string", example="+995599123456"),
      *                     @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}),
      *                     @OA\Property(property="group_id", type="integer", example=1),
+     *                     @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
      *                     @OA\Property(property="parent_code", type="string", example="ABC123", nullable=true),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
      *                     @OA\Property(property="group", type="object",
      *                         @OA\Property(property="id", type="integer", example=1),
      *                         @OA\Property(property="name", type="string", example="Group A")
+     *                     ),
+     *                     @OA\Property(property="personType", type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="ბავშვი")
      *                     )
      *                 )
      *             ),
@@ -175,6 +177,7 @@ class CardController extends Controller
      *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599123456", description="Contact phone number"),
      *             @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}, description="Card status"),
      *             @OA\Property(property="group_id", type="integer", example=1, description="ID of the associated garden group"),
+     *             @OA\Property(property="person_type_id", type="integer", example=1, nullable=true, description="Person type ID from person-types"),
      *             @OA\Property(property="parent_code", type="string", maxLength=255, example="ABC123", nullable=true, description="Optional parent access code")
      *         )
      *     ),
@@ -192,6 +195,7 @@ class CardController extends Controller
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
      *             @OA\Property(property="status", type="string", example="active"),
      *             @OA\Property(property="group_id", type="integer", example=1),
+     *             @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
      *             @OA\Property(property="parent_code", type="string", example="ABC123", nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
@@ -212,7 +216,8 @@ class CardController extends Controller
      *                 @OA\Property(property="parent_last_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="status", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="group_id", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(property="group_id", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="person_type_id", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     )
