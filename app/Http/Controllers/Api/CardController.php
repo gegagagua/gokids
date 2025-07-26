@@ -41,13 +41,12 @@ class CardController extends Controller
      *                     @OA\Property(property="id", type="integer", example=1),
      *                     @OA\Property(property="child_first_name", type="string", example="Giorgi"),
      *                     @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
-     *                     @OA\Property(property="father_name", type="string", example="Davit"),
      *                     @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
      *                     @OA\Property(property="phone", type="string", example="+995599123456"),
      *                     @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}),
      *                     @OA\Property(property="group_id", type="integer", example=1),
      *                     @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
-     *                     @OA\Property(property="parent_code", type="string", example="ABC123", nullable=true),
+     *                     @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
      *                     @OA\Property(property="group", type="object",
@@ -71,12 +70,19 @@ class CardController extends Controller
     public function index(Request $request)
     {
         $query = Card::with(['group', 'personType']);
+        
+        // Filter by garden_id if provided (for garden users)
+        if ($request->filled('garden_id')) {
+            $query->whereHas('group', function ($q) use ($request) {
+                $q->where('garden_id', $request->query('garden_id'));
+            });
+        }
+        
         if ($request->filled('search')) {
             $search = $request->query('search');
             $query->where(function ($q) use ($search) {
                 $q->where('child_first_name', 'like', "%$search%")
                     ->orWhere('child_last_name', 'like', "%$search%")
-                    ->orWhere('father_name', 'like', "%$search%")
                     ->orWhere('parent_name', 'like', "%$search%")
                 ;
             });
@@ -123,12 +129,11 @@ class CardController extends Controller
      *             @OA\Property(property="id", type="integer", example=1),
      *             @OA\Property(property="child_first_name", type="string", example="Giorgi"),
      *             @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
-     *             @OA\Property(property="father_name", type="string", example="Davit"),
      *             @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
      *             @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}),
      *             @OA\Property(property="group_id", type="integer", example=1),
-     *             @OA\Property(property="parent_code", type="string", example="ABC123", nullable=true),
+     *             @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time"),
      *             @OA\Property(
@@ -149,9 +154,18 @@ class CardController extends Controller
      * )
      */
     // ერთი ბარათის დეტალები
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        return Card::with(['group', 'personType'])->findOrFail($id);
+        $query = Card::with(['group', 'personType']);
+        
+        // Filter by garden_id if provided (for garden users)
+        if ($request->filled('garden_id')) {
+            $query->whereHas('group', function ($q) use ($request) {
+                $q->where('garden_id', $request->query('garden_id'));
+            });
+        }
+        
+        return $query->findOrFail($id);
     }
 
     /**
@@ -165,16 +179,15 @@ class CardController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"child_first_name", "child_last_name", "father_name", "parent_name", "phone", "status", "group_id"},
+     *             required={"child_first_name", "child_last_name", "parent_name", "phone", "status", "group_id"},
      *             @OA\Property(property="child_first_name", type="string", maxLength=255, example="Giorgi", description="Child's first name"),
      *             @OA\Property(property="child_last_name", type="string", maxLength=255, example="Davitashvili", description="Child's last name"),
-     *             @OA\Property(property="father_name", type="string", maxLength=255, example="Davit", description="Father's name"),
      *             @OA\Property(property="parent_name", type="string", maxLength=255, example="Nino Davitashvili", description="Parent's full name"),
      *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599123456", description="Contact phone number"),
      *             @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}, description="Card status"),
      *             @OA\Property(property="group_id", type="integer", example=1, description="ID of the associated garden group"),
      *             @OA\Property(property="person_type_id", type="integer", example=1, nullable=true, description="Person type ID from person-types"),
-     *             @OA\Property(property="parent_code", type="string", maxLength=255, example="ABC123", nullable=true, description="Optional parent access code")
+     *             @OA\Property(property="parent_code", type="string", maxLength=255, example="ABC123", nullable=true, description="Optional parent access code (auto-generated if not provided)")
      *         )
      *     ),
      *     @OA\Response(
@@ -185,13 +198,12 @@ class CardController extends Controller
      *             @OA\Property(property="id", type="integer", example=2),
      *             @OA\Property(property="child_first_name", type="string", example="Giorgi"),
      *             @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
-     *             @OA\Property(property="father_name", type="string", example="Davit"),
      *             @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
      *             @OA\Property(property="status", type="string", example="active"),
      *             @OA\Property(property="group_id", type="integer", example=1),
      *             @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
-     *             @OA\Property(property="parent_code", type="string", example="ABC123", nullable=true),
+     *             @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -206,7 +218,6 @@ class CardController extends Controller
      *                 type="object",
      *                 @OA\Property(property="child_first_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="child_last_name", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="father_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="parent_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="status", type="array", @OA\Items(type="string")),
@@ -223,7 +234,6 @@ class CardController extends Controller
         $validated = $request->validate([
             'child_first_name' => 'required|string|max:255',
             'child_last_name' => 'required|string|max:255',
-            'father_name' => 'required|string|max:255',
             'parent_name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
             'status' => 'required|string|in:pending,active,inactive',
@@ -231,6 +241,17 @@ class CardController extends Controller
             'person_type_id' => 'nullable|exists:person_types,id',
             'parent_code' => 'nullable|string|max:255',
         ]);
+
+        // If garden_id is provided (garden user), validate that the group belongs to their garden
+        if ($request->filled('garden_id')) {
+            $group = \App\Models\GardenGroup::where('id', $validated['group_id'])
+                ->where('garden_id', $request->query('garden_id'))
+                ->first();
+            
+            if (!$group) {
+                return response()->json(['message' => 'Group does not belong to your garden'], 403);
+            }
+        }
 
         $card = Card::create($validated);
 
@@ -257,12 +278,11 @@ class CardController extends Controller
      *         @OA\JsonContent(
      *             @OA\Property(property="child_first_name", type="string", maxLength=255, example="Updated Giorgi", description="Child's first name"),
      *             @OA\Property(property="child_last_name", type="string", maxLength=255, example="Updated Davitashvili", description="Child's last name"),
-     *             @OA\Property(property="father_name", type="string", maxLength=255, example="Updated Davit", description="Father's name"),
      *             @OA\Property(property="parent_name", type="string", maxLength=255, example="Updated Nino Davitashvili", description="Parent's full name"),
      *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599654321", description="Contact phone number"),
      *             @OA\Property(property="status", type="string", example="inactive", enum={"pending", "active", "inactive"}, description="Card status"),
      *             @OA\Property(property="group_id", type="integer", example=2, description="ID of the associated garden group"),
-     *             @OA\Property(property="parent_code", type="string", maxLength=255, example="XYZ789", nullable=true, description="Optional parent access code")
+     *             @OA\Property(property="parent_code", type="string", maxLength=255, example="K9#mP2", nullable=true, description="Optional parent access code (auto-generated if not provided)")
      *         )
      *     ),
      *     @OA\Response(
@@ -273,12 +293,11 @@ class CardController extends Controller
      *             @OA\Property(property="id", type="integer", example=1),
      *             @OA\Property(property="child_first_name", type="string", example="Updated Giorgi"),
      *             @OA\Property(property="child_last_name", type="string", example="Updated Davitashvili"),
-     *             @OA\Property(property="father_name", type="string", example="Updated Davit"),
      *             @OA\Property(property="parent_name", type="string", example="Updated Nino Davitashvili"),
      *             @OA\Property(property="phone", type="string", example="+995599654321"),
      *             @OA\Property(property="status", type="string", example="inactive"),
      *             @OA\Property(property="group_id", type="integer", example=2),
-     *             @OA\Property(property="parent_code", type="string", example="XYZ789", nullable=true),
+     *             @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -300,7 +319,6 @@ class CardController extends Controller
      *                 type="object",
      *                 @OA\Property(property="child_first_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="child_last_name", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="father_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="parent_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="status", type="array", @OA\Items(type="string")),
@@ -313,18 +331,37 @@ class CardController extends Controller
     // განახლება
     public function update(Request $request, $id)
     {
-        $card = Card::findOrFail($id);
+        $query = Card::query();
+        
+        // Filter by garden_id if provided (for garden users)
+        if ($request->filled('garden_id')) {
+            $query->whereHas('group', function ($q) use ($request) {
+                $q->where('garden_id', $request->query('garden_id'));
+            });
+        }
+        
+        $card = $query->findOrFail($id);
 
         $validated = $request->validate([
             'child_first_name' => 'sometimes|required|string|max:255',
             'child_last_name' => 'sometimes|required|string|max:255',
-            'father_name' => 'sometimes|required|string|max:255',
             'parent_name' => 'sometimes|required|string|max:255',
             'phone' => 'sometimes|required|string|max:20',
             'status' => 'sometimes|required|string|in:pending,active,inactive',
             'group_id' => 'sometimes|required|exists:garden_groups,id',
             'parent_code' => 'nullable|string|max:255',
         ]);
+
+        // If garden_id is provided and group_id is being updated, validate that the group belongs to their garden
+        if ($request->filled('garden_id') && isset($validated['group_id'])) {
+            $group = \App\Models\GardenGroup::where('id', $validated['group_id'])
+                ->where('garden_id', $request->query('garden_id'))
+                ->first();
+            
+            if (!$group) {
+                return response()->json(['message' => 'Group does not belong to your garden'], 403);
+            }
+        }
 
         $card->update($validated);
 
@@ -363,9 +400,18 @@ class CardController extends Controller
      * )
      */
     // წაშლა
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $card = Card::findOrFail($id);
+        $query = Card::query();
+        
+        // Filter by garden_id if provided (for garden users)
+        if ($request->filled('garden_id')) {
+            $query->whereHas('group', function ($q) use ($request) {
+                $q->where('garden_id', $request->query('garden_id'));
+            });
+        }
+        
+        $card = $query->findOrFail($id);
         $card->delete();
 
         return response()->json(['message' => 'Card deleted']);
@@ -416,7 +462,16 @@ class CardController extends Controller
             return response()->json(['message' => 'No valid IDs provided'], 400);
         }
 
-        $deleted = Card::whereIn('id', $ids)->delete();
+        $query = Card::whereIn('id', $ids);
+        
+        // Filter by garden_id if provided (for garden users)
+        if ($request->filled('garden_id')) {
+            $query->whereHas('group', function ($q) use ($request) {
+                $q->where('garden_id', $request->query('garden_id'));
+            });
+        }
+
+        $deleted = $query->delete();
 
         return response()->json([
             'message' => 'Cards deleted',
@@ -473,7 +528,16 @@ class CardController extends Controller
      */
     public function uploadImage(Request $request, $id)
     {
-        $card = \App\Models\Card::findOrFail($id);
+        $query = Card::query();
+        
+        // Filter by garden_id if provided (for garden users)
+        if ($request->filled('garden_id')) {
+            $query->whereHas('group', function ($q) use ($request) {
+                $q->where('garden_id', $request->query('garden_id'));
+            });
+        }
+        
+        $card = $query->findOrFail($id);
 
         $request->validate([
             'image' => 'required|image|max:2048', // 2MB max

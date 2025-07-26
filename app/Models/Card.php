@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Card extends Model
 {
@@ -12,7 +13,6 @@ class Card extends Model
     protected $fillable = [
         'child_first_name',
         'child_last_name',
-        'father_name',
         'parent_name',
         'phone',
         'status',
@@ -21,6 +21,35 @@ class Card extends Model
         'parent_code',
         'image_path',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($card) {
+            if (empty($card->parent_code)) {
+                $card->parent_code = self::generateParentCode();
+            }
+        });
+    }
+
+    /**
+     * Generate a unique 6-character parent code
+     */
+    public static function generateParentCode()
+    {
+        do {
+            // Generate 6-character code with letters, numbers, and symbols
+            $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            $code = '';
+            
+            for ($i = 0; $i < 6; $i++) {
+                $code .= $characters[rand(0, strlen($characters) - 1)];
+            }
+        } while (self::where('parent_code', $code)->exists());
+
+        return $code;
+    }
 
     public function group()
     {

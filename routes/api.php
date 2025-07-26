@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\PersonTypeController;
 use App\Http\Controllers\Api\PeopleController;
 use App\Http\Controllers\Api\GardenImageController;
 use App\Http\Controllers\Api\DeviceController;
+use App\Http\Controllers\Api\CountryController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/cities', [CityController::class, 'index']);
@@ -24,18 +25,28 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::apiResource('gardens', GardenController::class);
     Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
     Route::apiResource('garden-images', GardenImageController::class);
-    Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
+    Route::apiResource('countries', CountryController::class);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         Route::apiResource('garden-groups', GardenGroupController::class);
         Route::delete('/garden-groups/bulk-delete', [GardenGroupController::class, 'bulkDestroy']);
-        Route::apiResource('cards', CardController::class);
-        Route::delete('/cards/bulk-delete', [CardController::class, 'bulkDestroy']);
+        
+        // Garden-filtered routes
+        Route::middleware('garden.filter')->group(function () {
+            Route::apiResource('cards', CardController::class);
+            Route::delete('/cards/bulk-delete', [CardController::class, 'bulkDestroy']);
+            Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
+            Route::apiResource('devices', DeviceController::class);
+        });
+        
         Route::apiResource('parents', ParentModelController::class);
         Route::apiResource('people', PeopleController::class);
         Route::apiResource('devices', DeviceController::class);
+        Route::apiResource('cards', CardController::class);
+        Route::delete('/cards/bulk-delete', [CardController::class, 'bulkDestroy']);
+        Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
     });
 });
 

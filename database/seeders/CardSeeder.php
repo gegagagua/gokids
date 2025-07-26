@@ -15,12 +15,10 @@ class CardSeeder extends Seeder
         \App\Models\Card::create([
             'child_first_name' => 'თომა',
             'child_last_name' => 'ქველაძე',
-            'father_name' => 'ლევან',
             'parent_name' => 'თამარ ჯავახიშვილი',
             'phone' => '555112233',
             'status' => 'active',
             'group_id' => 3,
-            'parent_code' => 'PARENT1234',
         ]);
     }
 }

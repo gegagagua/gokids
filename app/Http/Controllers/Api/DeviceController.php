@@ -54,14 +54,17 @@ class DeviceController extends Controller
     public function index(Request $request)
     {
         $query = Device::query();
+        
+        // Filter by garden_id if provided (for garden users)
+        if ($request->filled('garden_id')) {
+            $query->where('garden_id', $request->query('garden_id'));
+        }
+        
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->query('name') . '%');
         }
         if ($request->filled('status')) {
             $query->where('status', $request->query('status'));
-        }
-        if ($request->filled('garden_id')) {
-            $query->where('garden_id', $request->query('garden_id'));
         }
         $perPage = $request->query('per_page', 15);
         return $query->paginate($perPage);
@@ -118,6 +121,23 @@ class DeviceController extends Controller
             'garden_groups' => 'required|array',
             'garden_groups.*' => 'integer|exists:garden_groups,id',
         ]);
+        
+        // If garden_id is provided (garden user), validate that it matches their garden
+        if ($request->filled('garden_id') && $request->query('garden_id') != $validated['garden_id']) {
+            return response()->json(['message' => 'You can only create devices for your own garden'], 403);
+        }
+        
+        // Validate that all garden_groups belong to the garden
+        if ($request->filled('garden_id')) {
+            $gardenGroups = \App\Models\GardenGroup::whereIn('id', $validated['garden_groups'])
+                ->where('garden_id', $request->query('garden_id'))
+                ->count();
+            
+            if ($gardenGroups != count($validated['garden_groups'])) {
+                return response()->json(['message' => 'Some groups do not belong to your garden'], 403);
+            }
+        }
+        
         $device = Device::create([
             'name' => $validated['name'],
             'status' => $validated['status'],
@@ -159,9 +179,16 @@ class DeviceController extends Controller
      *     )
      * )
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
-        return Device::findOrFail($id);
+        $query = Device::query();
+        
+        // Filter by garden_id if provided (for garden users)
+        if ($request->filled('garden_id')) {
+            $query->where('garden_id', $request->query('garden_id'));
+        }
+        
+        return $query->findOrFail($id);
     }
 
     /**
@@ -215,7 +242,15 @@ class DeviceController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $device = Device::findOrFail($id);
+        $query = Device::query();
+        
+        // Filter by garden_id if provided (for garden users)
+        if ($request->filled('garden_id')) {
+            $query->where('garden_id', $request->query('garden_id'));
+        }
+        
+        $device = $query->findOrFail($id);
+        
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'status' => 'sometimes|required|in:active,inactive',
@@ -223,6 +258,23 @@ class DeviceController extends Controller
             'garden_groups' => 'sometimes|required|array',
             'garden_groups.*' => 'integer|exists:garden_groups,id',
         ]);
+        
+        // If garden_id is provided and garden_id is being updated, validate that it matches their garden
+        if ($request->filled('garden_id') && isset($validated['garden_id']) && $request->query('garden_id') != $validated['garden_id']) {
+            return response()->json(['message' => 'You can only update devices for your own garden'], 403);
+        }
+        
+        // If garden_groups is being updated, validate that all groups belong to the garden
+        if ($request->filled('garden_id') && isset($validated['garden_groups'])) {
+            $gardenGroups = \App\Models\GardenGroup::whereIn('id', $validated['garden_groups'])
+                ->where('garden_id', $request->query('garden_id'))
+                ->count();
+            
+            if ($gardenGroups != count($validated['garden_groups'])) {
+                return response()->json(['message' => 'Some groups do not belong to your garden'], 403);
+            }
+        }
+        
         $device->update($validated);
         return response()->json($device);
     }
@@ -252,9 +304,16 @@ class DeviceController extends Controller
      *     )
      * )
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        $device = Device::findOrFail($id);
+        $query = Device::query();
+        
+        // Filter by garden_id if provided (for garden users)
+        if ($request->filled('garden_id')) {
+            $query->where('garden_id', $request->query('garden_id'));
+        }
+        
+        $device = $query->findOrFail($id);
         $device->delete();
         return response()->json(['message' => 'Device deleted']);
     }
