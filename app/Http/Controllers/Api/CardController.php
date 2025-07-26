@@ -74,12 +74,12 @@ class CardController extends Controller
         $query = Card::with(['group', 'personType']);
         if ($request->filled('search')) {
             $search = $request->query('search');
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('child_first_name', 'like', "%$search%")
-                  ->orWhere('child_last_name', 'like', "%$search%")
-                  ->orWhere('father_name', 'like', "%$search%")
-                  ->orWhere('parent_first_name', 'like', "%$search%")
-                  ->orWhere('parent_last_name', 'like', "%$search%")
+                    ->orWhere('child_last_name', 'like', "%$search%")
+                    ->orWhere('father_name', 'like', "%$search%")
+                    ->orWhere('parent_first_name', 'like', "%$search%")
+                    ->orWhere('parent_last_name', 'like', "%$search%")
                 ;
             });
         }
@@ -381,6 +381,60 @@ class CardController extends Controller
 
         return response()->json(['message' => 'Card deleted']);
     }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/cards/bulk-delete",
+     *     operationId="bulkDeleteCards",
+     *     tags={"Cards"},
+     *     summary="Delete multiple cards",
+     *     description="Permanently delete multiple child cards by their IDs",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"ids"},
+     *             @OA\Property(
+     *                 property="ids",
+     *                 type="array",
+     *                 @OA\Items(type="integer"),
+     *                 example={1, 2, 3}
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cards deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Cards deleted"),
+     *             @OA\Property(property="deleted_count", type="integer", example=3)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid input",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No valid IDs provided")
+     *         )
+     *     )
+     * )
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->input('ids');
+
+        if (!is_array($ids) || empty($ids)) {
+            return response()->json(['message' => 'No valid IDs provided'], 400);
+        }
+
+        $deleted = Card::whereIn('id', $ids)->delete();
+
+        return response()->json([
+            'message' => 'Cards deleted',
+            'deleted_count' => $deleted,
+        ]);
+    }
+
 
     /**
      * @OA\Post(

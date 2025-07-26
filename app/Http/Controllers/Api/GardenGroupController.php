@@ -292,4 +292,57 @@ class GardenGroupController extends Controller
 
         return response()->json(['message' => 'Deleted']);
     }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/garden-groups/bulk-delete",
+     *     operationId="bulkDeleteGardenGroups",
+     *     tags={"Garden Groups"},
+     *     summary="Delete multiple garden groups",
+     *     description="Permanently delete multiple garden groups by their IDs",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"ids"},
+     *             @OA\Property(
+     *                 property="ids",
+     *                 type="array",
+     *                 @OA\Items(type="integer"),
+     *                 example={1, 2, 3}
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Garden groups deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Garden groups deleted"),
+     *             @OA\Property(property="deleted_count", type="integer", example=3)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid input",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No valid IDs provided")
+     *         )
+     *     )
+     * )
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->input('ids');
+
+        if (!is_array($ids) || empty($ids)) {
+            return response()->json(['message' => 'No valid IDs provided'], 400);
+        }
+
+        $deleted = GardenGroup::whereIn('id', $ids)->delete();
+
+        return response()->json([
+            'message' => 'Garden groups deleted',
+            'deleted_count' => $deleted,
+        ]);
+    }
 }

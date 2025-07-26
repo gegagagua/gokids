@@ -22,6 +22,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/request-password-reset', [AuthController::class, 'requestPasswordReset']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::apiResource('gardens', GardenController::class);
+    Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
     Route::apiResource('garden-images', GardenImageController::class);
     Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
 
@@ -29,7 +30,9 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         Route::apiResource('garden-groups', GardenGroupController::class);
+        Route::delete('/garden-groups/bulk-delete', [GardenGroupController::class, 'bulkDestroy']);
         Route::apiResource('cards', CardController::class);
+        Route::delete('/cards/bulk-delete', [CardController::class, 'bulkDestroy']);
         Route::apiResource('parents', ParentModelController::class);
         Route::apiResource('people', PeopleController::class);
         Route::apiResource('devices', DeviceController::class);
