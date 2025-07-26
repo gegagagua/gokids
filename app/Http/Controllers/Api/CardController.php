@@ -42,8 +42,7 @@ class CardController extends Controller
      *                     @OA\Property(property="child_first_name", type="string", example="Giorgi"),
      *                     @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
      *                     @OA\Property(property="father_name", type="string", example="Davit"),
-     *                     @OA\Property(property="parent_first_name", type="string", example="Nino"),
-     *                     @OA\Property(property="parent_last_name", type="string", example="Davitashvili"),
+     *                     @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
      *                     @OA\Property(property="phone", type="string", example="+995599123456"),
      *                     @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}),
      *                     @OA\Property(property="group_id", type="integer", example=1),
@@ -78,8 +77,7 @@ class CardController extends Controller
                 $q->where('child_first_name', 'like', "%$search%")
                     ->orWhere('child_last_name', 'like', "%$search%")
                     ->orWhere('father_name', 'like', "%$search%")
-                    ->orWhere('parent_first_name', 'like', "%$search%")
-                    ->orWhere('parent_last_name', 'like', "%$search%")
+                    ->orWhere('parent_name', 'like', "%$search%")
                 ;
             });
         }
@@ -126,8 +124,7 @@ class CardController extends Controller
      *             @OA\Property(property="child_first_name", type="string", example="Giorgi"),
      *             @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
      *             @OA\Property(property="father_name", type="string", example="Davit"),
-     *             @OA\Property(property="parent_first_name", type="string", example="Nino"),
-     *             @OA\Property(property="parent_last_name", type="string", example="Davitashvili"),
+     *             @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
      *             @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}),
      *             @OA\Property(property="group_id", type="integer", example=1),
@@ -168,12 +165,11 @@ class CardController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"child_first_name", "child_last_name", "father_name", "parent_first_name", "parent_last_name", "phone", "status", "group_id"},
+     *             required={"child_first_name", "child_last_name", "father_name", "parent_name", "phone", "status", "group_id"},
      *             @OA\Property(property="child_first_name", type="string", maxLength=255, example="Giorgi", description="Child's first name"),
      *             @OA\Property(property="child_last_name", type="string", maxLength=255, example="Davitashvili", description="Child's last name"),
      *             @OA\Property(property="father_name", type="string", maxLength=255, example="Davit", description="Father's name"),
-     *             @OA\Property(property="parent_first_name", type="string", maxLength=255, example="Nino", description="Parent's first name"),
-     *             @OA\Property(property="parent_last_name", type="string", maxLength=255, example="Davitashvili", description="Parent's last name"),
+     *             @OA\Property(property="parent_name", type="string", maxLength=255, example="Nino Davitashvili", description="Parent's full name"),
      *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599123456", description="Contact phone number"),
      *             @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}, description="Card status"),
      *             @OA\Property(property="group_id", type="integer", example=1, description="ID of the associated garden group"),
@@ -190,8 +186,7 @@ class CardController extends Controller
      *             @OA\Property(property="child_first_name", type="string", example="Giorgi"),
      *             @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
      *             @OA\Property(property="father_name", type="string", example="Davit"),
-     *             @OA\Property(property="parent_first_name", type="string", example="Nino"),
-     *             @OA\Property(property="parent_last_name", type="string", example="Davitashvili"),
+     *             @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
      *             @OA\Property(property="status", type="string", example="active"),
      *             @OA\Property(property="group_id", type="integer", example=1),
@@ -212,8 +207,7 @@ class CardController extends Controller
      *                 @OA\Property(property="child_first_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="child_last_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="father_name", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="parent_first_name", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="parent_last_name", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="parent_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="status", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="group_id", type="array", @OA\Items(type="string")),
@@ -230,8 +224,7 @@ class CardController extends Controller
             'child_first_name' => 'required|string|max:255',
             'child_last_name' => 'required|string|max:255',
             'father_name' => 'required|string|max:255',
-            'parent_first_name' => 'required|string|max:255',
-            'parent_last_name' => 'required|string|max:255',
+            'parent_name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
             'status' => 'required|string|in:pending,active,inactive',
             'group_id' => 'required|exists:garden_groups,id',
@@ -265,8 +258,7 @@ class CardController extends Controller
      *             @OA\Property(property="child_first_name", type="string", maxLength=255, example="Updated Giorgi", description="Child's first name"),
      *             @OA\Property(property="child_last_name", type="string", maxLength=255, example="Updated Davitashvili", description="Child's last name"),
      *             @OA\Property(property="father_name", type="string", maxLength=255, example="Updated Davit", description="Father's name"),
-     *             @OA\Property(property="parent_first_name", type="string", maxLength=255, example="Updated Nino", description="Parent's first name"),
-     *             @OA\Property(property="parent_last_name", type="string", maxLength=255, example="Updated Davitashvili", description="Parent's last name"),
+     *             @OA\Property(property="parent_name", type="string", maxLength=255, example="Updated Nino Davitashvili", description="Parent's full name"),
      *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599654321", description="Contact phone number"),
      *             @OA\Property(property="status", type="string", example="inactive", enum={"pending", "active", "inactive"}, description="Card status"),
      *             @OA\Property(property="group_id", type="integer", example=2, description="ID of the associated garden group"),
@@ -282,8 +274,7 @@ class CardController extends Controller
      *             @OA\Property(property="child_first_name", type="string", example="Updated Giorgi"),
      *             @OA\Property(property="child_last_name", type="string", example="Updated Davitashvili"),
      *             @OA\Property(property="father_name", type="string", example="Updated Davit"),
-     *             @OA\Property(property="parent_first_name", type="string", example="Updated Nino"),
-     *             @OA\Property(property="parent_last_name", type="string", example="Updated Davitashvili"),
+     *             @OA\Property(property="parent_name", type="string", example="Updated Nino Davitashvili"),
      *             @OA\Property(property="phone", type="string", example="+995599654321"),
      *             @OA\Property(property="status", type="string", example="inactive"),
      *             @OA\Property(property="group_id", type="integer", example=2),
@@ -310,8 +301,7 @@ class CardController extends Controller
      *                 @OA\Property(property="child_first_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="child_last_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="father_name", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="parent_first_name", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="parent_last_name", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="parent_name", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="status", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="group_id", type="array", @OA\Items(type="string"))
@@ -329,8 +319,7 @@ class CardController extends Controller
             'child_first_name' => 'sometimes|required|string|max:255',
             'child_last_name' => 'sometimes|required|string|max:255',
             'father_name' => 'sometimes|required|string|max:255',
-            'parent_first_name' => 'sometimes|required|string|max:255',
-            'parent_last_name' => 'sometimes|required|string|max:255',
+            'parent_name' => 'sometimes|required|string|max:255',
             'phone' => 'sometimes|required|string|max:20',
             'status' => 'sometimes|required|string|in:pending,active,inactive',
             'group_id' => 'sometimes|required|exists:garden_groups,id',

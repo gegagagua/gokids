@@ -559,13 +559,9 @@
                                                         "type": "string",
                                                         "example": "Davit"
                                                     },
-                                                    "parent_first_name": {
+                                                    "parent_name": {
                                                         "type": "string",
-                                                        "example": "Nino"
-                                                    },
-                                                    "parent_last_name": {
-                                                        "type": "string",
-                                                        "example": "Davitashvili"
+                                                        "example": "Nino Davitashvili"
                                                     },
                                                     "phone": {
                                                         "type": "string",
@@ -673,8 +669,7 @@
                                     "child_first_name",
                                     "child_last_name",
                                     "father_name",
-                                    "parent_first_name",
-                                    "parent_last_name",
+                                    "parent_name",
                                     "phone",
                                     "status",
                                     "group_id"
@@ -698,17 +693,11 @@
                                         "maxLength": 255,
                                         "example": "Davit"
                                     },
-                                    "parent_first_name": {
-                                        "description": "Parent's first name",
+                                    "parent_name": {
+                                        "description": "Parent's full name",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "Nino"
-                                    },
-                                    "parent_last_name": {
-                                        "description": "Parent's last name",
-                                        "type": "string",
-                                        "maxLength": 255,
-                                        "example": "Davitashvili"
+                                        "example": "Nino Davitashvili"
                                     },
                                     "phone": {
                                         "description": "Contact phone number",
@@ -773,13 +762,9 @@
                                             "type": "string",
                                             "example": "Davit"
                                         },
-                                        "parent_first_name": {
+                                        "parent_name": {
                                             "type": "string",
-                                            "example": "Nino"
-                                        },
-                                        "parent_last_name": {
-                                            "type": "string",
-                                            "example": "Davitashvili"
+                                            "example": "Nino Davitashvili"
                                         },
                                         "phone": {
                                             "type": "string",
@@ -847,13 +832,7 @@
                                                         "type": "string"
                                                     }
                                                 },
-                                                "parent_first_name": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "parent_last_name": {
+                                                "parent_name": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -943,13 +922,9 @@
                                             "type": "string",
                                             "example": "Davit"
                                         },
-                                        "parent_first_name": {
+                                        "parent_name": {
                                             "type": "string",
-                                            "example": "Nino"
-                                        },
-                                        "parent_last_name": {
-                                            "type": "string",
-                                            "example": "Davitashvili"
+                                            "example": "Nino Davitashvili"
                                         },
                                         "phone": {
                                             "type": "string",
@@ -1066,17 +1041,11 @@
                                         "maxLength": 255,
                                         "example": "Updated Davit"
                                     },
-                                    "parent_first_name": {
-                                        "description": "Parent's first name",
+                                    "parent_name": {
+                                        "description": "Parent's full name",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "Updated Nino"
-                                    },
-                                    "parent_last_name": {
-                                        "description": "Parent's last name",
-                                        "type": "string",
-                                        "maxLength": 255,
-                                        "example": "Updated Davitashvili"
+                                        "example": "Updated Nino Davitashvili"
                                     },
                                     "phone": {
                                         "description": "Contact phone number",
@@ -1135,13 +1104,9 @@
                                             "type": "string",
                                             "example": "Updated Davit"
                                         },
-                                        "parent_first_name": {
+                                        "parent_name": {
                                             "type": "string",
-                                            "example": "Updated Nino"
-                                        },
-                                        "parent_last_name": {
-                                            "type": "string",
-                                            "example": "Updated Davitashvili"
+                                            "example": "Updated Nino Davitashvili"
                                         },
                                         "phone": {
                                             "type": "string",
@@ -1220,13 +1185,7 @@
                                                         "type": "string"
                                                     }
                                                 },
-                                                "parent_first_name": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "parent_last_name": {
+                                                "parent_name": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -1311,6 +1270,85 @@
                                         "message": {
                                             "type": "string",
                                             "example": "No query results for model [App\\\\Models\\\\Card]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/cards/bulk-delete": {
+            "delete": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Delete multiple cards",
+                "description": "Permanently delete multiple child cards by their IDs",
+                "operationId": "bulkDeleteCards",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "ids"
+                                ],
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cards deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cards deleted"
+                                        },
+                                        "deleted_count": {
+                                            "type": "integer",
+                                            "example": 3
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No valid IDs provided"
                                         }
                                     },
                                     "type": "object"
@@ -3337,6 +3375,85 @@
                                         "message": {
                                             "type": "string",
                                             "example": "No query results for model [App\\\\Models\\\\GardenGroup]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/garden-groups/bulk-delete": {
+            "delete": {
+                "tags": [
+                    "Garden Groups"
+                ],
+                "summary": "Delete multiple garden groups",
+                "description": "Permanently delete multiple garden groups by their IDs",
+                "operationId": "bulkDeleteGardenGroups",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "ids"
+                                ],
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Garden groups deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Garden groups deleted"
+                                        },
+                                        "deleted_count": {
+                                            "type": "integer",
+                                            "example": 3
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No valid IDs provided"
                                         }
                                     },
                                     "type": "object"
