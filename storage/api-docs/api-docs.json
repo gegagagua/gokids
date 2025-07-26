@@ -619,6 +619,74 @@
                                                             }
                                                         },
                                                         "type": "object"
+                                                    },
+                                                    "parents": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "ნინო დავითაშვილი"
+                                                                },
+                                                                "phone": {
+                                                                    "type": "string",
+                                                                    "example": "+995599123456"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "example": "nino@example.com"
+                                                                },
+                                                                "created_at": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
+                                                                },
+                                                                "updated_at": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "people": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "გიორგი დავითაშვილი"
+                                                                },
+                                                                "phone": {
+                                                                    "type": "string",
+                                                                    "example": "+995599123456"
+                                                                },
+                                                                "email": {
+                                                                    "type": "string",
+                                                                    "example": "giorgi@example.com"
+                                                                },
+                                                                "relationship": {
+                                                                    "type": "string",
+                                                                    "example": "მამა"
+                                                                },
+                                                                "created_at": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
+                                                                },
+                                                                "updated_at": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
                                                     }
                                                 },
                                                 "type": "object"
@@ -943,6 +1011,87 @@
                                                 }
                                             },
                                             "type": "object"
+                                        },
+                                        "personType": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "ბავშვი"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "parents": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "ნინო დავითაშვილი"
+                                                    },
+                                                    "phone": {
+                                                        "type": "string",
+                                                        "example": "+995599123456"
+                                                    },
+                                                    "email": {
+                                                        "type": "string",
+                                                        "example": "nino@example.com"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "people": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "გიორგი დავითაშვილი"
+                                                    },
+                                                    "phone": {
+                                                        "type": "string",
+                                                        "example": "+995599123456"
+                                                    },
+                                                    "email": {
+                                                        "type": "string",
+                                                        "example": "giorgi@example.com"
+                                                    },
+                                                    "relationship": {
+                                                        "type": "string",
+                                                        "example": "მამა"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
                                         }
                                     },
                                     "type": "object"
@@ -1382,6 +1531,163 @@
                     },
                     "422": {
                         "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/cards/move-to-group": {
+            "post": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Move multiple cards to a different group",
+                "description": "Move multiple cards to a different garden group by providing an array of card IDs and a new group ID",
+                "operationId": "moveCardsToGroup",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "card_ids",
+                                    "group_id"
+                                ],
+                                "properties": {
+                                    "card_ids": {
+                                        "description": "Array of card IDs to move",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3,
+                                            4,
+                                            5
+                                        ]
+                                    },
+                                    "group_id": {
+                                        "description": "Target group ID",
+                                        "type": "integer",
+                                        "example": 2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cards moved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cards moved to group successfully"
+                                        },
+                                        "moved_count": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "target_group_id": {
+                                            "type": "integer",
+                                            "example": 2
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No valid card IDs provided"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Group does not belong to user's garden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Group does not belong to your garden"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Group not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Target group not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "card_ids": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "group_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [

@@ -56,6 +56,29 @@ class CardController extends Controller
      *                     @OA\Property(property="personType", type="object",
      *                         @OA\Property(property="id", type="integer", example=1),
      *                         @OA\Property(property="name", type="string", example="ბავშვი")
+     *                     ),
+     *                     @OA\Property(property="parents", type="array",
+     *                         @OA\Items(
+     *                             type="object",
+     *                             @OA\Property(property="id", type="integer", example=1),
+     *                             @OA\Property(property="name", type="string", example="ნინო დავითაშვილი"),
+     *                             @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                             @OA\Property(property="email", type="string", example="nino@example.com"),
+     *                             @OA\Property(property="created_at", type="string", format="date-time"),
+     *                             @OA\Property(property="updated_at", type="string", format="date-time")
+     *                         )
+     *                     ),
+     *                     @OA\Property(property="people", type="array",
+     *                         @OA\Items(
+     *                             type="object",
+     *                             @OA\Property(property="id", type="integer", example=1),
+     *                             @OA\Property(property="name", type="string", example="გიორგი დავითაშვილი"),
+     *                             @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                             @OA\Property(property="email", type="string", example="giorgi@example.com"),
+     *                             @OA\Property(property="relationship", type="string", example="მამა"),
+     *                             @OA\Property(property="created_at", type="string", format="date-time"),
+     *                             @OA\Property(property="updated_at", type="string", format="date-time")
+     *                         )
      *                     )
      *                 )
      *             ),
@@ -69,7 +92,7 @@ class CardController extends Controller
     // ყველა ბარათის წამოღება
     public function index(Request $request)
     {
-        $query = Card::with(['group', 'personType']);
+        $query = Card::with(['group', 'personType', 'parents', 'people']);
         
         // Filter by garden_id if provided (for garden users)
         if ($request->filled('garden_id')) {
@@ -141,6 +164,33 @@ class CardController extends Controller
      *                 type="object",
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="Group A")
+     *             ),
+     *             @OA\Property(property="personType", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="ბავშვი")
+     *             ),
+     *             @OA\Property(property="parents", type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="ნინო დავითაშვილი"),
+     *                     @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                     @OA\Property(property="email", type="string", example="nino@example.com"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )
+     *             ),
+     *             @OA\Property(property="people", type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="გიორგი დავითაშვილი"),
+     *                     @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                     @OA\Property(property="email", type="string", example="giorgi@example.com"),
+     *                     @OA\Property(property="relationship", type="string", example="მამა"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )
      *             )
      *         )
      *     ),
@@ -156,7 +206,7 @@ class CardController extends Controller
     // ერთი ბარათის დეტალები
     public function show(Request $request, $id)
     {
-        $query = Card::with(['group', 'personType']);
+        $query = Card::with(['group', 'personType', 'parents', 'people']);
         
         // Filter by garden_id if provided (for garden users)
         if ($request->filled('garden_id')) {
@@ -254,6 +304,7 @@ class CardController extends Controller
         }
 
         $card = Card::create($validated);
+        $card->load(['group', 'personType', 'parents', 'people']);
 
         return response()->json($card, 201);
     }
@@ -364,6 +415,7 @@ class CardController extends Controller
         }
 
         $card->update($validated);
+        $card->load(['group', 'personType', 'parents', 'people']);
 
         return response()->json($card);
     }
@@ -555,5 +607,128 @@ class CardController extends Controller
 
         $fullUrl = asset('storage/' . $path);
         return response()->json(['image_path' => $fullUrl]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/cards/move-to-group",
+     *     operationId="moveCardsToGroup",
+     *     tags={"Cards"},
+     *     summary="Move multiple cards to a different group",
+     *     description="Move multiple cards to a different garden group by providing an array of card IDs and a new group ID",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"card_ids", "group_id"},
+     *             @OA\Property(
+     *                 property="card_ids",
+     *                 type="array",
+     *                 @OA\Items(type="integer"),
+     *                 example={1, 2, 3, 4, 5},
+     *                 description="Array of card IDs to move"
+     *             ),
+     *             @OA\Property(
+     *                 property="group_id",
+     *                 type="integer",
+     *                 example=2,
+     *                 description="Target group ID"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cards moved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Cards moved to group successfully"),
+     *             @OA\Property(property="moved_count", type="integer", example=5),
+     *             @OA\Property(property="target_group_id", type="integer", example=2)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No valid card IDs provided")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden - Group does not belong to user's garden",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Group does not belong to your garden")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Group not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Target group not found")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="card_ids", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="group_id", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function moveToGroup(Request $request)
+    {
+        $validated = $request->validate([
+            'card_ids' => 'required|array|min:1',
+            'card_ids.*' => 'integer|exists:cards,id',
+            'group_id' => 'required|integer|exists:garden_groups,id',
+        ]);
+
+        $cardIds = $validated['card_ids'];
+        $groupId = $validated['group_id'];
+
+        // Check if target group exists and belongs to user's garden
+        $targetGroup = \App\Models\GardenGroup::findOrFail($groupId);
+        
+        // If user is a garden user, verify the group belongs to their garden
+        if ($request->filled('garden_id')) {
+            if ($targetGroup->garden_id != $request->query('garden_id')) {
+                return response()->json([
+                    'message' => 'Group does not belong to your garden'
+                ], 403);
+            }
+        }
+
+        // Get cards that belong to user's garden (if garden user)
+        $query = Card::whereIn('id', $cardIds);
+        
+        if ($request->filled('garden_id')) {
+            $query->whereHas('group', function ($q) use ($request) {
+                $q->where('garden_id', $request->query('garden_id'));
+            });
+        }
+
+        $cards = $query->get();
+        
+        if ($cards->isEmpty()) {
+            return response()->json([
+                'message' => 'No valid cards found for your garden'
+            ], 400);
+        }
+
+        // Update all cards to the new group
+        $updatedCount = $query->update(['group_id' => $groupId]);
+
+        return response()->json([
+            'message' => 'Cards moved to group successfully',
+            'moved_count' => $updatedCount,
+            'target_group_id' => $groupId,
+            'target_group_name' => $targetGroup->name
+        ]);
     }
 }
