@@ -208,7 +208,16 @@ class CardController extends Controller
     // ერთი ბარათის დეტალები
     public function show(Request $request, $id)
     {
-        $query = Card::with(['group', 'personType', 'parents', 'people']);
+        $query = Card::with([
+            'group', 
+            'personType', 
+            'parents' => function($query) {
+                $query->select('id', 'first_name', 'last_name', 'status', 'phone', 'code', 'group_id', 'card_id', 'created_at', 'updated_at');
+            },
+            'people' => function($query) {
+                $query->with('personType:id,name');
+            }
+        ]);
         
         // Filter by garden_id if provided (for garden users)
         if ($request->filled('garden_id')) {
@@ -217,7 +226,20 @@ class CardController extends Controller
             });
         }
         
-        return $query->findOrFail($id);
+        $card = $query->findOrFail($id);
+        
+        // Format the response to include full names for parents and people
+        $card->parents = $card->parents->map(function($parent) {
+            $parent->full_name = $parent->first_name . ' ' . $parent->last_name;
+            return $parent;
+        });
+        
+        $card->people = $card->people->map(function($person) {
+            $person->full_name = $person->first_name . ' ' . $person->last_name;
+            return $person;
+        });
+        
+        return $card;
     }
 
     /**
