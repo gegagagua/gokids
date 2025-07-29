@@ -39,12 +39,12 @@ class Card extends Model
     public static function generateParentCode()
     {
         do {
-            // Generate 6-character code with letters, numbers, and symbols
-            $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            // Generate 6-character code with letters and numbers only (more readable)
+            $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             $code = '';
             
             for ($i = 0; $i < 6; $i++) {
-                $code .= $characters[rand(0, strlen($characters) - 1)];
+                $code .= $characters[random_int(0, strlen($characters) - 1)];
             }
         } while (self::where('parent_code', $code)->exists());
 

@@ -17,6 +17,8 @@ use App\Http\Controllers\Api\CountryController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/person-types', [PersonTypeController::class, 'index']);
+    Route::post('/person-types', [PersonTypeController::class, 'store']);
+    Route::delete('/person-types/{id}', [PersonTypeController::class, 'destroy']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/request-password-reset', [AuthController::class, 'requestPasswordReset']);
@@ -43,6 +45,10 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
             Route::apiResource('devices', DeviceController::class);
         });
+        
+        // Card OTP routes (no authentication required)
+        Route::post('/cards/send-otp', [CardController::class, 'sendOtp']);
+        Route::post('/cards/verify-otp', [CardController::class, 'verifyOtp']);
         
         Route::apiResource('parents', ParentModelController::class);
         Route::apiResource('people', PeopleController::class);

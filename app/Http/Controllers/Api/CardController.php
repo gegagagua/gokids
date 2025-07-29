@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Card;
+use App\Models\CardOtp;
+use App\Services\SmsService;
 
 /**
  * @OA\Tag(
@@ -237,7 +239,7 @@ class CardController extends Controller
      *             @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}, description="Card status"),
      *             @OA\Property(property="group_id", type="integer", example=1, description="ID of the associated garden group"),
      *             @OA\Property(property="person_type_id", type="integer", example=1, nullable=true, description="Person type ID from person-types"),
-     *             @OA\Property(property="parent_code", type="string", maxLength=255, example="ABC123", nullable=true, description="Optional parent access code (auto-generated if not provided)")
+     *             @OA\Property(property="parent_code", type="string", maxLength=255, example="K9M2P5", nullable=true, description="Optional parent access code (auto-generated if not provided)")
      *         )
      *     ),
      *     @OA\Response(
@@ -729,6 +731,222 @@ class CardController extends Controller
             'moved_count' => $updatedCount,
             'target_group_id' => $groupId,
             'target_group_name' => $targetGroup->name
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/cards/send-otp",
+     *     operationId="sendCardOtp",
+     *     tags={"Cards"},
+     *     summary="Send OTP for card login",
+     *     description="Send OTP to the phone number associated with a card",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"phone", "parent_code"},
+     *             @OA\Property(property="phone", type="string", example="+995599123456", description="Phone number associated with the card"),
+     *             @OA\Property(property="parent_code", type="string", example="K9M2P5", description="Parent access code for the card")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="OTP sent successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="OTP sent successfully"),
+     *             @OA\Property(property="phone", type="string", example="+995599123456")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid credentials",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid phone number or parent code")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="parent_code", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function sendOtp(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string|max:255',
+            'parent_code' => 'required|string|max:255',
+        ]);
+
+        // First verify the card exists with these credentials
+        $card = Card::where('phone', $request->phone)
+            ->where('parent_code', $request->parent_code)
+            ->first();
+
+        if (!$card) {
+            return response()->json([
+                'message' => 'Invalid phone number or parent code'
+            ], 401);
+        }
+
+        // Generate and save OTP
+        $otp = CardOtp::createOtp($request->phone);
+
+        // Send SMS
+        $smsService = new SmsService();
+        $smsResult = $smsService->sendOtp($request->phone, $otp->otp);
+
+        if (!$smsResult['success']) {
+            // If SMS fails, delete the OTP and return error
+            $otp->delete();
+            return response()->json([
+                'message' => 'Failed to send OTP. Please try again.'
+            ], 500);
+        }
+
+        return response()->json([
+            'message' => 'OTP sent successfully',
+            'phone' => $request->phone
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/cards/verify-otp",
+     *     operationId="verifyCardOtp",
+     *     tags={"Cards"},
+     *     summary="Verify OTP and login",
+     *     description="Verify OTP and return the complete card object if valid",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"phone", "otp"},
+     *             @OA\Property(property="phone", type="string", example="+995599123456", description="Phone number associated with the card"),
+     *             @OA\Property(property="otp", type="string", example="123456", description="6-digit OTP code")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Login successful"),
+     *             @OA\Property(property="card", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="child_first_name", type="string", example="Giorgi"),
+     *                 @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
+     *                 @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                 @OA\Property(property="status", type="string", example="active"),
+     *                 @OA\Property(property="group_id", type="integer", example=1),
+     *                 @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
+     *                 @OA\Property(property="parent_code", type="string", example="K9M2P5", nullable=true),
+     *                 @OA\Property(property="image_path", type="string", example="cards/abc123.jpg", nullable=true),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(property="group", type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Group A"),
+     *                     @OA\Property(property="garden_id", type="integer", example=1)
+     *                 ),
+     *                 @OA\Property(property="personType", type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Parent")
+     *                 ),
+     *                 @OA\Property(property="parents", type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="ნინო დავითაშვილი"),
+     *                         @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                         @OA\Property(property="email", type="string", example="nino@example.com")
+     *                     )
+     *                 ),
+     *                 @OA\Property(property="people", type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="გიორგი დავითაშვილი"),
+     *                         @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                         @OA\Property(property="email", type="string", example="giorgi@example.com"),
+     *                         @OA\Property(property="relationship", type="string", example="მამა")
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid OTP",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid or expired OTP")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="otp", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function verifyOtp(Request $request)
+    {
+        $request->validate([
+            'phone' => 'required|string|max:255',
+            'otp' => 'required|string|size:6',
+        ]);
+
+        // Find the OTP record
+        $otpRecord = CardOtp::where('phone', $request->phone)
+            ->where('otp', $request->otp)
+            ->where('used', false)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$otpRecord) {
+            return response()->json([
+                'message' => 'Invalid or expired OTP'
+            ], 401);
+        }
+
+        // Mark OTP as used
+        $otpRecord->update(['used' => true]);
+
+        // Get the card data
+        $card = Card::with(['group', 'personType', 'parents', 'people'])
+            ->where('phone', $request->phone)
+            ->first();
+
+        if (!$card) {
+            return response()->json([
+                'message' => 'Card not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'message' => 'Login successful',
+            'card' => $card
         ]);
     }
 }
