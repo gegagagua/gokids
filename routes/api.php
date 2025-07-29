@@ -46,12 +46,14 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             Route::apiResource('devices', DeviceController::class);
         });
         
-        // Card OTP routes (no authentication required)
-        Route::post('/cards/send-otp', [CardController::class, 'sendOtp']);
-        Route::post('/cards/verify-otp', [CardController::class, 'verifyOtp']);
         
         Route::apiResource('parents', ParentModelController::class);
         Route::apiResource('people', PeopleController::class);
     });
+
+    // Card login routes (no authentication required)
+    Route::post('/cards/login', [CardController::class, 'login']);
+    Route::post('/cards/send-otp', [CardController::class, 'sendOtp']);
+    Route::post('/cards/verify-otp', [CardController::class, 'verifyOtp']);
 });
 
