@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Http;
+
 class SmsService
 {
     private $apiKey = '706ee5fb74ece6ddd994e0905c1141fc791bae17';
@@ -23,25 +25,22 @@ class SmsService
             'text' => "OTP is {$otp}",
         ];
 
-        $payload = json_encode($data);
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->baseUrl . '?key=' . $this->apiKey, $data);
 
-        $ch = curl_init($this->baseUrl . '?key=' . $this->apiKey);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Content-Length: ' . strlen($payload)
-        ]);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        return [
-            'success' => $httpCode === 200,
-            'response' => $response,
-            'http_code' => $httpCode
-        ];
+            return [
+                'success' => $response->successful(),
+                'response' => $response->body(),
+                'http_code' => $response->status()
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'response' => $e->getMessage(),
+                'http_code' => 0
+            ];
+        }
     }
 } 
