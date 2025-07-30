@@ -96,10 +96,11 @@ class CardController extends Controller
     {
         $query = Card::with(['group', 'personType', 'parents', 'people']);
         
-        // Filter by garden_id if provided (for garden users)
-        if ($request->filled('garden_id')) {
-            $query->whereHas('group', function ($q) use ($request) {
-                $q->where('garden_id', $request->query('garden_id'));
+        // Filter by garden_id if authenticated user is a garden user
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
+            $query->whereHas('group', function ($q) use ($gardenId) {
+                $q->where('garden_id', $gardenId);
             });
         }
         
@@ -219,10 +220,11 @@ class CardController extends Controller
             }
         ]);
         
-        // Filter by garden_id if provided (for garden users)
-        if ($request->filled('garden_id')) {
-            $query->whereHas('group', function ($q) use ($request) {
-                $q->where('garden_id', $request->query('garden_id'));
+        // Filter by garden_id if authenticated user is a garden user
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
+            $query->whereHas('group', function ($q) use ($gardenId) {
+                $q->where('garden_id', $gardenId);
             });
         }
         
@@ -316,10 +318,11 @@ class CardController extends Controller
             'parent_code' => 'nullable|string|max:255',
         ]);
 
-        // If garden_id is provided (garden user), validate that the group belongs to their garden
-        if ($request->filled('garden_id')) {
+        // If authenticated user is a garden user, validate that the group belongs to their garden
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
             $group = \App\Models\GardenGroup::where('id', $validated['group_id'])
-                ->where('garden_id', $request->query('garden_id'))
+                ->where('garden_id', $gardenId)
                 ->first();
             
             if (!$group) {
@@ -408,10 +411,11 @@ class CardController extends Controller
     {
         $query = Card::query();
         
-        // Filter by garden_id if provided (for garden users)
-        if ($request->filled('garden_id')) {
-            $query->whereHas('group', function ($q) use ($request) {
-                $q->where('garden_id', $request->query('garden_id'));
+        // Filter by garden_id if authenticated user is a garden user
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
+            $query->whereHas('group', function ($q) use ($gardenId) {
+                $q->where('garden_id', $gardenId);
             });
         }
         
@@ -427,10 +431,11 @@ class CardController extends Controller
             'parent_code' => 'nullable|string|max:255',
         ]);
 
-        // If garden_id is provided and group_id is being updated, validate that the group belongs to their garden
-        if ($request->filled('garden_id') && isset($validated['group_id'])) {
+        // If authenticated user is a garden user and group_id is being updated, validate that the group belongs to their garden
+        if ($request->user() && $request->user()->garden_id && isset($validated['group_id'])) {
+            $gardenId = $request->user()->garden_id;
             $group = \App\Models\GardenGroup::where('id', $validated['group_id'])
-                ->where('garden_id', $request->query('garden_id'))
+                ->where('garden_id', $gardenId)
                 ->first();
             
             if (!$group) {
@@ -480,10 +485,11 @@ class CardController extends Controller
     {
         $query = Card::query();
         
-        // Filter by garden_id if provided (for garden users)
-        if ($request->filled('garden_id')) {
-            $query->whereHas('group', function ($q) use ($request) {
-                $q->where('garden_id', $request->query('garden_id'));
+        // Filter by garden_id if authenticated user is a garden user
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
+            $query->whereHas('group', function ($q) use ($gardenId) {
+                $q->where('garden_id', $gardenId);
             });
         }
         
@@ -540,10 +546,11 @@ class CardController extends Controller
 
         $query = Card::whereIn('id', $ids);
         
-        // Filter by garden_id if provided (for garden users)
-        if ($request->filled('garden_id')) {
-            $query->whereHas('group', function ($q) use ($request) {
-                $q->where('garden_id', $request->query('garden_id'));
+        // Filter by garden_id if authenticated user is a garden user
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
+            $query->whereHas('group', function ($q) use ($gardenId) {
+                $q->where('garden_id', $gardenId);
             });
         }
 
@@ -606,10 +613,11 @@ class CardController extends Controller
     {
         $query = Card::query();
         
-        // Filter by garden_id if provided (for garden users)
-        if ($request->filled('garden_id')) {
-            $query->whereHas('group', function ($q) use ($request) {
-                $q->where('garden_id', $request->query('garden_id'));
+        // Filter by garden_id if authenticated user is a garden user
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
+            $query->whereHas('group', function ($q) use ($gardenId) {
+                $q->where('garden_id', $gardenId);
             });
         }
         
@@ -718,10 +726,9 @@ class CardController extends Controller
 
         // Check if target group exists and belongs to user's garden
         $targetGroup = \App\Models\GardenGroup::findOrFail($groupId);
-        
-        // If user is a garden user, verify the group belongs to their garden
-        if ($request->filled('garden_id')) {
-            if ($targetGroup->garden_id != $request->query('garden_id')) {
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
+            if ($targetGroup->garden_id != $gardenId) {
                 return response()->json([
                     'message' => 'Group does not belong to your garden'
                 ], 403);
@@ -730,10 +737,10 @@ class CardController extends Controller
 
         // Get cards that belong to user's garden (if garden user)
         $query = Card::whereIn('id', $cardIds);
-        
-        if ($request->filled('garden_id')) {
-            $query->whereHas('group', function ($q) use ($request) {
-                $q->where('garden_id', $request->query('garden_id'));
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
+            $query->whereHas('group', function ($q) use ($gardenId) {
+                $q->where('garden_id', $gardenId);
             });
         }
 
