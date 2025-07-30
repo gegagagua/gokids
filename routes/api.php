@@ -28,14 +28,13 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::apiResource('garden-images', GardenImageController::class);
     Route::apiResource('countries', CountryController::class);
     Route::apiResource('cities', CityController::class);
+    Route::apiResource('people', PeopleController::class);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         Route::apiResource('garden-groups', GardenGroupController::class);
         Route::delete('/garden-groups/bulk-delete', [GardenGroupController::class, 'bulkDestroy']);
-        Route::apiResource('countries', CountryController::class);
-        Route::apiResource('cities', CityController::class);
         
         // Garden-filtered routes
         Route::middleware('garden.filter')->group(function () {
@@ -48,7 +47,6 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         
         
         Route::apiResource('parents', ParentModelController::class);
-        Route::apiResource('people', PeopleController::class);
     });
 
     // Card login routes (no authentication required)
