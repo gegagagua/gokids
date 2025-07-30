@@ -16,7 +16,8 @@ class DatabaseSeeder extends Seeder
             // CardSeeder::class,
             // ParentModelSeeder::class,
             PersonTypeSeeder::class,
-            CountrySeeder::class
+            CountrySeeder::class,
+            DisterSeeder::class
         ]);
     }
 }
