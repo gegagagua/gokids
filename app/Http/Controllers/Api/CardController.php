@@ -370,14 +370,17 @@ class CardController extends Controller
         }
 
         // If authenticated user is a garden user, validate that the group belongs to their garden
-        if ($request->user() && $request->user()->garden_id) {
-            $gardenId = $request->user()->garden_id;
-            $group = \App\Models\GardenGroup::where('id', $validated['group_id'])
-                ->where('garden_id', $gardenId)
-                ->first();
-            
-            if (!$group) {
-                return response()->json(['message' => 'Group does not belong to your garden'], 403);
+        if ($request->user() && $request->user()->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $request->user()->email)->first();
+            if ($garden) {
+                $gardenId = $garden->id;
+                $group = \App\Models\GardenGroup::where('id', $validated['group_id'])
+                    ->where('garden_id', $gardenId)
+                    ->first();
+                
+                if (!$group) {
+                    return response()->json(['message' => 'Group does not belong to your garden'], 403);
+                }
             }
         }
 
