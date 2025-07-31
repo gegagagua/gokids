@@ -357,6 +357,18 @@ class CardController extends Controller
             $validated['status'] = 'pending';
         }
 
+        // Set default values for parent_verification and license
+        if (!isset($validated['parent_verification'])) {
+            $validated['parent_verification'] = false;
+        }
+        
+        if (!isset($validated['license'])) {
+            $validated['license'] = [
+                'type' => 'boolean',
+                'value' => false
+            ];
+        }
+
         // If authenticated user is a garden user, validate that the group belongs to their garden
         if ($request->user() && $request->user()->garden_id) {
             $gardenId = $request->user()->garden_id;
@@ -521,7 +533,7 @@ class CardController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             required={"parent_verification"},
-     *             @OA\Property(property="parent_verification", type="boolean", example=true, description="Parent verification status")
+     *             @OA\Property(property="parent_verification", type="boolean", example=false, description="Parent verification status")
      *         )
      *     ),
      *     @OA\Response(
@@ -530,7 +542,7 @@ class CardController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="parent_verification", type="boolean", example=true),
+     *             @OA\Property(property="parent_verification", type="boolean", example=false),
      *             @OA\Property(property="message", type="string", example="Parent verification updated successfully")
      *         )
      *     ),
