@@ -3937,6 +3937,10 @@
                                                         "type": "string",
                                                         "example": "Device 1"
                                                     },
+                                                    "code": {
+                                                        "type": "string",
+                                                        "example": "ABC123"
+                                                    },
                                                     "status": {
                                                         "type": "string",
                                                         "enum": [
@@ -4002,7 +4006,7 @@
                     "Devices"
                 ],
                 "summary": "Create a new device",
-                "description": "Create a new device for a garden. garden_groups is an array of group IDs.",
+                "description": "Create a new device for a garden. garden_groups is an array of group IDs. Code will be auto-generated if not provided.",
                 "operationId": "createDevice",
                 "requestBody": {
                     "required": true,
@@ -4020,6 +4024,13 @@
                                         "type": "string",
                                         "maxLength": 255,
                                         "example": "Device 1"
+                                    },
+                                    "code": {
+                                        "description": "6-character unique code (auto-generated if not provided)",
+                                        "type": "string",
+                                        "maxLength": 6,
+                                        "example": "ABC123",
+                                        "nullable": true
                                     },
                                     "status": {
                                         "type": "string",
@@ -4064,6 +4075,10 @@
                                         "name": {
                                             "type": "string",
                                             "example": "Device 1"
+                                        },
+                                        "code": {
+                                            "type": "string",
+                                            "example": "ABC123"
                                         },
                                         "status": {
                                             "type": "string",

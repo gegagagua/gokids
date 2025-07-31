@@ -38,6 +38,7 @@ class DeviceController extends Controller
      *                     type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
      *                     @OA\Property(property="name", type="string", example="Device 1"),
+     *                     @OA\Property(property="code", type="string", example="ABC123"),
      *                     @OA\Property(property="status", type="string", enum={"active","inactive"}, example="active"),
      *                     @OA\Property(property="garden_id", type="integer", example=1),
      *                     @OA\Property(property="garden_groups", type="array", @OA\Items(type="integer"), example={1,2,3}),
@@ -89,13 +90,14 @@ class DeviceController extends Controller
      *     operationId="createDevice",
      *     tags={"Devices"},
      *     summary="Create a new device",
-     *     description="Create a new device for a garden. garden_groups is an array of group IDs.",
+     *     description="Create a new device for a garden. garden_groups is an array of group IDs. Code will be auto-generated if not provided.",
      *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             required={"name", "status", "garden_id", "garden_groups"},
      *             @OA\Property(property="name", type="string", maxLength=255, example="Device 1"),
+     *             @OA\Property(property="code", type="string", maxLength=6, example="ABC123", nullable=true, description="6-character unique code (auto-generated if not provided)"),
      *             @OA\Property(property="status", type="string", enum={"active","inactive"}, example="active"),
      *             @OA\Property(property="garden_id", type="integer", example=1),
      *             @OA\Property(property="garden_groups", type="array", @OA\Items(type="integer"), example={1,2,3})
@@ -108,6 +110,7 @@ class DeviceController extends Controller
      *             type="object",
      *             @OA\Property(property="id", type="integer", example=1),
      *             @OA\Property(property="name", type="string", example="Device 1"),
+     *             @OA\Property(property="code", type="string", example="ABC123"),
      *             @OA\Property(property="status", type="string", enum={"active","inactive"}, example="active"),
      *             @OA\Property(property="garden_id", type="integer", example=1),
      *             @OA\Property(property="garden_groups", type="array", @OA\Items(type="integer"), example={1,2,3}),
@@ -129,6 +132,7 @@ class DeviceController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:6|unique:devices,code',
             'status' => 'required|in:active,inactive',
             'garden_id' => 'required|exists:gardens,id',
             'garden_groups' => 'required|array',
