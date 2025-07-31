@@ -44,6 +44,8 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::post('/disters/logout', [DisterController::class, 'logout']);
         Route::get('/disters/profile', [DisterController::class, 'profile']);
         
+        Route::apiResource('devices', DeviceController::class);
+
         Route::apiResource('garden-groups', GardenGroupController::class);
         Route::delete('/garden-groups/bulk-delete', [GardenGroupController::class, 'bulkDestroy']);
         
@@ -53,7 +55,6 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             Route::delete('/cards/bulk-delete', [CardController::class, 'bulkDestroy']);
             Route::post('/cards/move-to-group', [CardController::class, 'moveToGroup']);
             Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
-            Route::apiResource('devices', DeviceController::class);
         });
         
         
