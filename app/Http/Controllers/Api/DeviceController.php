@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Device;
+use App\Rules\LicenseValueRule;
 
 /**
  * @OA\Tag(
@@ -589,7 +590,7 @@ class DeviceController extends Controller
             'parent_verification' => 'nullable|boolean',
             'license' => 'nullable|array',
             'license.type' => 'nullable|string|in:boolean,date',
-            'license.value' => 'nullable',
+            'license.value' => ['nullable', new LicenseValueRule],
         ]);
         
         // Validate that the group belongs to one of the device's garden groups

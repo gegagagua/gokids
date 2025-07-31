@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Card;
 use App\Models\CardOtp;
 use App\Services\SmsService;
+use App\Rules\LicenseValueRule;
 
 /**
  * @OA\Tag(
@@ -54,7 +55,7 @@ class CardController extends Controller
      *                     @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
      *                     @OA\Property(property="license", type="object", nullable=true,
      *                         @OA\Property(property="type", type="string", example="boolean"),
-     *                         @OA\Property(property="value", example=true)
+     *                         @OA\Property(property="value", example=true, description="Boolean value (true/false)")
      *                     ),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
@@ -285,7 +286,7 @@ class CardController extends Controller
      *             @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true, description="Parent verification status"),
      *             @OA\Property(property="license", type="object", nullable=true, description="License information",
      *                 @OA\Property(property="type", type="string", example="boolean", enum={"boolean", "date"}, description="License type"),
-     *                 @OA\Property(property="value", description="License value (boolean or date string)")
+     *                 @OA\Property(property="value", description="License value (boolean for boolean type, date string for date type)")
      *             )
      *         )
      *     ),
@@ -340,15 +341,19 @@ class CardController extends Controller
             'child_last_name' => 'required|string|max:255',
             'parent_name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
-            'status' => 'required|string|in:pending,active,inactive',
+            'status' => 'nullable|string|in:pending,active,inactive',
             'group_id' => 'required|exists:garden_groups,id',
             'person_type_id' => 'nullable|exists:person_types,id',
             'parent_code' => 'nullable|string|max:255',
             'parent_verification' => 'nullable|boolean',
             'license' => 'nullable|array',
             'license.type' => 'nullable|string|in:boolean,date',
-            'license.value' => 'nullable',
+            'license.value' => ['nullable', new LicenseValueRule],
         ]);
+
+        if (!isset($validated['status'])) {
+            $validated['status'] = 'pending';
+        }
 
         // If authenticated user is a garden user, validate that the group belongs to their garden
         if ($request->user() && $request->user()->garden_id) {
@@ -396,7 +401,7 @@ class CardController extends Controller
      *             @OA\Property(property="parent_verification", type="boolean", example=true, nullable=true, description="Parent verification status"),
      *             @OA\Property(property="license", type="object", nullable=true, description="License information",
      *                 @OA\Property(property="type", type="string", example="date", enum={"boolean", "date"}, description="License type"),
-     *                 @OA\Property(property="value", example="2025-12-31", description="License value (boolean or date string)")
+     *                 @OA\Property(property="value", example="2025-12-31", description="License value (boolean for boolean type, date string for date type)")
      *             )
      *         )
      *     ),
@@ -474,7 +479,7 @@ class CardController extends Controller
             'parent_verification' => 'nullable|boolean',
             'license' => 'nullable|array',
             'license.type' => 'nullable|string|in:boolean,date',
-            'license.value' => 'nullable',
+            'license.value' => ['nullable', new LicenseValueRule],
         ]);
 
         // If authenticated user is a garden user and group_id is being updated, validate that the group belongs to their garden

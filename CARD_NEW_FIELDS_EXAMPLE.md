@@ -192,4 +192,4 @@ The API validates the new fields with the following rules:
 - `license` is optional and can be `null`
 - When `license` is provided, it must be an object with `type` and `value` properties
 - `license.type` must be either "boolean" or "date"
-- `license.value` can be any value (boolean for boolean type, date string for date type) 
+- `license.value` must be boolean (true/false) when type is "boolean", or a valid date string when type is "date" 

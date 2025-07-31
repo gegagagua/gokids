@@ -620,6 +620,7 @@
                                                                 "example": "boolean"
                                                             },
                                                             "value": {
+                                                                "description": "Boolean value (true/false)",
                                                                 "example": true
                                                             }
                                                         },
@@ -849,7 +850,7 @@
                                                 "example": "boolean"
                                             },
                                             "value": {
-                                                "description": "License value (boolean or date string)"
+                                                "description": "License value (boolean for boolean type, date string for date type)"
                                             }
                                         },
                                         "type": "object",
@@ -1313,7 +1314,7 @@
                                                 "example": "date"
                                             },
                                             "value": {
-                                                "description": "License value (boolean or date string)",
+                                                "description": "License value (boolean for boolean type, date string for date type)",
                                                 "example": "2025-12-31"
                                             }
                                         },
