@@ -3938,8 +3938,9 @@
                                                         "example": "Device 1"
                                                     },
                                                     "code": {
+                                                        "description": "Auto-generated 6-character unique code",
                                                         "type": "string",
-                                                        "example": "ABC123"
+                                                        "example": "X7K9M2"
                                                     },
                                                     "status": {
                                                         "type": "string",
@@ -4006,7 +4007,7 @@
                     "Devices"
                 ],
                 "summary": "Create a new device",
-                "description": "Create a new device for a garden. garden_groups is an array of group IDs. Code will be auto-generated if not provided.",
+                "description": "Create a new device for a garden. garden_groups is an array of group IDs. Code will be auto-generated.",
                 "operationId": "createDevice",
                 "requestBody": {
                     "required": true,
@@ -4024,13 +4025,6 @@
                                         "type": "string",
                                         "maxLength": 255,
                                         "example": "Device 1"
-                                    },
-                                    "code": {
-                                        "description": "6-character unique code (auto-generated, optional to provide)",
-                                        "type": "string",
-                                        "maxLength": 6,
-                                        "example": "ABC123",
-                                        "nullable": true
                                     },
                                     "status": {
                                         "type": "string",
@@ -4077,8 +4071,9 @@
                                             "example": "Device 1"
                                         },
                                         "code": {
+                                            "description": "Auto-generated 6-character unique code",
                                             "type": "string",
-                                            "example": "ABC123"
+                                            "example": "X7K9M2"
                                         },
                                         "status": {
                                             "type": "string",
@@ -4177,6 +4172,11 @@
                                         "name": {
                                             "type": "string",
                                             "example": "Device 1"
+                                        },
+                                        "code": {
+                                            "description": "Auto-generated 6-character unique code",
+                                            "type": "string",
+                                            "example": "X7K9M2"
                                         },
                                         "status": {
                                             "type": "string",
@@ -4310,6 +4310,11 @@
                                         "name": {
                                             "type": "string",
                                             "example": "Device 1"
+                                        },
+                                        "code": {
+                                            "description": "Auto-generated 6-character unique code",
+                                            "type": "string",
+                                            "example": "X7K9M2"
                                         },
                                         "status": {
                                             "type": "string",
@@ -4509,8 +4514,9 @@
                                             "example": "Device 1"
                                         },
                                         "code": {
+                                            "description": "Auto-generated 6-character unique code",
                                             "type": "string",
-                                            "example": "ABC123"
+                                            "example": "X7K9M2"
                                         },
                                         "status": {
                                             "type": "string",
