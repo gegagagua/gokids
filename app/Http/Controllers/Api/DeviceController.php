@@ -411,8 +411,8 @@ class DeviceController extends Controller
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
      *                     @OA\Property(property="group", type="object"),
      *                     @OA\Property(property="personType", type="object"),
-     *                     @OA\Property(property="parents", type="array"),
-     *                     @OA\Property(property="people", type="array")
+     *                     @OA\Property(property="parents", type="array", @OA\Items(type="object")),
+     *                     @OA\Property(property="people", type="array", @OA\Items(type="object"))
      *                 )
      *             ),
      *             @OA\Property(property="last_page", type="integer", example=5),
@@ -634,8 +634,8 @@ class DeviceController extends Controller
      *             @OA\Property(property="updated_at", type="string", format="date-time"),
      *             @OA\Property(property="group", type="object"),
      *             @OA\Property(property="personType", type="object"),
-     *             @OA\Property(property="parents", type="array"),
-     *             @OA\Property(property="people", type="array")
+     *             @OA\Property(property="parents", type="array", @OA\Items(type="object")),
+     *             @OA\Property(property="people", type="array", @OA\Items(type="object"))
      *         )
      *     ),
      *     @OA\Response(

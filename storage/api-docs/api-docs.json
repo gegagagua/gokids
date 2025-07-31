@@ -518,6 +518,28 @@
                         }
                     },
                     {
+                        "name": "parent_verification",
+                        "in": "query",
+                        "description": "Filter by parent verification status",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "license_type",
+                        "in": "query",
+                        "description": "Filter by license type",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "boolean",
+                                "date"
+                            ]
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Items per page (pagination)",
@@ -584,6 +606,24 @@
                                                     "parent_code": {
                                                         "type": "string",
                                                         "example": "K9#mP2",
+                                                        "nullable": true
+                                                    },
+                                                    "parent_verification": {
+                                                        "type": "boolean",
+                                                        "example": false,
+                                                        "nullable": true
+                                                    },
+                                                    "license": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "boolean"
+                                                            },
+                                                            "value": {
+                                                                "example": true
+                                                            }
+                                                        },
+                                                        "type": "object",
                                                         "nullable": true
                                                     },
                                                     "created_at": {
@@ -789,6 +829,31 @@
                                         "maxLength": 255,
                                         "example": "K9M2P5",
                                         "nullable": true
+                                    },
+                                    "parent_verification": {
+                                        "description": "Parent verification status",
+                                        "type": "boolean",
+                                        "example": false,
+                                        "nullable": true
+                                    },
+                                    "license": {
+                                        "description": "License information",
+                                        "properties": {
+                                            "type": {
+                                                "description": "License type",
+                                                "type": "string",
+                                                "enum": [
+                                                    "boolean",
+                                                    "date"
+                                                ],
+                                                "example": "boolean"
+                                            },
+                                            "value": {
+                                                "description": "License value (boolean or date string)"
+                                            }
+                                        },
+                                        "type": "object",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -839,6 +904,24 @@
                                         "parent_code": {
                                             "type": "string",
                                             "example": "K9#mP2",
+                                            "nullable": true
+                                        },
+                                        "parent_verification": {
+                                            "type": "boolean",
+                                            "example": false,
+                                            "nullable": true
+                                        },
+                                        "license": {
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "boolean"
+                                                },
+                                                "value": {
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object",
                                             "nullable": true
                                         },
                                         "created_at": {
@@ -989,6 +1072,24 @@
                                         "parent_code": {
                                             "type": "string",
                                             "example": "K9#mP2",
+                                            "nullable": true
+                                        },
+                                        "parent_verification": {
+                                            "type": "boolean",
+                                            "example": false,
+                                            "nullable": true
+                                        },
+                                        "license": {
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "boolean"
+                                                },
+                                                "value": {
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object",
                                             "nullable": true
                                         },
                                         "created_at": {
@@ -1192,6 +1293,32 @@
                                         "maxLength": 255,
                                         "example": "K9#mP2",
                                         "nullable": true
+                                    },
+                                    "parent_verification": {
+                                        "description": "Parent verification status",
+                                        "type": "boolean",
+                                        "example": true,
+                                        "nullable": true
+                                    },
+                                    "license": {
+                                        "description": "License information",
+                                        "properties": {
+                                            "type": {
+                                                "description": "License type",
+                                                "type": "string",
+                                                "enum": [
+                                                    "boolean",
+                                                    "date"
+                                                ],
+                                                "example": "date"
+                                            },
+                                            "value": {
+                                                "description": "License value (boolean or date string)",
+                                                "example": "2025-12-31"
+                                            }
+                                        },
+                                        "type": "object",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -1237,6 +1364,24 @@
                                         "parent_code": {
                                             "type": "string",
                                             "example": "K9#mP2",
+                                            "nullable": true
+                                        },
+                                        "parent_verification": {
+                                            "type": "boolean",
+                                            "example": true,
+                                            "nullable": true
+                                        },
+                                        "license": {
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "date"
+                                                },
+                                                "value": {
+                                                    "example": "2025-12-31"
+                                                }
+                                            },
+                                            "type": "object",
                                             "nullable": true
                                         },
                                         "created_at": {
@@ -3880,6 +4025,506 @@
                     },
                     "404": {
                         "description": "Device not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\Device]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/devices/{id}/cards": {
+            "get": {
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Get cards associated with a device",
+                "description": "Retrieve all cards that belong to the garden groups associated with this device.",
+                "operationId": "getDeviceCards",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Device ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search in child's and parent's name fields",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "Filter by phone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "active",
+                                "inactive"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "group_id",
+                        "in": "query",
+                        "description": "Filter by group ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "person_type_id",
+                        "in": "query",
+                        "description": "Filter by person type ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "parent_code",
+                        "in": "query",
+                        "description": "Filter by parent code",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page (pagination)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "child_first_name": {
+                                                        "type": "string",
+                                                        "example": "Giorgi"
+                                                    },
+                                                    "child_last_name": {
+                                                        "type": "string",
+                                                        "example": "Davitashvili"
+                                                    },
+                                                    "parent_name": {
+                                                        "type": "string",
+                                                        "example": "Nino Davitashvili"
+                                                    },
+                                                    "phone": {
+                                                        "type": "string",
+                                                        "example": "+995599123456"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "active"
+                                                    },
+                                                    "group_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "person_type_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "parent_code": {
+                                                        "type": "string",
+                                                        "example": "ABC123"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "group": {
+                                                        "type": "object"
+                                                    },
+                                                    "personType": {
+                                                        "type": "object"
+                                                    },
+                                                    "parents": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "people": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 15
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 50
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Device not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\Device]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Create a new card for a device",
+                "description": "Create a new card that will be associated with the garden groups of this device.",
+                "operationId": "createDeviceCard",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Device ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "child_first_name",
+                                    "child_last_name",
+                                    "parent_name",
+                                    "phone",
+                                    "group_id"
+                                ],
+                                "properties": {
+                                    "child_first_name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Giorgi"
+                                    },
+                                    "child_last_name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Davitashvili"
+                                    },
+                                    "parent_name": {
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Nino Davitashvili"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+995599123456"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "active",
+                                            "inactive"
+                                        ],
+                                        "example": "pending"
+                                    },
+                                    "group_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "person_type_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "parent_code": {
+                                        "type": "string",
+                                        "example": "ABC123",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Card created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "child_first_name": {
+                                            "type": "string",
+                                            "example": "Giorgi"
+                                        },
+                                        "child_last_name": {
+                                            "type": "string",
+                                            "example": "Davitashvili"
+                                        },
+                                        "parent_name": {
+                                            "type": "string",
+                                            "example": "Nino Davitashvili"
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599123456"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "pending"
+                                        },
+                                        "group_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "person_type_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "parent_code": {
+                                            "type": "string",
+                                            "example": "ABC123"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/devices/{id}/cards/{cardId}": {
+            "get": {
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Get a specific card for a device",
+                "description": "Retrieve a specific card that belongs to the garden groups of this device.",
+                "operationId": "getDeviceCard",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Device ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "cardId",
+                        "in": "path",
+                        "description": "Card ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "child_first_name": {
+                                            "type": "string",
+                                            "example": "Giorgi"
+                                        },
+                                        "child_last_name": {
+                                            "type": "string",
+                                            "example": "Davitashvili"
+                                        },
+                                        "parent_name": {
+                                            "type": "string",
+                                            "example": "Nino Davitashvili"
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599123456"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "active"
+                                        },
+                                        "group_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "person_type_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "parent_code": {
+                                            "type": "string",
+                                            "example": "ABC123"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "group": {
+                                            "type": "object"
+                                        },
+                                        "personType": {
+                                            "type": "object"
+                                        },
+                                        "parents": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "people": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Device or card not found",
                         "content": {
                             "application/json": {
                                 "schema": {
