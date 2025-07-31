@@ -30,6 +30,8 @@ class CardController extends Controller
      *     @OA\Parameter(name="group_id", in="query", required=false, description="Filter by group ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="person_type_id", in="query", required=false, description="Filter by person type ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="parent_code", in="query", required=false, description="Filter by parent code", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="parent_verification", in="query", required=false, description="Filter by parent verification status", @OA\Schema(type="boolean")),
+     *     @OA\Parameter(name="license_type", in="query", required=false, description="Filter by license type", @OA\Schema(type="string", enum={"boolean", "date"})),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
      *     @OA\Response(
      *         response=200,
@@ -49,6 +51,11 @@ class CardController extends Controller
      *                     @OA\Property(property="group_id", type="integer", example=1),
      *                     @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
      *                     @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
+     *                     @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
+     *                     @OA\Property(property="license", type="object", nullable=true,
+     *                         @OA\Property(property="type", type="string", example="boolean"),
+     *                         @OA\Property(property="value", example=true)
+     *                     ),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
      *                     @OA\Property(property="group", type="object",
@@ -128,6 +135,12 @@ class CardController extends Controller
         if ($request->filled('parent_code')) {
             $query->where('parent_code', $request->query('parent_code'));
         }
+        if ($request->filled('parent_verification')) {
+            $query->where('parent_verification', $request->query('parent_verification'));
+        }
+        if ($request->filled('license_type')) {
+            $query->whereJsonContains('license->type', $request->query('license_type'));
+        }
         $perPage = $request->query('per_page', 15);
         return $query->paginate($perPage);
     }
@@ -160,6 +173,11 @@ class CardController extends Controller
      *             @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}),
      *             @OA\Property(property="group_id", type="integer", example=1),
      *             @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
+     *             @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
+     *             @OA\Property(property="license", type="object", nullable=true,
+     *                 @OA\Property(property="type", type="string", example="boolean"),
+     *                 @OA\Property(property="value", example=true)
+     *             ),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time"),
      *             @OA\Property(
@@ -263,7 +281,12 @@ class CardController extends Controller
      *             @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}, description="Card status"),
      *             @OA\Property(property="group_id", type="integer", example=1, description="ID of the associated garden group"),
      *             @OA\Property(property="person_type_id", type="integer", example=1, nullable=true, description="Person type ID from person-types"),
-     *             @OA\Property(property="parent_code", type="string", maxLength=255, example="K9M2P5", nullable=true, description="Optional parent access code (auto-generated if not provided)")
+     *             @OA\Property(property="parent_code", type="string", maxLength=255, example="K9M2P5", nullable=true, description="Optional parent access code (auto-generated if not provided)"),
+     *             @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true, description="Parent verification status"),
+     *             @OA\Property(property="license", type="object", nullable=true, description="License information",
+     *                 @OA\Property(property="type", type="string", example="boolean", enum={"boolean", "date"}, description="License type"),
+     *                 @OA\Property(property="value", description="License value (boolean or date string)")
+     *             )
      *         )
      *     ),
      *     @OA\Response(
@@ -280,6 +303,11 @@ class CardController extends Controller
      *             @OA\Property(property="group_id", type="integer", example=1),
      *             @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
      *             @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
+     *             @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
+     *             @OA\Property(property="license", type="object", nullable=true,
+     *                 @OA\Property(property="type", type="string", example="boolean"),
+     *                 @OA\Property(property="value", example=true)
+     *             ),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -316,6 +344,10 @@ class CardController extends Controller
             'group_id' => 'required|exists:garden_groups,id',
             'person_type_id' => 'nullable|exists:person_types,id',
             'parent_code' => 'nullable|string|max:255',
+            'parent_verification' => 'nullable|boolean',
+            'license' => 'nullable|array',
+            'license.type' => 'nullable|string|in:boolean,date',
+            'license.value' => 'nullable',
         ]);
 
         // If authenticated user is a garden user, validate that the group belongs to their garden
@@ -360,7 +392,12 @@ class CardController extends Controller
      *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599654321", description="Contact phone number"),
      *             @OA\Property(property="status", type="string", example="inactive", enum={"pending", "active", "inactive"}, description="Card status"),
      *             @OA\Property(property="group_id", type="integer", example=2, description="ID of the associated garden group"),
-     *             @OA\Property(property="parent_code", type="string", maxLength=255, example="K9#mP2", nullable=true, description="Optional parent access code (auto-generated if not provided)")
+     *             @OA\Property(property="parent_code", type="string", maxLength=255, example="K9#mP2", nullable=true, description="Optional parent access code (auto-generated if not provided)"),
+     *             @OA\Property(property="parent_verification", type="boolean", example=true, nullable=true, description="Parent verification status"),
+     *             @OA\Property(property="license", type="object", nullable=true, description="License information",
+     *                 @OA\Property(property="type", type="string", example="date", enum={"boolean", "date"}, description="License type"),
+     *                 @OA\Property(property="value", example="2025-12-31", description="License value (boolean or date string)")
+     *             )
      *         )
      *     ),
      *     @OA\Response(
@@ -376,6 +413,11 @@ class CardController extends Controller
      *             @OA\Property(property="status", type="string", example="inactive"),
      *             @OA\Property(property="group_id", type="integer", example=2),
      *             @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
+     *             @OA\Property(property="parent_verification", type="boolean", example=true, nullable=true),
+     *             @OA\Property(property="license", type="object", nullable=true,
+     *                 @OA\Property(property="type", type="string", example="date"),
+     *                 @OA\Property(property="value", example="2025-12-31")
+     *             ),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -429,6 +471,10 @@ class CardController extends Controller
             'status' => 'sometimes|required|string|in:pending,active,inactive',
             'group_id' => 'sometimes|required|exists:garden_groups,id',
             'parent_code' => 'nullable|string|max:255',
+            'parent_verification' => 'nullable|boolean',
+            'license' => 'nullable|array',
+            'license.type' => 'nullable|string|in:boolean,date',
+            'license.value' => 'nullable',
         ]);
 
         // If authenticated user is a garden user and group_id is being updated, validate that the group belongs to their garden

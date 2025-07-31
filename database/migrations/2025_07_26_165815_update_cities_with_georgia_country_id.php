@@ -18,10 +18,8 @@ return new class extends Migration
             // Update all existing cities to have Georgia as their country
             \App\Models\City::query()->update(['country_id' => $georgia->id]);
             
-            // Add foreign key constraint
-            Schema::table('cities', function (Blueprint $table) {
-                $table->foreign('country_id')->references('id')->on('countries')->onDelete('restrict');
-            });
+            // Note: Foreign key constraint is assumed to already exist
+            // If it doesn't exist, it should be added manually or through a separate migration
         }
     }
 
@@ -30,8 +28,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('cities', function (Blueprint $table) {
-            $table->dropForeign(['country_id']);
-        });
+        // No rollback needed for data updates
+        // Foreign key constraint should be handled separately if needed
     }
 };

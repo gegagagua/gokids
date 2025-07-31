@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class Card extends Model
 {
@@ -20,6 +21,13 @@ class Card extends Model
         'person_type_id',
         'parent_code',
         'image_path',
+        'parent_verification',
+        'license',
+    ];
+
+    protected $casts = [
+        'parent_verification' => 'boolean',
+        'license' => 'array',
     ];
 
     protected static function boot()
@@ -49,6 +57,64 @@ class Card extends Model
         } while (self::where('parent_code', $code)->exists());
 
         return $code;
+    }
+
+    /**
+     * Set license as boolean
+     */
+    public function setLicenseBoolean($value)
+    {
+        $this->license = ['type' => 'boolean', 'value' => (bool) $value];
+        return $this;
+    }
+
+    /**
+     * Set license as date
+     */
+    public function setLicenseDate($date)
+    {
+        $this->license = ['type' => 'date', 'value' => $date instanceof Carbon ? $date->toDateString() : $date];
+        return $this;
+    }
+
+    /**
+     * Get license value
+     */
+    public function getLicenseValue()
+    {
+        if (!$this->license) {
+            return null;
+        }
+        
+        return $this->license['value'] ?? null;
+    }
+
+    /**
+     * Get license type
+     */
+    public function getLicenseType()
+    {
+        if (!$this->license) {
+            return null;
+        }
+        
+        return $this->license['type'] ?? null;
+    }
+
+    /**
+     * Check if license is boolean
+     */
+    public function isLicenseBoolean()
+    {
+        return $this->getLicenseType() === 'boolean';
+    }
+
+    /**
+     * Check if license is date
+     */
+    public function isLicenseDate()
+    {
+        return $this->getLicenseType() === 'date';
     }
 
     public function group()
