@@ -6,30 +6,32 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        // Update existing devices with unique codes if they don't have one
-        $devices = \App\Models\Device::whereNull('code')->get();
+        // 1. ჯერ დაამატე code სვეტი (თუ არ არსებობს)
+        if (!Schema::hasColumn('devices', 'code')) {
+            Schema::table('devices', function (Blueprint $table) {
+                $table->string('code', 6)->nullable()->after('name');
+            });
+        }
+
+        // 2. განაახლე ყველა device-ს კოდი, სადაც code არის null ან ცარიელი
+        $devices = \App\Models\Device::whereNull('code')->orWhere('code', '')->get();
         foreach ($devices as $device) {
             $device->code = \App\Models\Device::generateDeviceCode();
             $device->save();
         }
-        
-        // Add unique constraint to existing code column
+
+        // 3. ბოლოს დაამატე უნიკალური constraint-ი
         Schema::table('devices', function (Blueprint $table) {
             $table->unique('code');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::table('devices', function (Blueprint $table) {
+            $table->dropUnique(['code']);
             $table->dropColumn('code');
         });
     }
