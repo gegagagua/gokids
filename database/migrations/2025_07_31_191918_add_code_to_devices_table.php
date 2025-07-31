@@ -11,8 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Update existing devices with unique codes if they don't have one
+        $devices = \App\Models\Device::whereNull('code')->get();
+        foreach ($devices as $device) {
+            $device->code = \App\Models\Device::generateDeviceCode();
+            $device->save();
+        }
+        
+        // Add unique constraint to existing code column
         Schema::table('devices', function (Blueprint $table) {
-            $table->string('code', 6)->unique()->after('name');
+            $table->unique('code');
         });
     }
 

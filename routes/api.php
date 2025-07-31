@@ -45,6 +45,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::get('/disters/profile', [DisterController::class, 'profile']);
         
         Route::apiResource('devices', DeviceController::class);
+        Route::patch('/devices/{id}/status', [DeviceController::class, 'updateStatus']);
 
         Route::apiResource('garden-groups', GardenGroupController::class);
         Route::delete('/garden-groups/bulk-delete', [GardenGroupController::class, 'bulkDestroy']);

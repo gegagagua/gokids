@@ -330,6 +330,99 @@ class DeviceController extends Controller
     }
 
     /**
+     * @OA\Patch(
+     *     path="/api/devices/{id}/status",
+     *     operationId="updateDeviceStatus",
+     *     tags={"Devices"},
+     *     summary="Update device status",
+     *     description="Update only the status of a specific device",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Device ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"status"},
+     *             @OA\Property(property="status", type="string", example="active", enum={"active", "inactive"}, description="Device status")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Status updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="name", type="string", example="Device 1"),
+     *             @OA\Property(property="code", type="string", example="ABC123"),
+     *             @OA\Property(property="status", type="string", example="active"),
+     *             @OA\Property(property="garden_id", type="integer", example=1),
+     *             @OA\Property(property="garden_groups", type="array", @OA\Items(type="integer"), example={1,2,3}),
+     *             @OA\Property(property="message", type="string", example="Status updated successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Device not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No query results for model [App\\Models\\Device]")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="status", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $query = Device::query();
+        
+        // Get garden_id from authenticated user if they are a garden user
+        $user = $request->user();
+        $userGardenId = null;
+        
+        if ($user->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $user->email)->first();
+            if ($garden) {
+                $userGardenId = $garden->id;
+                $query->where('garden_id', $userGardenId);
+            }
+        }
+        
+        $device = $query->findOrFail($id);
+        
+        $validated = $request->validate([
+            'status' => 'required|string|in:active,inactive',
+        ]);
+
+        $device->status = $validated['status'];
+        $device->save();
+
+        return response()->json([
+            'id' => $device->id,
+            'name' => $device->name,
+            'code' => $device->code,
+            'status' => $device->status,
+            'garden_id' => $device->garden_id,
+            'garden_groups' => $device->garden_groups,
+            'message' => 'Status updated successfully',
+        ]);
+    }
+
+    /**
      * @OA\Delete(
      *     path="/api/devices/{id}",
      *     operationId="deleteDevice",
