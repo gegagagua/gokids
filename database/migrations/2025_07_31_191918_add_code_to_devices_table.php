@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -15,11 +16,11 @@ return new class extends Migration
             });
         }
 
-        // 2. განაახლე ყველა device-ს კოდი, სადაც code არის null ან ცარიელი
-        $devices = \App\Models\Device::whereNull('code')->orWhere('code', '')->get();
+        // 2. განაახლე ყველა device-ს კოდი, სადაც code არის null ან ცარიელი (raw SQL-ით)
+        $devices = DB::table('devices')->whereNull('code')->orWhere('code', '')->get();
         foreach ($devices as $device) {
-            $device->code = \App\Models\Device::generateDeviceCode();
-            $device->save();
+            $code = $this->generateDeviceCode();
+            DB::table('devices')->where('id', $device->id)->update(['code' => $code]);
         }
 
         // 3. ბოლოს დაამატე უნიკალური constraint-ი
@@ -34,5 +35,22 @@ return new class extends Migration
             $table->dropUnique(['code']);
             $table->dropColumn('code');
         });
+    }
+
+    /**
+     * Generate a unique 6-character device code
+     */
+    private function generateDeviceCode()
+    {
+        do {
+            $characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            $code = '';
+            
+            for ($i = 0; $i < 6; $i++) {
+                $code .= $characters[random_int(0, strlen($characters) - 1)];
+            }
+        } while (DB::table('devices')->where('code', $code)->exists());
+
+        return $code;
     }
 };
