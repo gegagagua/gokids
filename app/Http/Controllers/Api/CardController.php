@@ -567,9 +567,6 @@ class CardController extends Controller
      *     )
      * )
      */
-    /**
-     * Update only the parent_verification field of a card
-     */
     public function updateParentVerification(Request $request, $id)
     {
         $validated = $request->validate([
@@ -647,9 +644,6 @@ class CardController extends Controller
      *         )
      *     )
      * )
-     */
-    /**
-     * Update only the license field of a card
      */
     public function updateLicense(Request $request, $id)
     {
