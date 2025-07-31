@@ -55,9 +55,21 @@ class DeviceController extends Controller
     {
         $query = Device::query();
         
-        // Filter by garden_id if provided (for garden users)
-        if ($request->filled('garden_id')) {
-            $query->where('garden_id', $request->query('garden_id'));
+        // Get garden_id from authenticated user if they are a garden user
+        $user = $request->user();
+        $userGardenId = null;
+        
+        if ($user->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $user->email)->first();
+            if ($garden) {
+                $userGardenId = $garden->id;
+                $query->where('garden_id', $userGardenId);
+            }
+        } else {
+            // For admin users, allow filtering by garden_id if provided
+            if ($request->filled('garden_id')) {
+                $query->where('garden_id', $request->query('garden_id'));
+            }
         }
         
         if ($request->filled('name')) {
@@ -122,20 +134,30 @@ class DeviceController extends Controller
             'garden_groups.*' => 'integer|exists:garden_groups,id',
         ]);
         
-        // If garden_id is provided (garden user), validate that it matches their garden
-        if ($request->filled('garden_id') && $request->query('garden_id') != $validated['garden_id']) {
+        // Get garden_id from authenticated user if they are a garden user
+        $user = $request->user();
+        $userGardenId = null;
+        
+        if ($user->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $user->email)->first();
+            if ($garden) {
+                $userGardenId = $garden->id;
+            }
+        }
+        
+        // If user is a garden user, validate that they can only create devices for their own garden
+        if ($userGardenId && $validated['garden_id'] != $userGardenId) {
             return response()->json(['message' => 'You can only create devices for your own garden'], 403);
         }
         
         // Validate that all garden_groups belong to the garden
-        if ($request->filled('garden_id')) {
-            $gardenGroups = \App\Models\GardenGroup::whereIn('id', $validated['garden_groups'])
-                ->where('garden_id', $request->query('garden_id'))
-                ->count();
-            
-            if ($gardenGroups != count($validated['garden_groups'])) {
-                return response()->json(['message' => 'Some groups do not belong to your garden'], 403);
-            }
+        $gardenIdToCheck = $userGardenId ?: $validated['garden_id'];
+        $gardenGroups = \App\Models\GardenGroup::whereIn('id', $validated['garden_groups'])
+            ->where('garden_id', $gardenIdToCheck)
+            ->count();
+        
+        if ($gardenGroups != count($validated['garden_groups'])) {
+            return response()->json(['message' => 'Some groups do not belong to your garden'], 403);
         }
         
         $device = Device::create([
@@ -183,9 +205,19 @@ class DeviceController extends Controller
     {
         $query = Device::query();
         
-        // Filter by garden_id if provided (for garden users)
-        if ($request->filled('garden_id')) {
-            $query->where('garden_id', $request->query('garden_id'));
+        // Get garden_id from authenticated user if they are a garden user
+        $user = $request->user();
+        
+        if ($user->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $user->email)->first();
+            if ($garden) {
+                $query->where('garden_id', $garden->id);
+            }
+        } else {
+            // For admin users, allow filtering by garden_id if provided
+            if ($request->filled('garden_id')) {
+                $query->where('garden_id', $request->query('garden_id'));
+            }
         }
         
         return $query->findOrFail($id);
@@ -244,9 +276,21 @@ class DeviceController extends Controller
     {
         $query = Device::query();
         
-        // Filter by garden_id if provided (for garden users)
-        if ($request->filled('garden_id')) {
-            $query->where('garden_id', $request->query('garden_id'));
+        // Get garden_id from authenticated user if they are a garden user
+        $user = $request->user();
+        $userGardenId = null;
+        
+        if ($user->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $user->email)->first();
+            if ($garden) {
+                $userGardenId = $garden->id;
+                $query->where('garden_id', $userGardenId);
+            }
+        } else {
+            // For admin users, allow filtering by garden_id if provided
+            if ($request->filled('garden_id')) {
+                $query->where('garden_id', $request->query('garden_id'));
+            }
         }
         
         $device = $query->findOrFail($id);
@@ -259,15 +303,16 @@ class DeviceController extends Controller
             'garden_groups.*' => 'integer|exists:garden_groups,id',
         ]);
         
-        // If garden_id is provided and garden_id is being updated, validate that it matches their garden
-        if ($request->filled('garden_id') && isset($validated['garden_id']) && $request->query('garden_id') != $validated['garden_id']) {
+        // If user is a garden user, validate that they can only update devices for their own garden
+        if ($userGardenId && isset($validated['garden_id']) && $validated['garden_id'] != $userGardenId) {
             return response()->json(['message' => 'You can only update devices for your own garden'], 403);
         }
         
         // If garden_groups is being updated, validate that all groups belong to the garden
-        if ($request->filled('garden_id') && isset($validated['garden_groups'])) {
+        if (isset($validated['garden_groups'])) {
+            $gardenIdToCheck = $userGardenId ?: $validated['garden_id'];
             $gardenGroups = \App\Models\GardenGroup::whereIn('id', $validated['garden_groups'])
-                ->where('garden_id', $request->query('garden_id'))
+                ->where('garden_id', $gardenIdToCheck)
                 ->count();
             
             if ($gardenGroups != count($validated['garden_groups'])) {
@@ -308,9 +353,19 @@ class DeviceController extends Controller
     {
         $query = Device::query();
         
-        // Filter by garden_id if provided (for garden users)
-        if ($request->filled('garden_id')) {
-            $query->where('garden_id', $request->query('garden_id'));
+        // Get garden_id from authenticated user if they are a garden user
+        $user = $request->user();
+        
+        if ($user->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $user->email)->first();
+            if ($garden) {
+                $query->where('garden_id', $garden->id);
+            }
+        } else {
+            // For admin users, allow filtering by garden_id if provided
+            if ($request->filled('garden_id')) {
+                $query->where('garden_id', $request->query('garden_id'));
+            }
         }
         
         $device = $query->findOrFail($id);
