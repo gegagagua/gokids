@@ -51,7 +51,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::delete('/garden-groups/bulk-delete', [GardenGroupController::class, 'bulkDestroy']);
         
         // Garden-filtered routes
-        Route::middleware('garden.filter')->group(function () {
+        Route::middleware(['garden.filter', ForceJsonResponse::class])->group(function () {
             Route::apiResource('cards', CardController::class);
             Route::delete('/cards/bulk-delete', [CardController::class, 'bulkDestroy']);
             Route::post('/cards/move-to-group', [CardController::class, 'moveToGroup']);

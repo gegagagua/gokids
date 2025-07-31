@@ -4026,7 +4026,7 @@
                                         "example": "Device 1"
                                     },
                                     "code": {
-                                        "description": "6-character unique code (auto-generated if not provided)",
+                                        "description": "6-character unique code (auto-generated, optional to provide)",
                                         "type": "string",
                                         "maxLength": 6,
                                         "example": "ABC123",

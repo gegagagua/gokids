@@ -97,7 +97,7 @@ class DeviceController extends Controller
      *         @OA\JsonContent(
      *             required={"name", "status", "garden_id", "garden_groups"},
      *             @OA\Property(property="name", type="string", maxLength=255, example="Device 1"),
-     *             @OA\Property(property="code", type="string", maxLength=6, example="ABC123", nullable=true, description="6-character unique code (auto-generated if not provided)"),
+     *             @OA\Property(property="code", type="string", maxLength=6, example="ABC123", nullable=true, description="6-character unique code (auto-generated, optional to provide)"),
      *             @OA\Property(property="status", type="string", enum={"active","inactive"}, example="active"),
      *             @OA\Property(property="garden_id", type="integer", example=1),
      *             @OA\Property(property="garden_groups", type="array", @OA\Items(type="integer"), example={1,2,3})
