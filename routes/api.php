@@ -55,6 +55,9 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             Route::delete('/cards/bulk-delete', [CardController::class, 'bulkDestroy']);
             Route::post('/cards/move-to-group', [CardController::class, 'moveToGroup']);
             Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
+            // New endpoints for updating only parent_verification and license
+            Route::patch('/cards/{id}/parent-verification', [CardController::class, 'updateParentVerification']);
+            Route::patch('/cards/{id}/license', [CardController::class, 'updateLicense']);
         });
         
         

@@ -105,11 +105,13 @@ class CardController extends Controller
         $query = Card::with(['group', 'personType', 'parents', 'people']);
         
         // Filter by garden_id if authenticated user is a garden user
-        if ($request->user() && $request->user()->garden_id) {
-            $gardenId = $request->user()->garden_id;
-            $query->whereHas('group', function ($q) use ($gardenId) {
-                $q->where('garden_id', $gardenId);
-            });
+        if ($request->user() && $request->user()->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $request->user()->email)->first();
+            if ($garden) {
+                $query->whereHas('group', function ($q) use ($garden) {
+                    $q->where('garden_id', $garden->id);
+                });
+            }
         }
         
         if ($request->filled('search')) {
@@ -498,6 +500,162 @@ class CardController extends Controller
         $card->load(['group', 'personType', 'parents', 'people']);
 
         return response()->json($card);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/cards/{id}/parent-verification",
+     *     operationId="updateCardParentVerification",
+     *     tags={"Cards"},
+     *     summary="Update parent verification status",
+     *     description="Update only the parent verification status of a specific card",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Card ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"parent_verification"},
+     *             @OA\Property(property="parent_verification", type="boolean", example=true, description="Parent verification status")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Parent verification updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="parent_verification", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Parent verification updated successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Card not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No query results for model [App\\Models\\Card]")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="parent_verification", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    /**
+     * Update only the parent_verification field of a card
+     */
+    public function updateParentVerification(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'parent_verification' => 'required|boolean',
+        ]);
+
+        $card = Card::findOrFail($id);
+        $card->parent_verification = $validated['parent_verification'];
+        $card->save();
+
+        return response()->json([
+            'id' => $card->id,
+            'parent_verification' => $card->parent_verification,
+            'message' => 'Parent verification updated successfully',
+        ]);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/cards/{id}/license",
+     *     operationId="updateCardLicense",
+     *     tags={"Cards"},
+     *     summary="Update license information",
+     *     description="Update only the license information of a specific card",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Card ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"license"},
+     *             @OA\Property(property="license", type="object", description="License information",
+     *                 @OA\Property(property="type", type="string", example="boolean", enum={"boolean", "date"}, description="License type"),
+     *                 @OA\Property(property="value", description="License value (boolean for boolean type, date string for date type)")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="License updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="license", type="object",
+     *                 @OA\Property(property="type", type="string", example="boolean"),
+     *                 @OA\Property(property="value", example=true)
+     *             ),
+     *             @OA\Property(property="message", type="string", example="License updated successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Card not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No query results for model [App\\Models\\Card]")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="license", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="license.type", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="license.value", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    /**
+     * Update only the license field of a card
+     */
+    public function updateLicense(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'license' => 'required|array',
+            'license.type' => 'required|string|in:boolean,date',
+            'license.value' => ['required', new \App\Rules\LicenseValueRule],
+        ]);
+
+        $card = Card::findOrFail($id);
+        $card->license = $validated['license'];
+        $card->save();
+
+        return response()->json([
+            'id' => $card->id,
+            'license' => $card->license,
+            'message' => 'License updated successfully',
+        ]);
     }
 
     /**
