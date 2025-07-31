@@ -665,6 +665,76 @@ class CardController extends Controller
     }
 
     /**
+     * @OA\Patch(
+     *     path="/api/cards/{id}/status",
+     *     operationId="updateCardStatus",
+     *     tags={"Cards"},
+     *     summary="Update card status",
+     *     description="Update only the status of a specific card",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Card ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"status"},
+     *             @OA\Property(property="status", type="string", example="active", enum={"pending", "active", "inactive"}, description="Card status")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Status updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="status", type="string", example="active"),
+     *             @OA\Property(property="message", type="string", example="Status updated successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Card not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No query results for model [App\\Models\\Card]")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="status", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:pending,active,inactive',
+        ]);
+
+        $card = Card::findOrFail($id);
+        $card->status = $validated['status'];
+        $card->save();
+
+        return response()->json([
+            'id' => $card->id,
+            'status' => $card->status,
+            'message' => 'Status updated successfully',
+        ]);
+    }
+
+    /**
      * @OA\Delete(
      *     path="/api/cards/{id}",
      *     operationId="deleteCard",

@@ -58,6 +58,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             // New endpoints for updating only parent_verification and license
             Route::patch('/cards/{id}/parent-verification', [CardController::class, 'updateParentVerification']);
             Route::patch('/cards/{id}/license', [CardController::class, 'updateLicense']);
+            Route::patch('/cards/{id}/status', [CardController::class, 'updateStatus']);
         });
         
         
