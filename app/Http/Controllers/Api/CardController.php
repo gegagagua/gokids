@@ -33,6 +33,7 @@ class CardController extends Controller
      *     @OA\Parameter(name="parent_code", in="query", required=false, description="Filter by parent code", @OA\Schema(type="string")),
      *     @OA\Parameter(name="parent_verification", in="query", required=false, description="Filter by parent verification status", @OA\Schema(type="boolean")),
      *     @OA\Parameter(name="license_type", in="query", required=false, description="Filter by license type", @OA\Schema(type="string", enum={"boolean", "date"})),
+     *     @OA\Parameter(name="page", in="query", required=false, description="Page number", @OA\Schema(type="integer", default=1)),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
      *     @OA\Response(
      *         response=200,

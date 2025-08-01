@@ -540,6 +540,16 @@
                         }
                     },
                     {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Items per page (pagination)",
