@@ -31,7 +31,8 @@ class DisterController extends Controller
      *     @OA\Parameter(name="search", in="query", required=false, description="Search in first_name, last_name, email fields", @OA\Schema(type="string")),
      *     @OA\Parameter(name="country_id", in="query", required=false, description="Filter by country ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="city_id", in="query", required=false, description="Filter by city ID", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
+     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination). Default: 15", @OA\Schema(type="integer", default=15, minimum=1, maximum=100)),
+     *     @OA\Parameter(name="page", in="query", required=false, description="Page number for pagination. Default: 1", @OA\Schema(type="integer", default=1, minimum=1)),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -61,9 +62,16 @@ class DisterController extends Controller
      *                     )
      *                 )
      *             ),
-     *             @OA\Property(property="last_page", type="integer", example=5),
-     *             @OA\Property(property="per_page", type="integer", example=15),
-     *             @OA\Property(property="total", type="integer", example=50)
+     *             @OA\Property(property="first_page_url", type="string", example="http://localhost/api/disters?page=1"),
+     *             @OA\Property(property="from", type="integer", example=1, description="First item number on current page"),
+     *             @OA\Property(property="last_page", type="integer", example=5, description="Last page number"),
+     *             @OA\Property(property="last_page_url", type="string", example="http://localhost/api/disters?page=5"),
+     *             @OA\Property(property="next_page_url", type="string", example="http://localhost/api/disters?page=2", nullable=true),
+     *             @OA\Property(property="path", type="string", example="http://localhost/api/disters"),
+     *             @OA\Property(property="per_page", type="integer", example=15, description="Items per page"),
+     *             @OA\Property(property="prev_page_url", type="string", example=null, nullable=true),
+     *             @OA\Property(property="to", type="integer", example=15, description="Last item number on current page"),
+     *             @OA\Property(property="total", type="integer", example=50, description="Total number of items")
      *         )
      *     )
      * )
@@ -90,7 +98,8 @@ class DisterController extends Controller
         }
         
         $perPage = $request->query('per_page', 15);
-        return $query->paginate($perPage);
+        $page = $request->query('page', 1);
+        return $query->paginate($perPage, ['*'], 'page', $page);
     }
 
     /**
@@ -192,24 +201,29 @@ class DisterController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:disters',
-            'phone' => 'nullable|string|max:20',
-            'password' => 'required|string|min:6',
-            'country_id' => 'required|exists:countries,id',
-            'city_id' => 'required|exists:cities,id',
-            'gardens' => 'nullable|array',
-            'gardens.*' => 'integer|exists:gardens,id',
-        ]);
+        try {
+            $validated = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:disters',
+                'phone' => 'nullable|string|max:20',
+                'password' => 'required|string|min:6',
+                'country_id' => 'required|exists:countries,id',
+                'city_id' => 'required|exists:cities,id',
+                'gardens' => 'nullable|array',
+                'gardens.*' => 'integer|exists:gardens,id',
+            ]);
 
-        $validated['password'] = Hash::make($validated['password']);
-        
-        $dister = Dister::create($validated);
-        $dister->load(['country', 'city']);
+            $validated['password'] = Hash::make($validated['password']);
+            
+            $dister = Dister::create($validated);
+            $dister->load(['country', 'city']);
 
-        return response()->json($dister, 201);
+            return response()->json($dister, 201);
+        } catch (\Exception $e) {
+            \Log::error('Dister creation error: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to create dister: ' . $e->getMessage()], 500);
+        }
     }
 
     /**

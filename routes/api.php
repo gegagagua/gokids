@@ -25,9 +25,6 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/request-password-reset', [AuthController::class, 'requestPasswordReset']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     
-    // Dister login route (no authentication required)
-    Route::post('/disters/login', [DisterController::class, 'login']);
-    
     Route::apiResource('gardens', GardenController::class);
     Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
     Route::apiResource('garden-images', GardenImageController::class);
@@ -39,8 +36,8 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         
-        // Dister routes
-        Route::apiResource('disters', DisterController::class)->except(['login']);
+        // Dister routes (authenticated)
+        Route::apiResource('disters', DisterController::class);
         Route::post('/disters/logout', [DisterController::class, 'logout']);
         Route::get('/disters/profile', [DisterController::class, 'profile']);
         
