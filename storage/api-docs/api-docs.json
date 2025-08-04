@@ -3879,7 +3879,7 @@
                     "Devices"
                 ],
                 "summary": "Get all devices",
-                "description": "Retrieve a list of all devices. Supports filtering by name, status, garden_id. Pagination supported.",
+                "description": "Retrieve a list of all devices. Supports filtering by name, status, garden_id. Pagination supported with default 15 items per page.",
                 "operationId": "getDevices",
                 "parameters": [
                     {
@@ -3916,11 +3916,24 @@
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "Items per page (pagination)",
+                        "description": "Items per page (pagination). Default: 15",
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "default": 15
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
                         }
                     }
                 ],
@@ -3932,6 +3945,7 @@
                                 "schema": {
                                     "properties": {
                                         "current_page": {
+                                            "description": "Current page number",
                                             "type": "integer",
                                             "example": 1
                                         },
@@ -3987,15 +4001,50 @@
                                                 "type": "object"
                                             }
                                         },
+                                        "first_page_url": {
+                                            "type": "string",
+                                            "example": "http://localhost/api/devices?page=1"
+                                        },
+                                        "from": {
+                                            "description": "First item number on current page",
+                                            "type": "integer",
+                                            "example": 1
+                                        },
                                         "last_page": {
+                                            "description": "Last page number",
                                             "type": "integer",
                                             "example": 5
                                         },
+                                        "last_page_url": {
+                                            "type": "string",
+                                            "example": "http://localhost/api/devices?page=5"
+                                        },
+                                        "next_page_url": {
+                                            "type": "string",
+                                            "example": "http://localhost/api/devices?page=2",
+                                            "nullable": true
+                                        },
+                                        "path": {
+                                            "type": "string",
+                                            "example": "http://localhost/api/devices"
+                                        },
                                         "per_page": {
+                                            "description": "Items per page",
+                                            "type": "integer",
+                                            "example": 15
+                                        },
+                                        "prev_page_url": {
+                                            "type": "string",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "to": {
+                                            "description": "Last item number on current page",
                                             "type": "integer",
                                             "example": 15
                                         },
                                         "total": {
+                                            "description": "Total number of items",
                                             "type": "integer",
                                             "example": 50
                                         }
@@ -4614,7 +4663,7 @@
                     "Devices"
                 ],
                 "summary": "Get cards associated with a device",
-                "description": "Retrieve all cards that belong to the garden groups associated with this device.",
+                "description": "Retrieve all cards that belong to the garden groups associated with this device. Pagination supported with default 15 items per page.",
                 "operationId": "getDeviceCards",
                 "parameters": [
                     {
@@ -4688,11 +4737,24 @@
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "Items per page (pagination)",
+                        "description": "Items per page (pagination). Default: 15",
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "default": 15
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1,
+                            "minimum": 1
                         }
                     }
                 ],
@@ -4704,6 +4766,7 @@
                                 "schema": {
                                     "properties": {
                                         "current_page": {
+                                            "description": "Current page number",
                                             "type": "integer",
                                             "example": 1
                                         },
@@ -4777,15 +4840,50 @@
                                                 "type": "object"
                                             }
                                         },
+                                        "first_page_url": {
+                                            "type": "string",
+                                            "example": "http://localhost/api/devices/1/cards?page=1"
+                                        },
+                                        "from": {
+                                            "description": "First item number on current page",
+                                            "type": "integer",
+                                            "example": 1
+                                        },
                                         "last_page": {
+                                            "description": "Last page number",
                                             "type": "integer",
                                             "example": 5
                                         },
+                                        "last_page_url": {
+                                            "type": "string",
+                                            "example": "http://localhost/api/devices/1/cards?page=5"
+                                        },
+                                        "next_page_url": {
+                                            "type": "string",
+                                            "example": "http://localhost/api/devices/1/cards?page=2",
+                                            "nullable": true
+                                        },
+                                        "path": {
+                                            "type": "string",
+                                            "example": "http://localhost/api/devices/1/cards"
+                                        },
                                         "per_page": {
+                                            "description": "Items per page",
+                                            "type": "integer",
+                                            "example": 15
+                                        },
+                                        "prev_page_url": {
+                                            "type": "string",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "to": {
+                                            "description": "Last item number on current page",
                                             "type": "integer",
                                             "example": 15
                                         },
                                         "total": {
+                                            "description": "Total number of items",
                                             "type": "integer",
                                             "example": 50
                                         }

@@ -21,18 +21,19 @@ class DeviceController extends Controller
      *     operationId="getDevices",
      *     tags={"Devices"},
      *     summary="Get all devices",
-     *     description="Retrieve a list of all devices. Supports filtering by name, status, garden_id. Pagination supported.",
+     *     description="Retrieve a list of all devices. Supports filtering by name, status, garden_id. Pagination supported with default 15 items per page.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="name", in="query", required=false, description="Filter by device name", @OA\Schema(type="string")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by status", @OA\Schema(type="string", enum={"active","inactive"})),
      *     @OA\Parameter(name="garden_id", in="query", required=false, description="Filter by garden ID", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
+     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination). Default: 15", @OA\Schema(type="integer", default=15, minimum=1, maximum=100)),
+     *     @OA\Parameter(name="page", in="query", required=false, description="Page number for pagination", @OA\Schema(type="integer", default=1, minimum=1)),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="current_page", type="integer", example=1),
+     *             @OA\Property(property="current_page", type="integer", example=1, description="Current page number"),
      *             @OA\Property(property="data", type="array",
      *                 @OA\Items(
      *                     type="object",
@@ -46,9 +47,16 @@ class DeviceController extends Controller
      *                     @OA\Property(property="updated_at", type="string", format="date-time")
      *                 )
      *             ),
-     *             @OA\Property(property="last_page", type="integer", example=5),
-     *             @OA\Property(property="per_page", type="integer", example=15),
-     *             @OA\Property(property="total", type="integer", example=50)
+     *             @OA\Property(property="first_page_url", type="string", example="http://localhost/api/devices?page=1"),
+     *             @OA\Property(property="from", type="integer", example=1, description="First item number on current page"),
+     *             @OA\Property(property="last_page", type="integer", example=5, description="Last page number"),
+     *             @OA\Property(property="last_page_url", type="string", example="http://localhost/api/devices?page=5"),
+     *             @OA\Property(property="next_page_url", type="string", example="http://localhost/api/devices?page=2", nullable=true),
+     *             @OA\Property(property="path", type="string", example="http://localhost/api/devices"),
+     *             @OA\Property(property="per_page", type="integer", example=15, description="Items per page"),
+     *             @OA\Property(property="prev_page_url", type="string", example=null, nullable=true),
+     *             @OA\Property(property="to", type="integer", example=15, description="Last item number on current page"),
+     *             @OA\Property(property="total", type="integer", example=50, description="Total number of items")
      *         )
      *     )
      * )
@@ -81,7 +89,8 @@ class DeviceController extends Controller
             $query->where('status', $request->query('status'));
         }
         $perPage = $request->query('per_page', 15);
-        return $query->paginate($perPage);
+        $page = $request->query('page', 1);
+        return $query->paginate($perPage, ['*'], 'page', $page);
     }
 
     /**
@@ -478,7 +487,7 @@ class DeviceController extends Controller
      *     operationId="getDeviceCards",
      *     tags={"Devices"},
      *     summary="Get cards associated with a device",
-     *     description="Retrieve all cards that belong to the garden groups associated with this device.",
+     *     description="Retrieve all cards that belong to the garden groups associated with this device. Pagination supported with default 15 items per page.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, description="Device ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="search", in="query", required=false, description="Search in child's and parent's name fields", @OA\Schema(type="string")),
@@ -487,13 +496,14 @@ class DeviceController extends Controller
      *     @OA\Parameter(name="group_id", in="query", required=false, description="Filter by group ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="person_type_id", in="query", required=false, description="Filter by person type ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="parent_code", in="query", required=false, description="Filter by parent code", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
+     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination). Default: 15", @OA\Schema(type="integer", default=15, minimum=1, maximum=100)),
+     *     @OA\Parameter(name="page", in="query", required=false, description="Page number for pagination", @OA\Schema(type="integer", default=1, minimum=1)),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="current_page", type="integer", example=1),
+     *             @OA\Property(property="current_page", type="integer", example=1, description="Current page number"),
      *             @OA\Property(property="data", type="array",
      *                 @OA\Items(
      *                     type="object",
@@ -514,9 +524,16 @@ class DeviceController extends Controller
      *                     @OA\Property(property="people", type="array", @OA\Items(type="object"))
      *                 )
      *             ),
-     *             @OA\Property(property="last_page", type="integer", example=5),
-     *             @OA\Property(property="per_page", type="integer", example=15),
-     *             @OA\Property(property="total", type="integer", example=50)
+     *             @OA\Property(property="first_page_url", type="string", example="http://localhost/api/devices/1/cards?page=1"),
+     *             @OA\Property(property="from", type="integer", example=1, description="First item number on current page"),
+     *             @OA\Property(property="last_page", type="integer", example=5, description="Last page number"),
+     *             @OA\Property(property="last_page_url", type="string", example="http://localhost/api/devices/1/cards?page=5"),
+     *             @OA\Property(property="next_page_url", type="string", example="http://localhost/api/devices/1/cards?page=2", nullable=true),
+     *             @OA\Property(property="path", type="string", example="http://localhost/api/devices/1/cards"),
+     *             @OA\Property(property="per_page", type="integer", example=15, description="Items per page"),
+     *             @OA\Property(property="prev_page_url", type="string", example=null, nullable=true),
+     *             @OA\Property(property="to", type="integer", example=15, description="Last item number on current page"),
+     *             @OA\Property(property="total", type="integer", example=50, description="Total number of items")
      *         )
      *     ),
      *     @OA\Response(
