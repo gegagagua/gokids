@@ -103,7 +103,7 @@ class CardController extends Controller
     // ყველა ბარათის წამოღება
     public function index(Request $request)
     {
-        $query = Card::with(['group', 'personType', 'parents', 'people'])->where('deleted', false);
+        $query = Card::with(['group', 'personType', 'parents', 'people']);
         
         // Filter by garden_id if authenticated user is a garden user
         if ($request->user() && $request->user()->type === 'garden') {
