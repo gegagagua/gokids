@@ -23,6 +23,7 @@ class Card extends Model
         'image_path',
         'parent_verification',
         'license',
+        'deleted',
     ];
 
     protected $casts = [

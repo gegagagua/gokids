@@ -103,7 +103,7 @@ class CardController extends Controller
     // ყველა ბარათის წამოღება
     public function index(Request $request)
     {
-        $query = Card::with(['group', 'personType', 'parents', 'people']);
+        $query = Card::with(['group', 'personType', 'parents', 'people'])->where('deleted', false);
         
         // Filter by garden_id if authenticated user is a garden user
         if ($request->user() && $request->user()->type === 'garden') {
@@ -783,7 +783,8 @@ class CardController extends Controller
         }
         
         $card = $query->findOrFail($id);
-        $card->delete();
+        $card->deleted = true;
+        $card->save();
 
         return response()->json(['message' => 'Card deleted']);
     }
@@ -851,6 +852,64 @@ class CardController extends Controller
                 'status' => $card->status,
                 'parent_code' => $card->parent_code,
                 'parent_verification' => $card->parent_verification,
+                'updated_at' => $card->updated_at
+            ]
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/cards/{id}/restore",
+     *     operationId="restoreCard",
+     *     tags={"Cards"},
+     *     summary="Restore deleted card",
+     *     description="Restore a deleted card by setting deleted to false",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Card ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Card restored successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Card restored successfully"),
+     *             @OA\Property(property="card", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="child_first_name", type="string", example="Giorgi"),
+     *                 @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
+     *                 @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                 @OA\Property(property="status", type="string", example="active"),
+     *                 @OA\Property(property="deleted", type="boolean", example=false),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=404, description="Card not found")
+     * )
+     */
+    public function restore(Request $request, $id)
+    {
+        $card = Card::findOrFail($id);
+        
+        $card->deleted = false;
+        $card->save();
+        
+        return response()->json([
+            'message' => 'Card restored successfully',
+            'card' => [
+                'id' => $card->id,
+                'child_first_name' => $card->child_first_name,
+                'child_last_name' => $card->child_last_name,
+                'parent_name' => $card->parent_name,
+                'phone' => $card->phone,
+                'status' => $card->status,
+                'deleted' => $card->deleted,
                 'updated_at' => $card->updated_at
             ]
         ]);

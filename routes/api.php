@@ -62,6 +62,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             Route::patch('/cards/{id}/license', [CardController::class, 'updateLicense']);
             Route::patch('/cards/{id}/status', [CardController::class, 'updateStatus']);
             Route::post('/cards/{id}/regenerate-code', [CardController::class, 'regenerateCode']);
+            Route::post('/cards/{id}/restore', [CardController::class, 'restore']);
         });
         
         
