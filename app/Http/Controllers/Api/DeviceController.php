@@ -482,6 +482,84 @@ class DeviceController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *     path="/api/devices/{id}/regenerate-code",
+     *     operationId="regenerateDeviceCode",
+     *     tags={"Devices"},
+     *     summary="Regenerate device code",
+     *     description="Generate a new random 6-character code for the specified device",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Device ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Code regenerated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Device code regenerated successfully"),
+     *             @OA\Property(property="device", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Device 1"),
+     *                 @OA\Property(property="code", type="string", example="X7K9M2"),
+     *                 @OA\Property(property="status", type="string", example="active"),
+     *                 @OA\Property(property="garden_id", type="integer", example=1),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=403, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Device not found")
+     * )
+     */
+    public function regenerateCode(Request $request, $id)
+    {
+        $query = Device::query();
+        
+        // Get garden_id from authenticated user if they are a garden user
+        $user = $request->user();
+        
+        if ($user->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $user->email)->first();
+            if ($garden) {
+                $query->where('garden_id', $garden->id);
+            }
+        } else {
+            // For admin users, allow filtering by garden_id if provided
+            if ($request->filled('garden_id')) {
+                $query->where('garden_id', $request->query('garden_id'));
+            }
+        }
+        
+        $device = $query->findOrFail($id);
+        
+        // Generate new unique code
+        do {
+            $newCode = strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 6));
+        } while (Device::where('code', $newCode)->where('id', '!=', $id)->exists());
+        
+        // Update device with new code
+        $device->code = $newCode;
+        $device->save();
+        
+        return response()->json([
+            'message' => 'Device code regenerated successfully',
+            'device' => [
+                'id' => $device->id,
+                'name' => $device->name,
+                'code' => $device->code,
+                'status' => $device->status,
+                'garden_id' => $device->garden_id,
+                'updated_at' => $device->updated_at
+            ]
+        ]);
+    }
+
+    /**
      * @OA\Get(
      *     path="/api/devices/{id}/cards",
      *     operationId="getDeviceCards",

@@ -789,6 +789,74 @@ class CardController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *     path="/api/cards/{id}/regenerate-code",
+     *     operationId="regenerateCardCode",
+     *     tags={"Cards"},
+     *     summary="Regenerate card code and reset parent verification",
+     *     description="Generate a new random 6-character code for the specified card and set parent_verification to false",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Card ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Code regenerated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Card code regenerated successfully"),
+     *             @OA\Property(property="card", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="child_first_name", type="string", example="Giorgi"),
+     *                 @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
+     *                 @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                 @OA\Property(property="status", type="string", example="active"),
+     *                 @OA\Property(property="parent_code", type="string", example="X7K9M2"),
+     *                 @OA\Property(property="parent_verification", type="boolean", example=false),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=403, description="Unauthorized"),
+     *     @OA\Response(response=404, description="Card not found")
+     * )
+     */
+    public function regenerateCode(Request $request, $id)
+    {
+        $card = Card::findOrFail($id);
+        
+        // Generate new unique code
+        do {
+            $newCode = strtoupper(substr(str_shuffle('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 6));
+        } while (Card::where('parent_code', $newCode)->where('id', '!=', $id)->exists());
+        
+        // Update card with new code and reset parent verification
+        $card->parent_code = $newCode;
+        $card->parent_verification = false;
+        $card->save();
+        
+        return response()->json([
+            'message' => 'Card code regenerated successfully',
+            'card' => [
+                'id' => $card->id,
+                'child_first_name' => $card->child_first_name,
+                'child_last_name' => $card->child_last_name,
+                'parent_name' => $card->parent_name,
+                'phone' => $card->phone,
+                'status' => $card->status,
+                'parent_code' => $card->parent_code,
+                'parent_verification' => $card->parent_verification,
+                'updated_at' => $card->updated_at
+            ]
+        ]);
+    }
+
+    /**
      * @OA\Delete(
      *     path="/api/cards/bulk-delete",
      *     operationId="bulkDeleteCards",

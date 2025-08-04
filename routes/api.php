@@ -46,6 +46,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         
         Route::apiResource('devices', DeviceController::class);
         Route::patch('/devices/{id}/status', [DeviceController::class, 'updateStatus']);
+        Route::post('/devices/{id}/regenerate-code', [DeviceController::class, 'regenerateCode']);
 
         Route::apiResource('garden-groups', GardenGroupController::class);
         Route::delete('/garden-groups/bulk-delete', [GardenGroupController::class, 'bulkDestroy']);
@@ -60,6 +61,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             Route::patch('/cards/{id}/parent-verification', [CardController::class, 'updateParentVerification']);
             Route::patch('/cards/{id}/license', [CardController::class, 'updateLicense']);
             Route::patch('/cards/{id}/status', [CardController::class, 'updateStatus']);
+            Route::post('/cards/{id}/regenerate-code', [CardController::class, 'regenerateCode']);
         });
         
         
