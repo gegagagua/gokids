@@ -96,7 +96,9 @@ class AuthController extends Controller
      *                 @OA\Property(property="email", type="string", example="john@example.com"),
      *                 @OA\Property(property="type", type="string", example="garden")
      *             ),
-     *             @OA\Property(property="token", type="string", example="1|abc123...")
+     *             @OA\Property(property="token", type="string", example="1|abc123..."),
+     *             @OA\Property(property="garden", type="object", nullable=true, description="Garden data if user type is garden"),
+     *             @OA\Property(property="dister", type="object", nullable=true, description="Dister data if user type is dister")
      *         )
      *     ),
      *     @OA\Response(response=401, description="Invalid credentials")
@@ -122,7 +124,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'type' => $user->type,
+                'type' => $user->type !== 'garden' && $user->type !== 'dister' ? 'admin' : $user->type,
             ],
             'token' => $token,
         ];
@@ -131,6 +133,11 @@ class AuthController extends Controller
             $garden = \App\Models\Garden::with(['city', 'images'])->where('email', $user->email)->first();
             if ($garden) {
                 $response['garden'] = $garden;
+            }
+        } elseif ($user->type === 'dister') {
+            $dister = \App\Models\Dister::with(['country', 'city'])->where('email', $user->email)->first();
+            if ($dister) {
+                $response['dister'] = $dister;
             }
         }
 

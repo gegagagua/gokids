@@ -181,16 +181,25 @@ class DisterController extends Controller
      *         description="Dister created successfully",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="first_name", type="string", example="John"),
-     *             @OA\Property(property="last_name", type="string", example="Doe"),
-     *             @OA\Property(property="email", type="string", example="john@example.com"),
-     *             @OA\Property(property="phone", type="string", example="+995599123456"),
-     *             @OA\Property(property="country_id", type="integer", example=1),
-     *             @OA\Property(property="city_id", type="integer", example=1),
-     *             @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}),
-     *             @OA\Property(property="created_at", type="string", format="date-time"),
-     *             @OA\Property(property="updated_at", type="string", format="date-time")
+     *             @OA\Property(property="message", type="string", example="Dister created successfully"),
+     *             @OA\Property(property="dister", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="first_name", type="string", example="John"),
+     *                 @OA\Property(property="last_name", type="string", example="Doe"),
+     *                 @OA\Property(property="email", type="string", example="john@example.com"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                 @OA\Property(property="country_id", type="integer", example=1),
+     *                 @OA\Property(property="city_id", type="integer", example=1),
+     *                 @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             ),
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="email", type="string", example="john@example.com"),
+     *                 @OA\Property(property="type", type="string", example="dister")
+     *             )
      *         )
      *     ),
      *     @OA\Response(
@@ -205,7 +214,7 @@ class DisterController extends Controller
             $validated = $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:disters',
+                'email' => 'required|string|email|max:255|unique:disters|unique:users',
                 'phone' => 'nullable|string|max:20',
                 'password' => 'required|string|min:6',
                 'country_id' => 'required|exists:countries,id',
@@ -214,12 +223,31 @@ class DisterController extends Controller
                 'gardens.*' => 'integer|exists:gardens,id',
             ]);
 
-            $validated['password'] = Hash::make($validated['password']);
+            // Create User account first
+            $user = \App\Models\User::create([
+                'name' => $validated['first_name'] . ' ' . $validated['last_name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'type' => 'dister',
+            ]);
+
+            // Create Dister
+            $disterData = $validated;
+            $disterData['password'] = Hash::make($validated['password']);
             
-            $dister = Dister::create($validated);
+            $dister = Dister::create($disterData);
             $dister->load(['country', 'city']);
 
-            return response()->json($dister, 201);
+            return response()->json([
+                'message' => 'Dister created successfully',
+                'dister' => $dister,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'type' => $user->type,
+                ]
+            ], 201);
         } catch (\Exception $e) {
             \Log::error('Dister creation error: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to create dister: ' . $e->getMessage()], 500);
