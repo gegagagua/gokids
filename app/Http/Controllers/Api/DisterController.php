@@ -173,7 +173,7 @@ class DisterController extends Controller
      *             @OA\Property(property="password", type="string", minLength=6, example="password123", description="Password"),
      *             @OA\Property(property="country_id", type="integer", example=1, description="Country ID"),
      *             @OA\Property(property="city_id", type="integer", example=1, description="City ID"),
-     *             @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}, description="Array of garden IDs")
+     *             @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}, description="Array of garden IDs (optional)")
      *         )
      *     ),
      *     @OA\Response(
@@ -276,7 +276,6 @@ class DisterController extends Controller
      *             @OA\Property(property="last_name", type="string", maxLength=255, example="Doe", description="Last name"),
      *             @OA\Property(property="email", type="string", maxLength=255, example="john@example.com", description="Email address"),
      *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599123456", description="Phone number"),
-     *             @OA\Property(property="password", type="string", minLength=6, example="newpassword123", description="New password (optional)"),
      *             @OA\Property(property="country_id", type="integer", example=1, description="Country ID"),
      *             @OA\Property(property="city_id", type="integer", example=1, description="City ID"),
      *             @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}, description="Array of garden IDs")
@@ -318,21 +317,84 @@ class DisterController extends Controller
             'last_name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|string|email|max:255|unique:disters,email,' . $id,
             'phone' => 'nullable|string|max:20',
-            'password' => 'nullable|string|min:6',
             'country_id' => 'sometimes|required|exists:countries,id',
             'city_id' => 'sometimes|required|exists:cities,id',
             'gardens' => 'nullable|array',
             'gardens.*' => 'integer|exists:gardens,id',
         ]);
 
-        if (isset($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
-        }
-
         $dister->update($validated);
         $dister->load(['country', 'city']);
 
         return response()->json($dister);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/disters/{id}/change-password",
+     *     operationId="changeDisterPassword",
+     *     tags={"Disters"},
+     *     summary="Change dister password",
+     *     description="Change the password for a specific distributor",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Dister ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"password"},
+     *             @OA\Property(property="password", type="string", minLength=6, example="newpassword123", description="New password")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Password changed successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Password changed successfully"),
+     *             @OA\Property(property="dister_id", type="integer", example=1)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Dister not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
+     */
+    public function changePassword(Request $request, $id)
+    {
+        $dister = Dister::findOrFail($id);
+
+        $validated = $request->validate([
+            'password' => 'required|string|min:6',
+        ]);
+
+        // Update password in both dister and user tables
+        $dister->update([
+            'password' => Hash::make($validated['password'])
+        ]);
+
+        // Also update the corresponding user account
+        $user = \App\Models\User::where('email', $dister->email)->first();
+        if ($user) {
+            $user->update([
+                'password' => Hash::make($validated['password'])
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Password changed successfully',
+            'dister_id' => $dister->id
+        ]);
     }
 
     /**

@@ -160,6 +160,16 @@
                                         "token": {
                                             "type": "string",
                                             "example": "1|abc123..."
+                                        },
+                                        "garden": {
+                                            "description": "Garden data if user type is garden",
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "dister": {
+                                            "description": "Dister data if user type is dister",
+                                            "type": "object",
+                                            "nullable": true
                                         }
                                     },
                                     "type": "object"
@@ -1926,6 +1936,181 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/cards/{id}/regenerate-code": {
+            "post": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Regenerate card code and reset parent verification",
+                "description": "Generate a new random 6-character code for the specified card and set parent_verification to false",
+                "operationId": "regenerateCardCode",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Card ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Code regenerated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card code regenerated successfully"
+                                        },
+                                        "card": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "child_first_name": {
+                                                    "type": "string",
+                                                    "example": "Giorgi"
+                                                },
+                                                "child_last_name": {
+                                                    "type": "string",
+                                                    "example": "Davitashvili"
+                                                },
+                                                "parent_name": {
+                                                    "type": "string",
+                                                    "example": "Nino Davitashvili"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599123456"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "active"
+                                                },
+                                                "parent_code": {
+                                                    "type": "string",
+                                                    "example": "X7K9M2"
+                                                },
+                                                "parent_verification": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Card not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/cards/{id}/restore": {
+            "post": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Restore deleted card",
+                "description": "Restore a deleted card by setting deleted to false",
+                "operationId": "restoreCard",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Card ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Card restored successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card restored successfully"
+                                        },
+                                        "card": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "child_first_name": {
+                                                    "type": "string",
+                                                    "example": "Giorgi"
+                                                },
+                                                "child_last_name": {
+                                                    "type": "string",
+                                                    "example": "Davitashvili"
+                                                },
+                                                "parent_name": {
+                                                    "type": "string",
+                                                    "example": "Nino Davitashvili"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599123456"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "active"
+                                                },
+                                                "deleted": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Card not found"
                     }
                 },
                 "security": [
@@ -4657,6 +4842,85 @@
                 ]
             }
         },
+        "/api/devices/{id}/regenerate-code": {
+            "post": {
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Regenerate device code",
+                "description": "Generate a new random 6-character code for the specified device",
+                "operationId": "regenerateDeviceCode",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Device ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Code regenerated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Device code regenerated successfully"
+                                        },
+                                        "device": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Device 1"
+                                                },
+                                                "code": {
+                                                    "type": "string",
+                                                    "example": "X7K9M2"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "active"
+                                                },
+                                                "garden_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Device not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/devices/{id}/cards": {
             "get": {
                 "tags": [
@@ -5504,52 +5768,82 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "first_name": {
+                                        "message": {
                                             "type": "string",
-                                            "example": "John"
+                                            "example": "Dister created successfully"
                                         },
-                                        "last_name": {
-                                            "type": "string",
-                                            "example": "Doe"
-                                        },
-                                        "email": {
-                                            "type": "string",
-                                            "example": "john@example.com"
-                                        },
-                                        "phone": {
-                                            "type": "string",
-                                            "example": "+995599123456"
-                                        },
-                                        "country_id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "city_id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "gardens": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "integer"
+                                        "dister": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "first_name": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "last_name": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@example.com"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599123456"
+                                                },
+                                                "country_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "city_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "gardens": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer"
+                                                    },
+                                                    "example": [
+                                                        1,
+                                                        2,
+                                                        3
+                                                    ]
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
                                             },
-                                            "example": [
-                                                1,
-                                                2,
-                                                3
-                                            ]
+                                            "type": "object"
                                         },
-                                        "created_at": {
-                                            "type": "string",
-                                            "format": "date-time"
-                                        },
-                                        "updated_at": {
-                                            "type": "string",
-                                            "format": "date-time"
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@example.com"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "dister"
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -5733,12 +6027,6 @@
                                         "maxLength": 20,
                                         "example": "+995599123456"
                                     },
-                                    "password": {
-                                        "description": "New password (optional)",
-                                        "type": "string",
-                                        "minLength": 6,
-                                        "example": "newpassword123"
-                                    },
                                     "country_id": {
                                         "description": "Country ID",
                                         "type": "integer",
@@ -5878,6 +6166,82 @@
                     },
                     "404": {
                         "description": "Dister not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/disters/{id}/change-password": {
+            "patch": {
+                "tags": [
+                    "Disters"
+                ],
+                "summary": "Change dister password",
+                "description": "Change the password for a specific distributor",
+                "operationId": "changeDisterPassword",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Dister ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "password"
+                                ],
+                                "properties": {
+                                    "password": {
+                                        "description": "New password",
+                                        "type": "string",
+                                        "minLength": 6,
+                                        "example": "newpassword123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password changed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Password changed successfully"
+                                        },
+                                        "dister_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Dister not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
                     }
                 },
                 "security": [
