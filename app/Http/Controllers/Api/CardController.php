@@ -8,6 +8,8 @@ use App\Models\Card;
 use App\Models\CardOtp;
 use App\Services\SmsService;
 use App\Rules\LicenseValueRule;
+use App\Exports\CardsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * @OA\Tag(
@@ -1598,5 +1600,39 @@ class CardController extends Controller
             'message' => 'Login successful',
             'card' => $card
         ]);
+    }
+    
+    /**
+     * @OA\Get(
+     *     path="/api/cards/export",
+     *     operationId="exportCards",
+     *     tags={"Cards"},
+     *     summary="Export cards to Excel",
+     *     description="Download an Excel report of cards. Optionally filter by card IDs. If dister is logged in, export is restricted to their assigned gardens.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="ids", in="query", required=false, description="Comma-separated card IDs or multiple ids[] query params", @OA\Schema(type="string", example="1,2,3")),
+     *     @OA\Response(response=200, description="Excel file")
+     * )
+     */
+    public function export(Request $request)
+    {
+        // Parse requested card IDs
+        $requestedIds = [];
+        $idsParam = $request->query('ids');
+        if (is_string($idsParam)) {
+            $requestedIds = array_values(array_filter(array_map('intval', explode(',', $idsParam))));
+        } elseif (is_array($request->query('ids'))) {
+            $requestedIds = array_values(array_filter(array_map('intval', (array) $request->query('ids'))));
+        }
+
+        // Allowed gardens for dister
+        $allowedGardenIds = [];
+        if ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = array_values(array_filter((array) ($request->user()->gardens ?? []), 'is_numeric'));
+        } elseif ($request->user() && $request->user()->garden_id) {
+            $allowedGardenIds = [(int) $request->user()->garden_id];
+        }
+
+        return Excel::download(new CardsExport($allowedGardenIds, $requestedIds), 'cards.xlsx');
     }
 }

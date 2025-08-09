@@ -184,18 +184,45 @@ class GardenController extends Controller
      *     operationId="exportGardens",
      *     tags={"Gardens"},
      *     summary="Export gardens to Excel",
-     *     description="Download an Excel report of gardens with full information. If dister is logged in, only their assigned gardens are exported.",
+     *     description="Download an Excel report of gardens with full information. Optionally filter by garden IDs. If dister is logged in, export is automatically restricted to their assigned gardens.",
      *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="ids", in="query", required=false, description="Comma-separated garden IDs or multiple ids[] query params", @OA\Schema(type="string", example="37,42")),
      *     @OA\Response(response=200, description="Excel file")
      * )
      */
     public function export(Request $request)
     {
-        $gardenIds = [];
-        if ($request->user() instanceof \App\Models\Dister) {
-            $gardenIds = $request->user()->gardens ?? [];
+        // Parse requested IDs from query: supports ids=1,2,3 or ids[]=1&ids[]=2
+        $requestedIds = [];
+        $idsParam = $request->query('ids');
+        if (is_string($idsParam)) {
+            $requestedIds = array_values(array_filter(array_map('intval', explode(',', $idsParam))));
+        } elseif (is_array($request->query('ids'))) {
+            $requestedIds = array_values(array_filter(array_map('intval', (array) $request->query('ids'))));
         }
-        return Excel::download(new GardensExport($gardenIds), 'gardens.xlsx');
+
+        // If dister, restrict export to their assigned gardens
+        $allowedIds = null;
+        if ($request->user() instanceof \App\Models\Dister) {
+            $allowedIds = array_values(array_filter((array) ($request->user()->gardens ?? []), 'is_numeric'));
+        }
+
+        // Decide final IDs to export
+        $finalIds = [];
+        if (!empty($requestedIds)) {
+            $finalIds = $requestedIds;
+            if (is_array($allowedIds)) {
+                $finalIds = array_values(array_intersect($finalIds, $allowedIds));
+            }
+        } else {
+            if (is_array($allowedIds)) {
+                $finalIds = $allowedIds;
+            } else {
+                $finalIds = [];
+            }
+        }
+
+        return Excel::download(new GardensExport($finalIds), 'gardens.xlsx');
     }
 
     /**
