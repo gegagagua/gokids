@@ -28,8 +28,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     // Dister creation (no authentication required)
     Route::post('/disters', [DisterController::class, 'store']);
     
-    Route::apiResource('gardens', GardenController::class);
-    Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
+    // Gardens: require auth to enforce per-dister filtering
     Route::apiResource('garden-images', GardenImageController::class);
     Route::apiResource('countries', CountryController::class);
     Route::apiResource('cities', CityController::class);
@@ -38,6 +37,8 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
+        Route::apiResource('gardens', GardenController::class);
+        Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
         
         // Dister routes (authenticated)
         Route::apiResource('disters', DisterController::class);
