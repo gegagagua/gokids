@@ -245,6 +245,7 @@ class DisterController extends Controller
                 $creator = $request->user();
                 $disterData['main_dister'] = [
                     'id' => $creator->id,
+                    'email' => $creator->email,
                 ];
             } else {
                 // Fallback: extract bearer token manually (route might not be under auth middleware)
@@ -256,12 +257,12 @@ class DisterController extends Controller
                         if ($tokenable instanceof \App\Models\Dister) {
                             /** @var \App\Models\Dister $creator */
                             $creator = $tokenable;
-                            $disterData['main_dister'] = [ 'id' => $creator->id ];
+                            $disterData['main_dister'] = [ 'id' => $creator->id, 'email' => $creator->email ];
                         } elseif ($tokenable instanceof \App\Models\User && $tokenable->type === 'dister') {
                             // Map user token to corresponding dister by email
                             $creatorDister = \App\Models\Dister::where('email', $tokenable->email)->first();
                             if ($creatorDister) {
-                                $disterData['main_dister'] = [ 'id' => $creatorDister->id ];
+                                $disterData['main_dister'] = [ 'id' => $creatorDister->id, 'email' => $creatorDister->email ];
                             }
                         }
                     }
