@@ -21,6 +21,7 @@ class Dister extends Authenticatable
         'country_id',
         'city_id',
         'gardens',
+        'percent',
     ];
 
     protected $hidden = [
@@ -32,6 +33,7 @@ class Dister extends Authenticatable
         'gardens' => 'array',
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'percent' => 'decimal:2',
     ];
 
     /**

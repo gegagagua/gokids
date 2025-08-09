@@ -40,7 +40,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         
         // Dister routes (authenticated)
-        Route::apiResource('disters', DisterController::class)->except(['store']);
+        Route::apiResource('disters', DisterController::class);
         Route::patch('/disters/{id}/change-password', [DisterController::class, 'changePassword']);
         Route::post('/disters/logout', [DisterController::class, 'logout']);
         Route::get('/disters/profile', [DisterController::class, 'profile']);
