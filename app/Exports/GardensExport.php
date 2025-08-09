@@ -3,15 +3,12 @@
 namespace App\Exports;
 
 use App\Models\Garden;
-use Illuminate\Contracts\Support\Responsable;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
-class GardensExport implements FromCollection, WithHeadings, WithMapping, Responsable
+class GardensExport implements FromCollection, WithHeadings, WithMapping
 {
-    public string $fileName = 'gardens.xlsx';
-
     private array $gardenIds;
 
     public function __construct(array $gardenIds = [])

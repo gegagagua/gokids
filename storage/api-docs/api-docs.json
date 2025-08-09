@@ -7359,6 +7359,26 @@
                 ]
             }
         },
+        "/api/gardens/export": {
+            "get": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Export gardens to Excel",
+                "description": "Download an Excel report of gardens with full information. If dister is logged in, only their assigned gardens are exported.",
+                "operationId": "exportGardens",
+                "responses": {
+                    "200": {
+                        "description": "Excel file"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/gardens/bulk-delete": {
             "delete": {
                 "tags": [
