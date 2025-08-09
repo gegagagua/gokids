@@ -245,24 +245,25 @@ class DisterController extends Controller
                 $creator = $request->user();
                 $disterData['main_dister'] = [
                     'id' => $creator->id,
-                    'first_name' => $creator->first_name,
-                    'last_name' => $creator->last_name,
-                    'email' => $creator->email,
                 ];
             } else {
                 // Fallback: extract bearer token manually (route might not be under auth middleware)
                 $plainToken = $request->bearerToken();
                 if ($plainToken) {
                     $accessToken = PersonalAccessToken::findToken($plainToken);
-                    if ($accessToken && $accessToken->tokenable instanceof \App\Models\Dister) {
-                        /** @var \App\Models\Dister $creator */
-                        $creator = $accessToken->tokenable;
-                        $disterData['main_dister'] = [
-                            'id' => $creator->id,
-                            'first_name' => $creator->first_name,
-                            'last_name' => $creator->last_name,
-                            'email' => $creator->email,
-                        ];
+                    if ($accessToken) {
+                        $tokenable = $accessToken->tokenable;
+                        if ($tokenable instanceof \App\Models\Dister) {
+                            /** @var \App\Models\Dister $creator */
+                            $creator = $tokenable;
+                            $disterData['main_dister'] = [ 'id' => $creator->id ];
+                        } elseif ($tokenable instanceof \App\Models\User && $tokenable->type === 'dister') {
+                            // Map user token to corresponding dister by email
+                            $creatorDister = \App\Models\Dister::where('email', $tokenable->email)->first();
+                            if ($creatorDister) {
+                                $disterData['main_dister'] = [ 'id' => $creatorDister->id ];
+                            }
+                        }
                     }
                 }
             }
