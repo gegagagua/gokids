@@ -37,9 +37,10 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
-        Route::apiResource('gardens', GardenController::class);
+        // Place specific routes before resource to avoid {garden} binding capturing 'export'
         Route::get('/gardens/export', [GardenController::class, 'export']);
         Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
+        Route::apiResource('gardens', GardenController::class);
         
         // Dister routes (authenticated)
         Route::apiResource('disters', DisterController::class);
