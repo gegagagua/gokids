@@ -38,6 +38,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         Route::apiResource('gardens', GardenController::class);
+        Route::get('/gardens/export', [GardenController::class, 'export']);
         Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
         
         // Dister routes (authenticated)

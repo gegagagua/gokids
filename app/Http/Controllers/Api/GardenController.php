@@ -7,6 +7,8 @@ use App\Models\Garden;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Exports\GardensExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 /**
  * @OA\Tag(
@@ -174,6 +176,26 @@ class GardenController extends Controller
         $garden = Garden::with(['city', 'images'])->findOrFail($id);
         $garden->makeVisible('referral_code');
         return $garden;
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/gardens/export",
+     *     operationId="exportGardens",
+     *     tags={"Gardens"},
+     *     summary="Export gardens to Excel",
+     *     description="Download an Excel report of gardens with full information. If dister is logged in, only their assigned gardens are exported.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(response=200, description="Excel file")
+     * )
+     */
+    public function export(Request $request)
+    {
+        $gardenIds = [];
+        if ($request->user() instanceof \App\Models\Dister) {
+            $gardenIds = $request->user()->gardens ?? [];
+        }
+        return Excel::download(new GardensExport($gardenIds), 'gardens.xlsx');
     }
 
     /**
