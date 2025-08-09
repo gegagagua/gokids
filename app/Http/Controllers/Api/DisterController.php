@@ -11,6 +11,7 @@ use App\Models\Garden;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * @OA\Tag(
@@ -53,11 +54,11 @@ class DisterController extends Controller
       *                     @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
-     *                     @OA\Property(property="country", type="object",
+      *                     @OA\Property(property="country", type="object",
      *                         @OA\Property(property="id", type="integer", example=1),
      *                         @OA\Property(property="name", type="string", example="Georgia")
      *                     ),
-     *                     @OA\Property(property="city", type="object",
+      *                     @OA\Property(property="city", type="object",
      *                         @OA\Property(property="id", type="integer", example=1),
      *                         @OA\Property(property="name", type="string", example="Tbilisi")
      *                     )
@@ -238,6 +239,33 @@ class DisterController extends Controller
             // Create Dister
             $disterData = $validated;
             $disterData['password'] = Hash::make($validated['password']);
+
+            // If the creator is an authenticated dister, store creator info in main_dister
+            if ($request->user() instanceof \App\Models\Dister) {
+                $creator = $request->user();
+                $disterData['main_dister'] = [
+                    'id' => $creator->id,
+                    'first_name' => $creator->first_name,
+                    'last_name' => $creator->last_name,
+                    'email' => $creator->email,
+                ];
+            } else {
+                // Fallback: extract bearer token manually (route might not be under auth middleware)
+                $plainToken = $request->bearerToken();
+                if ($plainToken) {
+                    $accessToken = PersonalAccessToken::findToken($plainToken);
+                    if ($accessToken && $accessToken->tokenable instanceof \App\Models\Dister) {
+                        /** @var \App\Models\Dister $creator */
+                        $creator = $accessToken->tokenable;
+                        $disterData['main_dister'] = [
+                            'id' => $creator->id,
+                            'first_name' => $creator->first_name,
+                            'last_name' => $creator->last_name,
+                            'email' => $creator->email,
+                        ];
+                    }
+                }
+            }
             
             $dister = Dister::create($disterData);
             $dister->load(['country', 'city']);

@@ -22,11 +22,13 @@ class Dister extends Authenticatable
         'city_id',
         'gardens',
         'percent',
+        'main_dister',
     ];
 
     protected $hidden = [
         'password',
         'remember_token',
+        'main_dister',
     ];
 
     protected $casts = [
@@ -34,6 +36,7 @@ class Dister extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'percent' => 'decimal:2',
+        'main_dister' => 'array',
     ];
 
     /**

@@ -75,6 +75,16 @@ class GardenController extends Controller
     {
         $query = Garden::with(['city', 'images']);
 
+        // If logged-in user is a dister, restrict to their assigned gardens
+        if ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            if (empty($allowedGardenIds)) {
+                // Return empty when no gardens assigned
+                return $query->whereRaw('1 = 0')->paginate($request->query('per_page', 15));
+            }
+            $query->whereIn('id', $allowedGardenIds);
+        }
+
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->query('name') . '%');
         }
@@ -153,6 +163,14 @@ class GardenController extends Controller
      */
     public function show($id)
     {
+        // Restrict dister to only their gardens
+        if (request()->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = request()->user()->gardens ?? [];
+            if (!in_array((int)$id, $allowedGardenIds, true)) {
+                return response()->json(['message' => 'Forbidden'], 403);
+            }
+        }
+
         $garden = Garden::with(['city', 'images'])->findOrFail($id);
         $garden->makeVisible('referral_code');
         return $garden;

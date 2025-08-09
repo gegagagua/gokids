@@ -113,6 +113,16 @@ class CardController extends Controller
                     $q->where('garden_id', $garden->id);
                 });
             }
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            if (!empty($allowedGardenIds)) {
+                $query->whereHas('group', function ($q) use ($allowedGardenIds) {
+                    $q->whereIn('garden_id', $allowedGardenIds);
+                });
+            } else {
+                // Return empty result if no gardens assigned
+                return $query->whereRaw('1 = 0')->paginate($request->query('per_page', 15));
+            }
         }
         
         if ($request->filled('search')) {
@@ -242,12 +252,21 @@ class CardController extends Controller
             }
         ]);
         
-        // Filter by garden_id if authenticated user is a garden user
+        // Filter by garden if authenticated garden user or dister user
         if ($request->user() && $request->user()->garden_id) {
             $gardenId = $request->user()->garden_id;
             $query->whereHas('group', function ($q) use ($gardenId) {
                 $q->where('garden_id', $gardenId);
             });
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            if (!empty($allowedGardenIds)) {
+                $query->whereHas('group', function ($q) use ($allowedGardenIds) {
+                    $q->whereIn('garden_id', $allowedGardenIds);
+                });
+            } else {
+                return response()->json(['message' => 'Forbidden'], 403);
+            }
         }
         
         $card = $query->findOrFail($id);
@@ -383,6 +402,14 @@ class CardController extends Controller
                     return response()->json(['message' => 'Group does not belong to your garden'], 403);
                 }
             }
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            $group = \App\Models\GardenGroup::where('id', $validated['group_id'])
+                ->whereIn('garden_id', $allowedGardenIds)
+                ->first();
+            if (!$group) {
+                return response()->json(['message' => 'Group does not belong to your allowed gardens'], 403);
+            }
         }
 
         $card = Card::create($validated);
@@ -476,11 +503,16 @@ class CardController extends Controller
     {
         $query = Card::query();
         
-        // Filter by garden_id if authenticated user is a garden user
+        // Filter by garden if authenticated garden user or dister user
         if ($request->user() && $request->user()->garden_id) {
             $gardenId = $request->user()->garden_id;
             $query->whereHas('group', function ($q) use ($gardenId) {
                 $q->where('garden_id', $gardenId);
+            });
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            $query->whereHas('group', function ($q) use ($allowedGardenIds) {
+                $q->whereIn('garden_id', $allowedGardenIds);
             });
         }
         
@@ -509,6 +541,14 @@ class CardController extends Controller
             
             if (!$group) {
                 return response()->json(['message' => 'Group does not belong to your garden'], 403);
+            }
+        } elseif ($request->user() instanceof \App\Models\Dister && isset($validated['group_id'])) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            $group = \App\Models\GardenGroup::where('id', $validated['group_id'])
+                ->whereIn('garden_id', $allowedGardenIds)
+                ->first();
+            if (!$group) {
+                return response()->json(['message' => 'Group does not belong to your allowed gardens'], 403);
             }
         }
 
@@ -774,11 +814,16 @@ class CardController extends Controller
     {
         $query = Card::query();
         
-        // Filter by garden_id if authenticated user is a garden user
+        // Filter by garden if authenticated garden user or dister user
         if ($request->user() && $request->user()->garden_id) {
             $gardenId = $request->user()->garden_id;
             $query->whereHas('group', function ($q) use ($gardenId) {
                 $q->where('garden_id', $gardenId);
+            });
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            $query->whereHas('group', function ($q) use ($allowedGardenIds) {
+                $q->whereIn('garden_id', $allowedGardenIds);
             });
         }
         
@@ -829,7 +874,20 @@ class CardController extends Controller
      */
     public function regenerateCode(Request $request, $id)
     {
-        $card = Card::findOrFail($id);
+        // Enforce access for garden and dister users
+        $query = Card::query();
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
+            $query->whereHas('group', function ($q) use ($gardenId) {
+                $q->where('garden_id', $gardenId);
+            });
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            $query->whereHas('group', function ($q) use ($allowedGardenIds) {
+                $q->whereIn('garden_id', $allowedGardenIds);
+            });
+        }
+        $card = $query->findOrFail($id);
         
         // Generate new unique code
         do {
@@ -895,7 +953,19 @@ class CardController extends Controller
      */
     public function restore(Request $request, $id)
     {
-        $card = Card::findOrFail($id);
+        $query = Card::query();
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
+            $query->whereHas('group', function ($q) use ($gardenId) {
+                $q->where('garden_id', $gardenId);
+            });
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            $query->whereHas('group', function ($q) use ($allowedGardenIds) {
+                $q->whereIn('garden_id', $allowedGardenIds);
+            });
+        }
+        $card = $query->findOrFail($id);
         
         $card->deleted = false;
         $card->save();
@@ -962,11 +1032,16 @@ class CardController extends Controller
 
         $query = Card::whereIn('id', $ids);
         
-        // Filter by garden_id if authenticated user is a garden user
+        // Filter by garden if authenticated garden user or dister user
         if ($request->user() && $request->user()->garden_id) {
             $gardenId = $request->user()->garden_id;
             $query->whereHas('group', function ($q) use ($gardenId) {
                 $q->where('garden_id', $gardenId);
+            });
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            $query->whereHas('group', function ($q) use ($allowedGardenIds) {
+                $q->whereIn('garden_id', $allowedGardenIds);
             });
         }
 
@@ -1029,11 +1104,16 @@ class CardController extends Controller
     {
         $query = Card::query();
         
-        // Filter by garden_id if authenticated user is a garden user
+        // Filter by garden for authenticated garden or dister users
         if ($request->user() && $request->user()->garden_id) {
             $gardenId = $request->user()->garden_id;
             $query->whereHas('group', function ($q) use ($gardenId) {
                 $q->where('garden_id', $gardenId);
+            });
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            $query->whereHas('group', function ($q) use ($allowedGardenIds) {
+                $q->whereIn('garden_id', $allowedGardenIds);
             });
         }
         
@@ -1149,6 +1229,13 @@ class CardController extends Controller
                     'message' => 'Group does not belong to your garden'
                 ], 403);
             }
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            if (!in_array($targetGroup->garden_id, $allowedGardenIds, true)) {
+                return response()->json([
+                    'message' => 'Group does not belong to your allowed gardens'
+                ], 403);
+            }
         }
 
         // Get cards that belong to user's garden (if garden user)
@@ -1157,6 +1244,11 @@ class CardController extends Controller
             $gardenId = $request->user()->garden_id;
             $query->whereHas('group', function ($q) use ($gardenId) {
                 $q->where('garden_id', $gardenId);
+            });
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            $query->whereHas('group', function ($q) use ($allowedGardenIds) {
+                $q->whereIn('garden_id', $allowedGardenIds);
             });
         }
 
