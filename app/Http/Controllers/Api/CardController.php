@@ -1284,9 +1284,8 @@ class CardController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"phone", "parent_code"},
-     *             @OA\Property(property="phone", type="string", example="+995599123456", description="Phone number associated with the card"),
-     *             @OA\Property(property="parent_code", type="string", example="K9M2P5", description="Parent access code for the card")
+     *             required={"phone"},
+     *             @OA\Property(property="phone", type="string", example="+995599123456", description="Phone number associated with the card")
      *         )
      *     ),
      *     @OA\Response(
@@ -1303,7 +1302,7 @@ class CardController extends Controller
      *         description="Invalid credentials",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="Invalid phone number or parent code")
+     *             @OA\Property(property="message", type="string", example="Invalid phone number")
      *         )
      *     ),
      *     @OA\Response(
@@ -1316,7 +1315,7 @@ class CardController extends Controller
      *                 property="errors",
      *                 type="object",
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="parent_code", type="array", @OA\Items(type="string"))
+     *
      *             )
      *         )
      *     )
@@ -1493,8 +1492,8 @@ class CardController extends Controller
      *     path="/api/cards/login",
      *     operationId="cardLogin",
      *     tags={"Cards"},
-     *     summary="Card login with phone and parent code (direct)",
-     *     description="Authenticate a card using phone number and parent code directly, returns the complete card object if credentials match",
+     *     summary="Card login with phone number",
+     *     description="Authenticate a card using phone number and automatically send OTP",
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
