@@ -77,6 +77,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
 
     // Card login routes (no authentication required)
     Route::post('/cards/login', [CardController::class, 'login']);
+    Route::post('/cards/login-with-parent-code', [CardController::class, 'loginWithParentCode']);
     Route::post('/cards/send-otp', [CardController::class, 'sendOtp']);
     Route::post('/cards/verify-otp', [CardController::class, 'verifyOtp']);
 });

@@ -795,7 +795,6 @@
                                     "child_last_name",
                                     "parent_name",
                                     "phone",
-                                    "status",
                                     "group_id"
                                 ],
                                 "properties": {
@@ -2438,19 +2437,13 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "phone",
-                                    "parent_code"
+                                    "phone"
                                 ],
                                 "properties": {
                                     "phone": {
                                         "description": "Phone number associated with the card",
                                         "type": "string",
                                         "example": "+995599123456"
-                                    },
-                                    "parent_code": {
-                                        "description": "Parent access code for the card",
-                                        "type": "string",
-                                        "example": "K9M2P5"
                                     }
                                 },
                                 "type": "object"
@@ -2487,7 +2480,7 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Invalid phone number or parent code"
+                                            "example": "Invalid phone number"
                                         }
                                     },
                                     "type": "object"
@@ -2508,12 +2501,6 @@
                                         "errors": {
                                             "properties": {
                                                 "phone": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "parent_code": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -2777,8 +2764,8 @@
                 "tags": [
                     "Cards"
                 ],
-                "summary": "Card login with phone and parent code (direct)",
-                "description": "Authenticate a card using phone number and parent code directly, returns the complete card object if credentials match",
+                "summary": "Card login with phone number",
+                "description": "Authenticate a card using phone number and automatically send OTP",
                 "operationId": "cardLogin",
                 "requestBody": {
                     "required": true,
@@ -2786,19 +2773,13 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "phone",
-                                    "parent_code"
+                                    "phone"
                                 ],
                                 "properties": {
                                     "phone": {
                                         "description": "Phone number associated with the card",
                                         "type": "string",
                                         "example": "+995599123456"
-                                    },
-                                    "parent_code": {
-                                        "description": "Parent access code for the card",
-                                        "type": "string",
-                                        "example": "K9M2P5"
                                     }
                                 },
                                 "type": "object"
@@ -2969,7 +2950,7 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Invalid phone number or parent code"
+                                            "example": "Invalid phone number"
                                         }
                                     },
                                     "type": "object"
@@ -2994,7 +2975,230 @@
                                                     "items": {
                                                         "type": "string"
                                                     }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/cards/login-with-parent-code": {
+            "post": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Card login with parent code",
+                "description": "Authenticate a card using parent code and return full card details",
+                "operationId": "cardLoginWithParentCode",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "parent_code"
+                                ],
+                                "properties": {
+                                    "parent_code": {
+                                        "description": "Parent access code for the card",
+                                        "type": "string",
+                                        "example": "K9M2P5"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login successful"
+                                        },
+                                        "card": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
                                                 },
+                                                "child_first_name": {
+                                                    "type": "string",
+                                                    "example": "Giorgi"
+                                                },
+                                                "child_last_name": {
+                                                    "type": "string",
+                                                    "example": "Davitashvili"
+                                                },
+                                                "parent_name": {
+                                                    "type": "string",
+                                                    "example": "Nino Davitashvili"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599123456"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "active"
+                                                },
+                                                "group_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "person_type_id": {
+                                                    "type": "integer",
+                                                    "example": 1,
+                                                    "nullable": true
+                                                },
+                                                "parent_code": {
+                                                    "type": "string",
+                                                    "example": "K9M2P5",
+                                                    "nullable": true
+                                                },
+                                                "image_path": {
+                                                    "type": "string",
+                                                    "example": "cards/abc123.jpg",
+                                                    "nullable": true
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "group": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Group A"
+                                                        },
+                                                        "garden_id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "personType": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Parent"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "parents": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "ნინო დავითაშვილი"
+                                                            },
+                                                            "phone": {
+                                                                "type": "string",
+                                                                "example": "+995599123456"
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "example": "nino@example.com"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "people": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "გიორგი დავითაშვილი"
+                                                            },
+                                                            "phone": {
+                                                                "type": "string",
+                                                                "example": "+995599123456"
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "example": "giorgi@example.com"
+                                                            },
+                                                            "relationship": {
+                                                                "type": "string",
+                                                                "example": "მამა"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid parent code",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid parent code"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
                                                 "parent_code": {
                                                     "type": "array",
                                                     "items": {
@@ -3011,6 +3215,38 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/cards/export": {
+            "get": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Export cards to Excel",
+                "description": "Download an Excel report of cards. Optionally filter by card IDs. If dister is logged in, export is restricted to their assigned gardens.",
+                "operationId": "exportCards",
+                "parameters": [
+                    {
+                        "name": "ids",
+                        "in": "query",
+                        "description": "Comma-separated card IDs or multiple ids[] query params",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "1,2,3"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Excel file"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/cities": {
@@ -7365,8 +7601,20 @@
                     "Gardens"
                 ],
                 "summary": "Export gardens to Excel",
-                "description": "Download an Excel report of gardens with full information. If dister is logged in, only their assigned gardens are exported.",
+                "description": "Download an Excel report of gardens with full information. Optionally filter by garden IDs. If dister is logged in, export is automatically restricted to their assigned gardens.",
                 "operationId": "exportGardens",
+                "parameters": [
+                    {
+                        "name": "ids",
+                        "in": "query",
+                        "description": "Comma-separated garden IDs or multiple ids[] query params",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "37,42"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Excel file"
