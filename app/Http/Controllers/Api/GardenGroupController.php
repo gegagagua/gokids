@@ -73,6 +73,15 @@ class GardenGroupController extends Controller
             } else {
                 return collect([]);
             }
+        } elseif ($user instanceof \App\Models\User && $user->type === 'dister') {
+            $dister = \App\Models\Dister::where('email', $user->email)->first();
+            $allowedGardenIds = $dister->gardens ?? [];
+            if (!empty($allowedGardenIds)) {
+                $query->whereIn('garden_id', $allowedGardenIds);
+            } else {
+                // Return empty when no gardens assigned
+                return collect([]);
+            }
         } else if ($request->filled('garden_id')) {
             $query->where('garden_id', $request->query('garden_id'));
         }
