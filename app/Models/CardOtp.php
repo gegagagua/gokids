@@ -34,7 +34,7 @@ class CardOtp extends Model
         return str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     }
 
-    public static function createOtp($phone)
+    public static function createOtp($phone, $expiresInMinutes = 5)
     {
         // Invalidate any existing OTPs for this phone
         self::where('phone', $phone)->update(['used' => true]);
@@ -42,7 +42,7 @@ class CardOtp extends Model
         return self::create([
             'phone' => $phone,
             'otp' => self::generateOtp(),
-            'expires_at' => Carbon::now()->addMinutes(5), // OTP expires in 5 minutes
+            'expires_at' => Carbon::now()->addMinutes($expiresInMinutes),
             'used' => false,
         ]);
     }

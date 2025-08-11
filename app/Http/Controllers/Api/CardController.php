@@ -1592,15 +1592,19 @@ class CardController extends Controller
         }
 
         // Automatically send OTP
-        $otp = \App\Models\CardOtp::create([
-            'card_id' => $card->id,
-            'otp' => str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT),
-            'expires_at' => now()->addMinutes(10),
-        ]);
+        $otp = \App\Models\CardOtp::createOtp($request->phone);
 
         // Send OTP via SMS
         $smsService = new \App\Services\SmsService();
-        $smsService->sendSms($card->phone, "Your OTP code is: {$otp->otp}");
+        $smsResult = $smsService->sendOtp($card->phone, $otp->otp);
+
+        if (!$smsResult['success']) {
+            // If SMS fails, delete the OTP and return error
+            $otp->delete();
+            return response()->json([
+                'message' => 'Failed to send OTP. Please try again.'
+            ], 500);
+        }
 
         return response()->json([
             'message' => 'OTP sent successfully',
