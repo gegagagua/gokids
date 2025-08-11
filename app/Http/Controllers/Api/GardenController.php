@@ -78,7 +78,7 @@ class GardenController extends Controller
         $query = Garden::with(['city', 'images']);
 
         // If logged-in user is a dister, restrict to their assigned gardens
-        if ($request->user() instanceof \App\Models\Dister) {
+        if ($request->user() instanceof \App\Models\User && $request->user()->type === 'dister') {
             $dister = \App\Models\Dister::where('email', $request->user()->email)->first();
             $allowedGardenIds = $dister->gardens ?? [];
             if (empty($allowedGardenIds)) {
