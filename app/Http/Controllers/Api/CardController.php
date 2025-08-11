@@ -298,7 +298,7 @@ class CardController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"child_first_name", "child_last_name", "parent_name", "phone", "status", "group_id"},
+     *             required={"child_first_name", "child_last_name", "parent_name", "phone", "group_id"},
      *             @OA\Property(property="child_first_name", type="string", maxLength=255, example="Giorgi", description="Child's first name"),
      *             @OA\Property(property="child_last_name", type="string", maxLength=255, example="Davitashvili", description="Child's last name"),
      *             @OA\Property(property="parent_name", type="string", maxLength=255, example="Nino Davitashvili", description="Parent's full name"),
