@@ -1592,7 +1592,7 @@ class CardController extends Controller
         }
 
         // Automatically send OTP
-        $otp = \App\Models\CardOtp::createOtp($request->phone);
+        $otp = \App\Models\CardOtp::createOtp($request->phone, 10);
 
         // Send OTP via SMS
         $smsService = new \App\Services\SmsService();
