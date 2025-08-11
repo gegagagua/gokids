@@ -118,6 +118,8 @@ class CardController extends Controller
         } elseif ($request->user() instanceof \App\Models\Dister) {
             $dister = \App\Models\Dister::where('email', $request->user()->email)->first();
             $allowedGardenIds = $dister->gardens ?? [];
+            print_r($allowedGardenIds);
+            die();
             if (!empty($allowedGardenIds)) {
                 $query->whereHas('group', function ($q) use ($allowedGardenIds) {
                     $q->whereIn('garden_id', $allowedGardenIds);
