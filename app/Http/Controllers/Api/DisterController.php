@@ -82,6 +82,17 @@ class DisterController extends Controller
     {
         $query = Dister::with(['country', 'city']);
         
+        // If logged-in user is a dister, restrict to only their child disters
+        if ($request->user() instanceof \App\Models\User && $request->user()->type === 'dister') {
+            $currentDister = \App\Models\Dister::where('email', $request->user()->email)->first();
+            if ($currentDister) {
+                $query->where('parent_id', $currentDister->id);
+            } else {
+                // Return empty if dister not found
+                return $query->whereRaw('1 = 0')->paginate($request->query('per_page', 15));
+            }
+        }
+        
         if ($request->filled('search')) {
             $search = $request->query('search');
             $query->where(function ($q) use ($search) {
