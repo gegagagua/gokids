@@ -1326,17 +1326,15 @@ class CardController extends Controller
     {
         $request->validate([
             'phone' => 'required|string|max:255',
-            'parent_code' => 'required|string|max:255',
+
         ]);
 
-        // First verify the card exists with these credentials
-        $card = Card::where('phone', $request->phone)
-            ->where('parent_code', $request->parent_code)
-            ->first();
+        // First verify the card exists with this phone number
+        $card = Card::where('phone', $request->phone)->first();
 
         if (!$card) {
             return response()->json([
-                'message' => 'Invalid phone number or parent code'
+                'message' => 'Invalid phone number'
             ], 401);
         }
 
@@ -1583,23 +1581,33 @@ class CardController extends Controller
     {
         $request->validate([
             'phone' => 'required|string|max:255',
-            'parent_code' => 'required|string|max:255',
         ]);
 
         $card = Card::with(['group', 'personType', 'parents', 'people'])
             ->where('phone', $request->phone)
-            ->where('parent_code', $request->parent_code)
             ->first();
 
         if (!$card) {
             return response()->json([
-                'message' => 'Invalid phone number or parent code'
+                'message' => 'Invalid phone number'
             ], 401);
         }
 
+        // Automatically send OTP
+        $otp = \App\Models\CardOtp::create([
+            'card_id' => $card->id,
+            'otp' => str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT),
+            'expires_at' => now()->addMinutes(10),
+        ]);
+
+        // Send OTP via SMS
+        $smsService = new \App\Services\SmsService();
+        $smsService->sendSms($card->phone, "Your OTP code is: {$otp->otp}");
+
         return response()->json([
-            'message' => 'Login successful',
-            'card' => $card
+            'message' => 'OTP sent successfully',
+            'card_id' => $card->id,
+            'phone' => $card->phone
         ]);
     }
     
