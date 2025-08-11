@@ -79,7 +79,8 @@ class GardenController extends Controller
 
         // If logged-in user is a dister, restrict to their assigned gardens
         if ($request->user() instanceof \App\Models\Dister) {
-            $allowedGardenIds = $request->user()->gardens ?? [];
+            $dister = \App\Models\Dister::where('email', $request->user()->email)->first();
+            $allowedGardenIds = $dister->gardens ?? [];
             if (empty($allowedGardenIds)) {
                 // Return empty when no gardens assigned
                 return $query->whereRaw('1 = 0')->paginate($request->query('per_page', 15));
