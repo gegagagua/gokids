@@ -86,7 +86,8 @@ class DisterController extends Controller
         if ($request->user() instanceof \App\Models\User && $request->user()->type === 'dister') {
             $currentDister = \App\Models\Dister::where('email', $request->user()->email)->first();
             if ($currentDister) {
-                $query->where('parent_id', $currentDister->id);
+                // Look for disters where current dister is in the main_dister array
+                $query->whereJsonContains('main_dister', ['id' => $currentDister->id]);
             } else {
                 // Return empty if dister not found
                 return $query->whereRaw('1 = 0')->paginate($request->query('per_page', 15));
