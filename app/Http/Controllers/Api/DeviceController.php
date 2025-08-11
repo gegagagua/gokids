@@ -75,6 +75,15 @@ class DeviceController extends Controller
                 $userGardenId = $garden->id;
                 $query->where('garden_id', $userGardenId);
             }
+        } elseif ($user instanceof \App\Models\User && $user->type === 'dister') {
+            $dister = \App\Models\Dister::where('email', $user->email)->first();
+            $allowedGardenIds = $dister->gardens ?? [];
+            if (!empty($allowedGardenIds)) {
+                $query->whereIn('garden_id', $allowedGardenIds);
+            } else {
+                // Return empty when no gardens assigned
+                return $query->whereRaw('1 = 0')->paginate($request->query('per_page', 15));
+            }
         } else {
             // For admin users, allow filtering by garden_id if provided
             if ($request->filled('garden_id')) {
