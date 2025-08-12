@@ -1472,7 +1472,7 @@ class CardController extends Controller
         $otpRecord->update(['used' => true]);
 
         // Get all cards with this phone number
-        $cards = Card::with(['group', 'personType', 'parents', 'people'])
+        $cards = Card::with(['group.garden', 'personType', 'parents', 'people'])
             ->where('phone', $request->phone)
             ->get();
 
