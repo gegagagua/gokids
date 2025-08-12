@@ -1422,6 +1422,7 @@ class CardController extends Controller
      *                     )
      *                 )
      *             )
+     * )
      *         )
      *     ),
      *     @OA\Response(
