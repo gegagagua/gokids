@@ -1624,8 +1624,9 @@ class CardController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"parent_code"},
-     *             @OA\Property(property="parent_code", type="string", example="K9M2P5", description="Parent access code for the card")
+     *             required={"parent_code", "phone"},
+     *             @OA\Property(property="parent_code", type="string", example="K9M2P5", description="Parent access code for the card"),
+     *             @OA\Property(property="phone", type="string", example="+995599123456", description="Phone number associated with the card")
      *         )
      *     ),
      *     @OA\Response(
@@ -1680,10 +1681,10 @@ class CardController extends Controller
      *     ),
      *     @OA\Response(
      *         response=401,
-     *         description="Invalid parent code",
+     *         description="Invalid credentials",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="Invalid parent code")
+     *             @OA\Property(property="message", type="string", example="Invalid parent code or phone number")
      *         )
      *     ),
      *     @OA\Response(
@@ -1695,7 +1696,8 @@ class CardController extends Controller
      *             @OA\Property(
      *                 property="errors",
      *                 type="object",
-     *                 @OA\Property(property="parent_code", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(property="parent_code", type="array", @OA\Items(type="string")),
+                 @OA\Property(property="phone", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     )
@@ -1705,15 +1707,17 @@ class CardController extends Controller
     {
         $request->validate([
             'parent_code' => 'required|string|max:255',
+            'phone' => 'required|string|max:255',
         ]);
 
-        $card = Card::with(['group', 'personType', 'parents', 'people'])
+        $card = Card::with(['group.garden', 'personType', 'parents', 'people'])
             ->where('parent_code', $request->parent_code)
+            ->where('phone', $request->phone)
             ->first();
 
         if (!$card) {
             return response()->json([
-                'message' => 'Invalid parent code'
+                'message' => 'Invalid parent code or phone number'
             ], 401);
         }
 
