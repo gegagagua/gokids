@@ -885,6 +885,91 @@ class DeviceController extends Controller
         
         return response()->json($card);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/devices/login",
+     *     operationId="deviceLogin",
+     *     tags={"Devices"},
+     *     summary="Device login with code",
+     *     description="Authenticate a device using its unique code and return device information",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"code"},
+     *             @OA\Property(property="code", type="string", example="X7K9M2", description="6-character unique device code")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Device login successful"),
+     *             @OA\Property(property="device", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Device 1"),
+     *                 @OA\Property(property="code", type="string", example="X7K9M2"),
+     *                 @OA\Property(property="status", type="string", enum={"active","inactive"}, example="active"),
+     *                 @OA\Property(property="garden_id", type="integer", example=1),
+     *                 @OA\Property(property="garden_groups", type="array", @OA\Items(type="integer"), example={1,2,3}),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(property="garden", type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Garden Name"),
+     *                     @OA\Property(property="address", type="string", example="Garden Address"),
+     *                     @OA\Property(property="email", type="string", example="garden@example.com"),
+     *                     @OA\Property(property="phone", type="string", example="+995599123456")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid device code",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid device code")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="code", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function deviceLogin(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|size:6',
+        ]);
+
+        $device = Device::with(['garden'])
+            ->where('code', $request->code)
+            ->where('status', 'active')
+            ->first();
+
+        if (!$device) {
+            return response()->json([
+                'message' => 'Invalid device code or device is inactive'
+            ], 401);
+        }
+
+        return response()->json([
+            'message' => 'Device login successful',
+            'device' => $device
+        ]);
+    }
 }
 
 /**
