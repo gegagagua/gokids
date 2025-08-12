@@ -1364,7 +1364,7 @@ class CardController extends Controller
      *     operationId="verifyCardOtp",
      *     tags={"Cards"},
      *     summary="Verify OTP and login",
-     *     description="Verify OTP and return the complete card object if valid",
+     *     description="Verify OTP and return all cards associated with the phone number if valid",
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -1379,7 +1379,8 @@ class CardController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="message", type="string", example="Login successful"),
-     *             @OA\Property(property="card", type="object",
+     *             @OA\Property(property="cards", type="array", @OA\Items(
+     *                 type="object",
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="child_first_name", type="string", example="Giorgi"),
      *                 @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
@@ -1470,20 +1471,20 @@ class CardController extends Controller
         // Mark OTP as used
         $otpRecord->update(['used' => true]);
 
-        // Get the card data
-        $card = Card::with(['group', 'personType', 'parents', 'people'])
+        // Get all cards with this phone number
+        $cards = Card::with(['group', 'personType', 'parents', 'people'])
             ->where('phone', $request->phone)
-            ->first();
+            ->get();
 
-        if (!$card) {
+        if ($cards->isEmpty()) {
             return response()->json([
-                'message' => 'Card not found'
+                'message' => 'No cards found for this phone number'
             ], 404);
         }
 
         return response()->json([
             'message' => 'Login successful',
-            'card' => $card
+            'cards' => $cards
         ]);
     }
 
