@@ -15,6 +15,7 @@ class Garden extends Model
         'email',
         'password',
         'referral_code',
+        'referral',
     ];
 
     protected $hidden = ['password'];
