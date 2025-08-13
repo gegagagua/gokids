@@ -98,7 +98,7 @@ class AuthController extends Controller
      *             ),
      *             @OA\Property(property="token", type="string", example="1|abc123..."),
      *             @OA\Property(property="garden", type="object", nullable=true, description="Garden data if user type is garden"),
-     *             @OA\Property(property="dister", type="object", nullable=true, description="Dister data if user type is dister")
+     *             @OA\Property(property="dister", type="object", nullable=true, description="Dister data if user type is dister or if garden user has assigned dister")
      *         )
      *     ),
      *     @OA\Response(response=401, description="Invalid credentials")
@@ -133,6 +133,13 @@ class AuthController extends Controller
             $garden = \App\Models\Garden::with(['city', 'images'])->where('email', $user->email)->first();
             if ($garden) {
                 $response['garden'] = $garden;
+                
+                // Find dister who has access to this garden
+                $dister = \App\Models\Dister::whereJsonContains('gardens', $garden->id)->first();
+                if ($dister) {
+                    $dister->load(['country', 'city']);
+                    $response['dister'] = $dister;
+                }
             }
         } elseif ($user->type === 'dister') {
             $dister = \App\Models\Dister::with(['country', 'city'])->where('email', $user->email)->first();

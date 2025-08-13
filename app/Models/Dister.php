@@ -78,4 +78,23 @@ class Dister extends Authenticatable
     {
         return 'id';
     }
+
+    /**
+     * Find dister by garden email
+     */
+    public static function findByGardenEmail($email)
+    {
+        return static::whereJsonContains('gardens', ['email' => $email])->first();
+    }
+
+    /**
+     * Check if dister has access to specific garden
+     */
+    public function hasGardenAccess($gardenId)
+    {
+        if (is_array($this->gardens)) {
+            return in_array($gardenId, $this->gardens);
+        }
+        return false;
+    }
 }

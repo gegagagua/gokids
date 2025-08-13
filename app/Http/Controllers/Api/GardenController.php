@@ -356,7 +356,8 @@ class GardenController extends Controller
      *             @OA\Property(property="city_id", type="integer", example=2, description="ID of the associated city"),
      *             @OA\Property(property="phone", type="string", maxLength=255, example="+995599111222", description="Contact phone number"),
      *             @OA\Property(property="email", type="string", format="email", example="updated@garden.ge", description="Contact email address"),
-     *             @OA\Property(property="password", type="string", minLength=6, example="newpassword123", description="Garden access password")
+     *             @OA\Property(property="password", type="string", minLength=6, example="newpassword123", description="Garden access password"),
+     *             @OA\Property(property="referral", type="string", example="REF123", nullable=true, description="Optional referral code")
      *         )
      *     ),
      *     @OA\Response(
@@ -371,6 +372,7 @@ class GardenController extends Controller
      *             @OA\Property(property="city_id", type="integer", example=2),
      *             @OA\Property(property="phone", type="string", example="+995599111222"),
      *             @OA\Property(property="email", type="string", example="updated@garden.ge"),
+     *             @OA\Property(property="referral", type="string", example="REF123", nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -396,7 +398,8 @@ class GardenController extends Controller
      *                 @OA\Property(property="city_id", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="email", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="password", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(property="password", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="referral", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     )
@@ -414,6 +417,7 @@ class GardenController extends Controller
             'phone' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:gardens,email,' . $id,
             'password' => 'sometimes|required|string|min:6',
+            'referral' => 'nullable|string|max:255',
         ]);
 
         // Hash the password if it's being updated
