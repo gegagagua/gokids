@@ -7000,6 +7000,12 @@
                                         "type": "string",
                                         "minLength": 6,
                                         "example": "password123"
+                                    },
+                                    "referral": {
+                                        "description": "Optional referral code",
+                                        "type": "string",
+                                        "example": "REF123",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"

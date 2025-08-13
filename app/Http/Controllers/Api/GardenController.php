@@ -244,7 +244,8 @@ class GardenController extends Controller
      *             @OA\Property(property="city_id", type="integer", example=1, description="ID of the associated city"),
      *             @OA\Property(property="phone", type="string", maxLength=255, example="+995599654321", description="Contact phone number"),
      *             @OA\Property(property="email", type="string", format="email", example="newgarden@garden.ge", description="Contact email address"),
-     *             @OA\Property(property="password", type="string", minLength=6, example="password123", description="Garden access password")
+     *             @OA\Property(property="password", type="string", minLength=6, example="password123", description="Garden access password"),
+             @OA\Property(property="referral", type="string", example="REF123", nullable=true, description="Optional referral code")
      *         )
      *     ),
      *     @OA\Response(
@@ -302,6 +303,7 @@ class GardenController extends Controller
             'phone' => 'required|string|max:255',
             'email' => 'required|email|unique:gardens,email|unique:users,email',
             'password' => 'required|string|min:6',
+            'referral' => 'nullable|string|max:255',
         ]);
 
         // Create user for the garden
