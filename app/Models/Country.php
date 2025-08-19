@@ -9,6 +9,7 @@ class Country extends Model
     protected $fillable = [
         'name',
         'tariff',
+        'dister',
     ];
 
     protected $casts = [
@@ -18,6 +19,14 @@ class Country extends Model
     public function cities()
     {
         return $this->hasMany(City::class);
+    }
+
+    /**
+     * Get the dister that owns the country.
+     */
+    public function dister()
+    {
+        return $this->belongsTo(Dister::class);
     }
 
     /**

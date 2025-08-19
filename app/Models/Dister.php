@@ -64,6 +64,14 @@ class Dister extends Authenticatable
     }
 
     /**
+     * Get the countries associated with the dister.
+     */
+    public function countries()
+    {
+        return $this->hasMany(Country::class);
+    }
+
+    /**
      * Get the full name of the dister.
      */
     public function getFullNameAttribute()

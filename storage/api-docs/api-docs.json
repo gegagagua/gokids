@@ -167,7 +167,7 @@
                                             "nullable": true
                                         },
                                         "dister": {
-                                            "description": "Dister data if user type is dister",
+                                            "description": "Dister data if user type is dister or if garden user has assigned dister",
                                             "type": "object",
                                             "nullable": true
                                         }
@@ -3597,6 +3597,15 @@
                         }
                     },
                     {
+                        "name": "dister",
+                        "in": "query",
+                        "description": "Filter by dister ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Items per page (pagination)",
@@ -3638,6 +3647,11 @@
                                                     "formatted_tariff": {
                                                         "type": "string",
                                                         "example": "უფასო"
+                                                    },
+                                                    "dister": {
+                                                        "type": "integer",
+                                                        "example": 1,
+                                                        "nullable": true
                                                     },
                                                     "created_at": {
                                                         "type": "string",
@@ -3704,6 +3718,12 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 0
+                                    },
+                                    "dister": {
+                                        "description": "Optional dister ID",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -3734,6 +3754,11 @@
                                         "formatted_tariff": {
                                             "type": "string",
                                             "example": "უფასო"
+                                        },
+                                        "dister": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -3768,6 +3793,12 @@
                                                     }
                                                 },
                                                 "tariff": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "dister": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -3833,6 +3864,11 @@
                                         "formatted_tariff": {
                                             "type": "string",
                                             "example": "უფასო"
+                                        },
+                                        "dister": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -3907,6 +3943,12 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 10.5
+                                    },
+                                    "dister": {
+                                        "description": "Optional dister ID",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -3937,6 +3979,11 @@
                                         "formatted_tariff": {
                                             "type": "string",
                                             "example": "10.50 ₾"
+                                        },
+                                        "dister": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -3987,6 +4034,12 @@
                                                     }
                                                 },
                                                 "tariff": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "dister": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -7337,6 +7390,12 @@
                                         "type": "string",
                                         "minLength": 6,
                                         "example": "newpassword123"
+                                    },
+                                    "referral": {
+                                        "description": "Optional referral code",
+                                        "type": "string",
+                                        "example": "REF123",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -7378,6 +7437,11 @@
                                         "email": {
                                             "type": "string",
                                             "example": "updated@garden.ge"
+                                        },
+                                        "referral": {
+                                            "type": "string",
+                                            "example": "REF123",
+                                            "nullable": true
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -7458,6 +7522,12 @@
                                                     }
                                                 },
                                                 "password": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "referral": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"

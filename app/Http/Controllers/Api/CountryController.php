@@ -23,6 +23,7 @@ class CountryController extends Controller
      *     description="Retrieve a list of all countries with their tariffs. Supports filtering by name and pagination.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="name", in="query", required=false, description="Filter by country name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="dister", in="query", required=false, description="Filter by dister ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
      *     @OA\Response(
      *         response=200,
@@ -37,6 +38,7 @@ class CountryController extends Controller
      *                     @OA\Property(property="name", type="string", example="საქართველო"),
      *                     @OA\Property(property="tariff", type="number", format="float", example=0.00),
      *                     @OA\Property(property="formatted_tariff", type="string", example="უფასო"),
+     *                     @OA\Property(property="dister", type="integer", example=1, nullable=true),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time")
      *                 )
@@ -50,10 +52,14 @@ class CountryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Country::query();
+        $query = Country::with('dister');
         
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->query('name') . '%');
+        }
+        
+        if ($request->filled('dister')) {
+            $query->where('dister', $request->query('dister'));
         }
         
         $perPage = $request->query('per_page', 15);
@@ -84,6 +90,7 @@ class CountryController extends Controller
      *             @OA\Property(property="name", type="string", example="საქართველო"),
      *             @OA\Property(property="tariff", type="number", format="float", example=0.00),
      *             @OA\Property(property="formatted_tariff", type="string", example="უფასო"),
+     *             @OA\Property(property="dister", type="integer", example=1, nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -99,7 +106,7 @@ class CountryController extends Controller
      */
     public function show($id)
     {
-        return Country::findOrFail($id);
+        return Country::with('dister')->findOrFail($id);
     }
 
     /**
@@ -115,7 +122,8 @@ class CountryController extends Controller
      *         @OA\JsonContent(
      *             required={"name", "tariff"},
      *             @OA\Property(property="name", type="string", maxLength=255, example="საქართველო", description="Country name"),
-     *             @OA\Property(property="tariff", type="number", format="float", example=0.00, description="Tariff amount (0 for free)")
+     *             @OA\Property(property="tariff", type="number", format="float", example=0.00, description="Tariff amount (0 for free)"),
+     *             @OA\Property(property="dister", type="integer", example=1, nullable=true, description="Optional dister ID")
      *         )
      *     ),
      *     @OA\Response(
@@ -127,6 +135,7 @@ class CountryController extends Controller
      *             @OA\Property(property="name", type="string", example="საქართველო"),
      *             @OA\Property(property="tariff", type="number", format="float", example=0.00),
      *             @OA\Property(property="formatted_tariff", type="string", example="უფასო"),
+     *             @OA\Property(property="dister", type="integer", example=1, nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -140,7 +149,8 @@ class CountryController extends Controller
      *                 property="errors",
      *                 type="object",
      *                 @OA\Property(property="name", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="tariff", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(property="tariff", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="dister", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     )
@@ -151,9 +161,11 @@ class CountryController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:countries,name',
             'tariff' => 'required|numeric|min:0|max:999999.99',
+            'dister' => 'nullable|exists:disters,id',
         ]);
 
         $country = Country::create($validated);
+        $country->load('dister');
 
         return response()->json($country, 201);
     }
@@ -177,7 +189,8 @@ class CountryController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             @OA\Property(property="name", type="string", maxLength=255, example="Updated საქართველო", description="Country name"),
-     *             @OA\Property(property="tariff", type="number", format="float", example=10.50, description="Tariff amount (0 for free)")
+     *             @OA\Property(property="tariff", type="number", format="float", example=10.50, description="Tariff amount (0 for free)"),
+     *             @OA\Property(property="dister", type="integer", example=1, nullable=true, description="Optional dister ID")
      *         )
      *     ),
      *     @OA\Response(
@@ -189,6 +202,7 @@ class CountryController extends Controller
      *             @OA\Property(property="name", type="string", example="Updated საქართველო"),
      *             @OA\Property(property="tariff", type="number", format="float", example=10.50),
      *             @OA\Property(property="formatted_tariff", type="string", example="10.50 ₾"),
+     *             @OA\Property(property="dister", type="integer", example=1, nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -209,7 +223,8 @@ class CountryController extends Controller
      *                 property="errors",
      *                 type="object",
      *                 @OA\Property(property="name", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="tariff", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(property="tariff", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="dister", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     )
@@ -222,9 +237,11 @@ class CountryController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255|unique:countries,name,' . $id,
             'tariff' => 'sometimes|required|numeric|min:0|max:999999.99',
+            'dister' => 'nullable|exists:disters,id',
         ]);
 
         $country->update($validated);
+        $country->load('dister');
 
         return response()->json($country);
     }
