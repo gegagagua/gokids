@@ -98,7 +98,7 @@ class AuthController extends Controller
      *             ),
      *             @OA\Property(property="token", type="string", example="1|abc123..."),
      *             @OA\Property(property="garden", type="object", nullable=true, description="Garden data if user type is garden"),
-     *             @OA\Property(property="dister", type="object", nullable=true, description="Dister data if user type is dister or if garden user has assigned dister")
+     *             @OA\Property(property="dister", type="object", nullable=true, description="Dister data if user type is dister or if garden user has assigned dister (directly or via country ownership)")
      *         )
      *     ),
      *     @OA\Response(response=401, description="Invalid credentials")
@@ -130,12 +130,18 @@ class AuthController extends Controller
         ];
 
         if ($user->type === 'garden') {
-            $garden = \App\Models\Garden::with(['city', 'images'])->where('email', $user->email)->first();
+            $garden = \App\Models\Garden::with(['city', 'country', 'images'])->where('email', $user->email)->first();
             if ($garden) {
                 $response['garden'] = $garden;
                 
-                // Find dister who has access to this garden
+                // First, try to find dister who has direct access to this garden
                 $dister = \App\Models\Dister::whereJsonContains('gardens', $garden->id)->first();
+                
+                // If no direct dister found, try to find dister who owns the country where the garden is located
+                if (!$dister && $garden->country) {
+                    $dister = \App\Models\Dister::where('country', $garden->country->id)->first();
+                }
+                
                 if ($dister) {
                     $dister->load(['country', 'city']);
                     $response['dister'] = $dister;

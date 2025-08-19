@@ -9,11 +9,13 @@ class Country extends Model
     protected $fillable = [
         'name',
         'tariff',
+        'price',
         'dister',
     ];
 
     protected $casts = [
         'tariff' => 'decimal:2',
+        'price' => 'decimal:2',
     ];
 
     public function cities()
@@ -51,5 +53,13 @@ class Country extends Model
             return 'უფასო';
         }
         return number_format($this->tariff, 2) . ' ₾';
+    }
+
+    /**
+     * Get formatted price display
+     */
+    public function getFormattedPriceAttribute()
+    {
+        return number_format($this->price, 2) . ' ₾';
     }
 }

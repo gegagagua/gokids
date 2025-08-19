@@ -167,7 +167,7 @@
                                             "nullable": true
                                         },
                                         "dister": {
-                                            "description": "Dister data if user type is dister or if garden user has assigned dister",
+                                            "description": "Dister data if user type is dister or if garden user has assigned dister (directly or via country ownership)",
                                             "type": "object",
                                             "nullable": true
                                         }
@@ -3648,6 +3648,15 @@
                                                         "type": "string",
                                                         "example": "უფასო"
                                                     },
+                                                    "price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 10
+                                                    },
+                                                    "formatted_price": {
+                                                        "type": "string",
+                                                        "example": "10.00 ₾"
+                                                    },
                                                     "dister": {
                                                         "type": "integer",
                                                         "example": 1,
@@ -3704,7 +3713,8 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "tariff"
+                                    "tariff",
+                                    "price"
                                 ],
                                 "properties": {
                                     "name": {
@@ -3718,6 +3728,12 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 0
+                                    },
+                                    "price": {
+                                        "description": "Price amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10
                                     },
                                     "dister": {
                                         "description": "Optional dister ID",
@@ -3754,6 +3770,15 @@
                                         "formatted_tariff": {
                                             "type": "string",
                                             "example": "უფასო"
+                                        },
+                                        "price": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 10
+                                        },
+                                        "formatted_price": {
+                                            "type": "string",
+                                            "example": "10.00 ₾"
                                         },
                                         "dister": {
                                             "type": "integer",
@@ -3793,6 +3818,12 @@
                                                     }
                                                 },
                                                 "tariff": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "price": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -3864,6 +3895,15 @@
                                         "formatted_tariff": {
                                             "type": "string",
                                             "example": "უფასო"
+                                        },
+                                        "price": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 10
+                                        },
+                                        "formatted_price": {
+                                            "type": "string",
+                                            "example": "10.00 ₾"
                                         },
                                         "dister": {
                                             "type": "integer",
@@ -3944,6 +3984,12 @@
                                         "format": "float",
                                         "example": 10.5
                                     },
+                                    "price": {
+                                        "description": "Price amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15
+                                    },
                                     "dister": {
                                         "description": "Optional dister ID",
                                         "type": "integer",
@@ -3979,6 +4025,15 @@
                                         "formatted_tariff": {
                                             "type": "string",
                                             "example": "10.50 ₾"
+                                        },
+                                        "price": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 15
+                                        },
+                                        "formatted_price": {
+                                            "type": "string",
+                                            "example": "15.00 ₾"
                                         },
                                         "dister": {
                                             "type": "integer",
@@ -4034,6 +4089,12 @@
                                                     }
                                                 },
                                                 "tariff": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "price": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
