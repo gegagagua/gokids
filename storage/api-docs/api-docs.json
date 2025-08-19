@@ -6934,6 +6934,20 @@
                         }
                     },
                     {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "paused",
+                                "inactive"
+                            ]
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Items per page (pagination)",
@@ -6986,6 +7000,15 @@
                                                     "email": {
                                                         "type": "string",
                                                         "example": "sunshine@garden.ge"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "active",
+                                                            "paused",
+                                                            "inactive"
+                                                        ],
+                                                        "example": "active"
                                                     },
                                                     "created_at": {
                                                         "type": "string",
@@ -7154,6 +7177,17 @@
                                         "type": "string",
                                         "example": "REF123",
                                         "nullable": true
+                                    },
+                                    "status": {
+                                        "description": "Garden status (defaults to active)",
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "paused",
+                                            "inactive"
+                                        ],
+                                        "example": "active",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -7197,6 +7231,15 @@
                                                 "email": {
                                                     "type": "string",
                                                     "example": "newgarden@garden.ge"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "active",
+                                                        "paused",
+                                                        "inactive"
+                                                    ],
+                                                    "example": "active"
                                                 },
                                                 "created_at": {
                                                     "type": "string",
@@ -7299,6 +7342,12 @@
                                                     "items": {
                                                         "type": "string"
                                                     }
+                                                },
+                                                "status": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -7370,6 +7419,15 @@
                                         },
                                         "email": {
                                             "example": "sunshine@garden.ge"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "active",
+                                                "paused",
+                                                "inactive"
+                                            ],
+                                            "example": "active"
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -7521,6 +7579,17 @@
                                         "type": "string",
                                         "example": "REF123",
                                         "nullable": true
+                                    },
+                                    "status": {
+                                        "description": "Garden status",
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "paused",
+                                            "inactive"
+                                        ],
+                                        "example": "paused",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -7572,6 +7641,15 @@
                                             "type": "string",
                                             "example": "REF123",
                                             "nullable": true
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "active",
+                                                "paused",
+                                                "inactive"
+                                            ],
+                                            "example": "paused"
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -7664,6 +7742,12 @@
                                                     }
                                                 },
                                                 "referral": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "status": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -7777,6 +7861,136 @@
                 ]
             }
         },
+        "/api/gardens/{id}/status": {
+            "patch": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Update garden status",
+                "description": "Update only the status of a specific garden",
+                "operationId": "updateGardenStatus",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Garden ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "description": "New garden status",
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "paused",
+                                            "inactive"
+                                        ],
+                                        "example": "paused"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Garden status updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Garden Name"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "active",
+                                                "paused",
+                                                "inactive"
+                                            ],
+                                            "example": "paused"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Garden not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\Garden]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/gardens/bulk-delete": {
             "delete": {
                 "tags": [
@@ -7839,7 +8053,6 @@
                                 "schema": {
                                     "properties": {
                                         "message": {
-                                            "type": "string",
                                             "example": "No valid IDs provided"
                                         }
                                     },

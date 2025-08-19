@@ -33,6 +33,7 @@ class GardenController extends Controller
      *     @OA\Parameter(name="tax_id", in="query", required=false, description="Filter by tax ID", @OA\Schema(type="string")),
      *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
      *     @OA\Parameter(name="email", in="query", required=false, description="Filter by email", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Filter by status", @OA\Schema(type="string", enum={"active", "paused", "inactive"})),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
      *     @OA\Response(
      *         response=200,
@@ -50,6 +51,7 @@ class GardenController extends Controller
      *                     @OA\Property(property="city_id", type="integer", example=1),
      *                     @OA\Property(property="phone", type="string", example="+995599123456"),
      *                     @OA\Property(property="email", type="string", example="sunshine@garden.ge"),
+     *                     @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
      *                     @OA\Property(property="city", type="object",
@@ -115,6 +117,9 @@ class GardenController extends Controller
         if ($request->filled('email')) {
             $query->where('email', 'like', '%' . $request->query('email') . '%');
         }
+        if ($request->filled('status')) {
+            $query->where('status', $request->query('status'));
+        }
 
         $perPage = $request->query('per_page', 15);
         $gardens = $query->paginate($perPage);
@@ -153,6 +158,7 @@ class GardenController extends Controller
      *             @OA\Property(property="city_id", type="integer", example=1),
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
      *             @OA\Property(property="email", example="sunshine@garden.ge"),
+     *             @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time"),
      *             @OA\Property(
@@ -263,7 +269,8 @@ class GardenController extends Controller
      *             @OA\Property(property="phone", type="string", maxLength=255, example="+995599654321", description="Contact phone number"),
      *             @OA\Property(property="email", type="string", format="email", example="newgarden@garden.ge", description="Contact email address"),
      *             @OA\Property(property="password", type="string", minLength=6, example="password123", description="Garden access password"),
-             @OA\Property(property="referral", type="string", example="REF123", nullable=true, description="Optional referral code")
+     *             @OA\Property(property="referral", type="string", example="REF123", nullable=true, description="Optional referral code"),
+     *             @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}, nullable=true, description="Garden status (defaults to active)")
      *         )
      *     ),
      *     @OA\Response(
@@ -279,6 +286,7 @@ class GardenController extends Controller
      *                 @OA\Property(property="city_id", type="integer", example=1),
      *                 @OA\Property(property="phone", type="string", example="+995599654321"),
      *                 @OA\Property(property="email", type="string", example="newgarden@garden.ge"),
+     *                 @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}),
      *                 @OA\Property(property="created_at", type="string", format="date-time"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time")
      *             ),
@@ -306,7 +314,8 @@ class GardenController extends Controller
      *                 @OA\Property(property="country", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="email", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="password", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(property="password", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="status", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     )
@@ -324,6 +333,7 @@ class GardenController extends Controller
             'email' => 'required|email|unique:gardens,email|unique:users,email',
             'password' => 'required|string|min:6',
             'referral' => 'nullable|string|max:255',
+            'status' => 'nullable|string|in:active,paused,inactive',
         ]);
 
         // Create user for the garden
@@ -378,7 +388,8 @@ class GardenController extends Controller
      *             @OA\Property(property="phone", type="string", maxLength=255, example="+995599111222", description="Contact phone number"),
      *             @OA\Property(property="email", type="string", format="email", example="updated@garden.ge", description="Contact email address"),
      *             @OA\Property(property="password", type="string", minLength=6, example="newpassword123", description="Garden access password"),
-     *             @OA\Property(property="referral", type="string", example="REF123", nullable=true, description="Optional referral code")
+     *             @OA\Property(property="referral", type="string", example="REF123", nullable=true, description="Optional referral code"),
+     *             @OA\Property(property="status", type="string", example="paused", enum={"active", "paused", "inactive"}, nullable=true, description="Garden status")
      *         )
      *     ),
      *     @OA\Response(
@@ -395,6 +406,7 @@ class GardenController extends Controller
      *             @OA\Property(property="phone", type="string", example="+995599111222"),
      *             @OA\Property(property="email", type="string", example="updated@garden.ge"),
      *             @OA\Property(property="referral", type="string", example="REF123", nullable=true),
+     *             @OA\Property(property="status", type="string", example="paused", enum={"active", "paused", "inactive"}),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -422,7 +434,8 @@ class GardenController extends Controller
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="email", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="password", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="referral", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(property="referral", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="status", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     )
@@ -442,6 +455,7 @@ class GardenController extends Controller
             'email' => 'sometimes|required|email|unique:gardens,email,' . $id,
             'password' => 'sometimes|required|string|min:6',
             'referral' => 'nullable|string|max:255',
+            'status' => 'nullable|string|in:active,paused,inactive',
         ]);
 
         // Hash the password if it's being updated
@@ -494,6 +508,84 @@ class GardenController extends Controller
     }
 
     /**
+     * @OA\Patch(
+     *     path="/api/gardens/{id}/status",
+     *     operationId="updateGardenStatus",
+     *     tags={"Gardens"},
+     *     summary="Update garden status",
+     *     description="Update only the status of a specific garden",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Garden ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"status"},
+     *             @OA\Property(
+     *                 property="status",
+     *                 type="string",
+     *                 enum={"active", "paused", "inactive"},
+     *                 example="paused",
+     *                 description="New garden status"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Garden status updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="name", type="string", example="Garden Name"),
+     *             @OA\Property(property="status", type="string", example="paused", enum={"active", "paused", "inactive"}),
+     *             @OA\Property(property="updated_at", type="string", format="date-time")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Garden not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No query results for model [App\\Models\\Garden]")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="status", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $garden = Garden::findOrFail($id);
+
+        $validated = $request->validate([
+            'status' => 'required|string|in:active,paused,inactive',
+        ]);
+
+        $garden->update(['status' => $validated['status']]);
+
+        return response()->json([
+            'id' => $garden->id,
+            'name' => $garden->name,
+            'status' => $garden->status,
+            'updated_at' => $garden->updated_at,
+        ]);
+    }
+
+    /**
      * @OA\Delete(
      *     path="/api/gardens/bulk-delete",
      *     operationId="bulkDeleteGardens",
@@ -525,7 +617,7 @@ class GardenController extends Controller
      *         response=400,
      *         description="Invalid input",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="No valid IDs provided")
+     *             @OA\Property(property="message", example="No valid IDs provided")
      *         )
      *     )
      * )

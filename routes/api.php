@@ -40,6 +40,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         // Place specific routes before resource to avoid {garden} binding capturing 'export'
         Route::get('/gardens/export', [GardenController::class, 'export']);
         Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
+        Route::patch('/gardens/{id}/status', [GardenController::class, 'updateStatus']);
         Route::apiResource('gardens', GardenController::class);
         
         // Dister routes (authenticated)

@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class Garden extends Model
 {
+    // Status constants
+    const STATUS_ACTIVE = 'active';
+    const STATUS_PAUSED = 'paused';
+    const STATUS_INACTIVE = 'inactive';
+
     protected $fillable = [
         'name',
         'address',
@@ -17,6 +22,7 @@ class Garden extends Model
         'password',
         'referral_code',
         'referral',
+        'status',
     ];
 
     protected $hidden = ['password'];
@@ -47,5 +53,41 @@ class Garden extends Model
     public function images()
     {
         return $this->hasMany(\App\Models\GardenImage::class);
+    }
+
+    /**
+     * Check if garden is active
+     */
+    public function isActive()
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
+    /**
+     * Check if garden is paused
+     */
+    public function isPaused()
+    {
+        return $this->status === self::STATUS_PAUSED;
+    }
+
+    /**
+     * Check if garden is inactive
+     */
+    public function isInactive()
+    {
+        return $this->status === self::STATUS_INACTIVE;
+    }
+
+    /**
+     * Get all possible status values
+     */
+    public static function getStatusOptions()
+    {
+        return [
+            self::STATUS_ACTIVE => 'Active',
+            self::STATUS_PAUSED => 'Paused',
+            self::STATUS_INACTIVE => 'Inactive',
+        ];
     }
 }
