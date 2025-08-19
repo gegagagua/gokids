@@ -2792,152 +2792,80 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Login successful",
+                        "description": "OTP sent successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Login successful"
+                                            "example": "OTP sent successfully"
                                         },
-                                        "card": {
+                                        "card_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599123456"
+                                        },
+                                        "garden_images": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Main Entrance"
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "example": "garden_images/abc123.jpg"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "garden": {
                                             "properties": {
                                                 "id": {
                                                     "type": "integer",
                                                     "example": 1
                                                 },
-                                                "child_first_name": {
+                                                "name": {
                                                     "type": "string",
-                                                    "example": "Giorgi"
+                                                    "example": "Sunshine Garden"
                                                 },
-                                                "child_last_name": {
+                                                "address": {
                                                     "type": "string",
-                                                    "example": "Davitashvili"
-                                                },
-                                                "parent_name": {
-                                                    "type": "string",
-                                                    "example": "Nino Davitashvili"
+                                                    "example": "123 Main Street"
                                                 },
                                                 "phone": {
                                                     "type": "string",
                                                     "example": "+995599123456"
                                                 },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "garden@example.com"
+                                                },
                                                 "status": {
                                                     "type": "string",
                                                     "example": "active"
                                                 },
-                                                "group_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "person_type_id": {
-                                                    "type": "integer",
-                                                    "example": 1,
-                                                    "nullable": true
-                                                },
-                                                "parent_code": {
-                                                    "type": "string",
-                                                    "example": "K9M2P5",
-                                                    "nullable": true
-                                                },
-                                                "image_path": {
-                                                    "type": "string",
-                                                    "example": "cards/abc123.jpg",
-                                                    "nullable": true
-                                                },
                                                 "created_at": {
                                                     "type": "string",
                                                     "format": "date-time"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                },
-                                                "group": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "integer",
-                                                            "example": 1
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "example": "Group A"
-                                                        },
-                                                        "garden_id": {
-                                                            "type": "integer",
-                                                            "example": 1
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                },
-                                                "personType": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "integer",
-                                                            "example": 1
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "example": "Parent"
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                },
-                                                "parents": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "integer",
-                                                                "example": 1
-                                                            },
-                                                            "name": {
-                                                                "type": "string",
-                                                                "example": "ნინო დავითაშვილი"
-                                                            },
-                                                            "phone": {
-                                                                "type": "string",
-                                                                "example": "+995599123456"
-                                                            },
-                                                            "email": {
-                                                                "type": "string",
-                                                                "example": "nino@example.com"
-                                                            }
-                                                        },
-                                                        "type": "object"
-                                                    }
-                                                },
-                                                "people": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "integer",
-                                                                "example": 1
-                                                            },
-                                                            "name": {
-                                                                "type": "string",
-                                                                "example": "გიორგი დავითაშვილი"
-                                                            },
-                                                            "phone": {
-                                                                "type": "string",
-                                                                "example": "+995599123456"
-                                                            },
-                                                            "email": {
-                                                                "type": "string",
-                                                                "example": "giorgi@example.com"
-                                                            },
-                                                            "relationship": {
-                                                                "type": "string",
-                                                                "example": "მამა"
-                                                            }
-                                                        },
-                                                        "type": "object"
-                                                    }
                                                 }
                                             },
-                                            "type": "object"
+                                            "type": "object",
+                                            "nullable": true
                                         }
                                     },
                                     "type": "object"
@@ -5815,6 +5743,15 @@
                         }
                     },
                     {
+                        "name": "iban",
+                        "in": "query",
+                        "description": "Filter by IBAN (partial match)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Items per page (pagination). Default: 15",
@@ -5907,6 +5844,16 @@
                                                     "formatted_balance": {
                                                         "type": "string",
                                                         "example": "500.00 ₾",
+                                                        "nullable": true
+                                                    },
+                                                    "iban": {
+                                                        "type": "string",
+                                                        "example": "GE29NB0000000101904917",
+                                                        "nullable": true
+                                                    },
+                                                    "formatted_iban": {
+                                                        "type": "string",
+                                                        "example": "GE29 NB00 0000 0101 9049 17",
                                                         "nullable": true
                                                     },
                                                     "created_at": {
@@ -6092,6 +6039,13 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 500,
+                                        "nullable": true
+                                    },
+                                    "iban": {
+                                        "description": "Optional IBAN (International Bank Account Number)",
+                                        "type": "string",
+                                        "maxLength": 50,
+                                        "example": "GE29NB0000000101904917",
                                         "nullable": true
                                     }
                                 },
@@ -6290,6 +6244,16 @@
                                             "example": "500.00 ₾",
                                             "nullable": true
                                         },
+                                        "iban": {
+                                            "type": "string",
+                                            "example": "GE29NB0000000101904917",
+                                            "nullable": true
+                                        },
+                                        "formatted_iban": {
+                                            "type": "string",
+                                            "example": "GE29 NB00 0000 0101 9049 17",
+                                            "nullable": true
+                                        },
                                         "created_at": {
                                             "type": "string",
                                             "format": "date-time"
@@ -6424,6 +6388,13 @@
                                         "format": "float",
                                         "example": 500,
                                         "nullable": true
+                                    },
+                                    "iban": {
+                                        "description": "Optional IBAN (International Bank Account Number)",
+                                        "type": "string",
+                                        "maxLength": 50,
+                                        "example": "GE29NB0000000101904917",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -6492,6 +6463,16 @@
                                         "formatted_balance": {
                                             "type": "string",
                                             "example": "500.00 ₾",
+                                            "nullable": true
+                                        },
+                                        "iban": {
+                                            "type": "string",
+                                            "example": "GE29NB0000000101904917",
+                                            "nullable": true
+                                        },
+                                        "formatted_iban": {
+                                            "type": "string",
+                                            "example": "GE29 NB00 0000 0101 9049 17",
                                             "nullable": true
                                         },
                                         "created_at": {

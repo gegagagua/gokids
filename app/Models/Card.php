@@ -137,4 +137,26 @@ class Card extends Model
     {
         return $this->belongsTo(\App\Models\PersonType::class);
     }
+
+    /**
+     * Get garden images through group relationship
+     */
+    public function getGardenImagesAttribute()
+    {
+        if ($this->group && $this->group->garden) {
+            return $this->group->garden->images;
+        }
+        return collect();
+    }
+
+    /**
+     * Get garden information through group relationship
+     */
+    public function getGardenAttribute()
+    {
+        if ($this->group && $this->group->garden) {
+            return $this->group->garden;
+        }
+        return null;
+    }
 }

@@ -34,6 +34,7 @@ class DisterController extends Controller
      *     @OA\Parameter(name="city_id", in="query", required=false, description="Filter by city ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="balance_min", in="query", required=false, description="Filter by minimum balance", @OA\Schema(type="number", format="float")),
      *     @OA\Parameter(name="balance_max", in="query", required=false, description="Filter by maximum balance", @OA\Schema(type="number", format="float")),
+     *     @OA\Parameter(name="iban", in="query", required=false, description="Filter by IBAN (partial match)", @OA\Schema(type="string")),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination). Default: 15", @OA\Schema(type="integer", default=15, minimum=1, maximum=100)),
      *     @OA\Parameter(name="page", in="query", required=false, description="Page number for pagination. Default: 1", @OA\Schema(type="integer", default=1, minimum=1)),
      *     @OA\Response(
@@ -56,6 +57,8 @@ class DisterController extends Controller
      *                     @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true),
      *                     @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true),
      *                     @OA\Property(property="formatted_balance", type="string", example="500.00 ₾", nullable=true),
+     *                     @OA\Property(property="iban", type="string", example="GE29NB0000000101904917", nullable=true),
+     *                     @OA\Property(property="formatted_iban", type="string", example="GE29 NB00 0000 0101 9049 17", nullable=true),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
       *                     @OA\Property(property="country", type="object",
@@ -120,6 +123,9 @@ class DisterController extends Controller
         if ($request->filled('balance_max')) {
             $query->where('balance', '<=', $request->query('balance_max'));
         }
+        if ($request->filled('iban')) {
+            $query->where('iban', 'like', '%' . $request->query('iban') . '%');
+        }
         
         $perPage = $request->query('per_page', 15);
         $page = $request->query('page', 1);
@@ -157,6 +163,8 @@ class DisterController extends Controller
      *             @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true),
      *             @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true),
      *             @OA\Property(property="formatted_balance", type="string", example="500.00 ₾", nullable=true),
+     *             @OA\Property(property="iban", type="string", example="GE29NB0000000101904917", nullable=true),
+     *             @OA\Property(property="formatted_iban", type="string", example="GE29 NB00 0000 0101 9049 17", nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time"),
      *             @OA\Property(property="country", type="object",
@@ -202,7 +210,8 @@ class DisterController extends Controller
       *             @OA\Property(property="city_id", type="integer", example=1, description="City ID"),
            *             @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}, description="Array of garden IDs (optional)"),
      *             @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true, description="Optional percent value (0-100)"),
-     *             @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true, description="Optional dister balance")
+     *             @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true, description="Optional dister balance"),
+     *             @OA\Property(property="iban", type="string", maxLength=50, example="GE29NB0000000101904917", nullable=true, description="Optional IBAN (International Bank Account Number)")
      *         )
      *     ),
      *     @OA\Response(
@@ -253,6 +262,7 @@ class DisterController extends Controller
                 'gardens.*' => 'integer|exists:gardens,id',
                 'percent' => 'nullable|numeric|min:0|max:100',
                 'balance' => 'nullable|numeric|min:0|max:9999999.99',
+                'iban' => 'nullable|string|max:50',
             ]);
 
             // Create User account first
@@ -341,7 +351,8 @@ class DisterController extends Controller
       *             @OA\Property(property="city_id", type="integer", example=1, description="City ID"),
            *             @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}, description="Array of garden IDs"),
      *             @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true, description="Optional percent value (0-100)"),
-     *             @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true, description="Optional dister balance")
+     *             @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true, description="Optional dister balance"),
+     *             @OA\Property(property="iban", type="string", maxLength=50, example="GE29NB0000000101904917", nullable=true, description="Optional IBAN (International Bank Account Number)")
      *         )
      *     ),
      *     @OA\Response(
@@ -360,6 +371,8 @@ class DisterController extends Controller
      *             @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true),
      *             @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true),
      *             @OA\Property(property="formatted_balance", type="string", example="500.00 ₾", nullable=true),
+     *             @OA\Property(property="iban", type="string", example="GE29NB0000000101904917", nullable=true),
+     *             @OA\Property(property="formatted_iban", type="string", example="GE29 NB00 0000 0101 9049 17", nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -389,6 +402,7 @@ class DisterController extends Controller
             'gardens.*' => 'integer|exists:gardens,id',
             'percent' => 'nullable|numeric|min:0|max:100',
             'balance' => 'nullable|numeric|min:0|max:9999999.99',
+            'iban' => 'nullable|string|max:50',
         ]);
 
         $dister->update($validated);

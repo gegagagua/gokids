@@ -24,6 +24,7 @@ class Dister extends Authenticatable
         'percent',
         'main_dister',
         'balance',
+        'iban',
     ];
 
     protected $hidden = [
@@ -117,5 +118,37 @@ class Dister extends Authenticatable
             return null;
         }
         return number_format($this->balance, 2) . ' ₾';
+    }
+
+    /**
+     * Get formatted IBAN display
+     */
+    public function getFormattedIbanAttribute()
+    {
+        if ($this->iban === null) {
+            return null;
+        }
+        // Format IBAN with spaces every 4 characters for better readability
+        return trim(chunk_split($this->iban, 4, ' '));
+    }
+
+    /**
+     * Validate IBAN format
+     */
+    public static function validateIban($iban)
+    {
+        if (empty($iban)) {
+            return false;
+        }
+        
+        // Remove spaces and convert to uppercase
+        $iban = strtoupper(str_replace(' ', '', $iban));
+        
+        // Basic IBAN format validation (2 letters + 2 digits + up to 30 alphanumeric)
+        if (!preg_match('/^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$/', $iban)) {
+            return false;
+        }
+        
+        return true;
     }
 }

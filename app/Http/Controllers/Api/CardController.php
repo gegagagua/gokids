@@ -1505,51 +1505,27 @@ class CardController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Login successful",
+     *         description="OTP sent successfully",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="Login successful"),
-     *             @OA\Property(property="card", type="object",
+     *             @OA\Property(property="message", type="string", example="OTP sent successfully"),
+     *             @OA\Property(property="card_id", type="integer", example=1),
+     *             @OA\Property(property="phone", type="string", example="+995599123456"),
+     *             @OA\Property(property="garden_images", type="array", @OA\Items(
+     *                 type="object",
      *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="child_first_name", type="string", example="Giorgi"),
-     *                 @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
-     *                 @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
+     *                 @OA\Property(property="title", type="string", example="Main Entrance"),
+     *                 @OA\Property(property="image", type="string", example="garden_images/abc123.jpg"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time")
+     *             )),
+     *             @OA\Property(property="garden", type="object", nullable=true,
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Sunshine Garden"),
+     *                 @OA\Property(property="address", type="string", example="123 Main Street"),
      *                 @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                 @OA\Property(property="email", type="string", example="garden@example.com"),
      *                 @OA\Property(property="status", type="string", example="active"),
-     *                 @OA\Property(property="group_id", type="integer", example=1),
-     *                 @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
-     *                 @OA\Property(property="parent_code", type="string", example="K9M2P5", nullable=true),
-     *                 @OA\Property(property="image_path", type="string", example="cards/abc123.jpg", nullable=true),
-     *                 @OA\Property(property="created_at", type="string", format="date-time"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
-     *                 @OA\Property(property="group", type="object",
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="name", type="string", example="Group A"),
-     *                     @OA\Property(property="garden_id", type="integer", example=1)
-     *                 ),
-     *                 @OA\Property(property="personType", type="object",
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="name", type="string", example="Parent")
-     *                 ),
-     *                 @OA\Property(property="parents", type="array",
-     *                     @OA\Items(
-     *                         type="object",
-     *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="name", type="string", example="ნინო დავითაშვილი"),
-     *                         @OA\Property(property="phone", type="string", example="+995599123456"),
-     *                         @OA\Property(property="email", type="string", example="nino@example.com")
-     *                     )
-     *                 ),
-     *                 @OA\Property(property="people", type="array",
-     *                     @OA\Items(
-     *                         type="object",
-     *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="name", type="string", example="გიორგი დავითაშვილი"),
-     *                         @OA\Property(property="phone", type="string", example="+995599123456"),
-     *                         @OA\Property(property="email", type="string", example="giorgi@example.com"),
-     *                         @OA\Property(property="relationship", type="string", example="მამა")
-     *                     )
-     *                 )
+     *                 @OA\Property(property="created_at", type="string", format="date-time")
      *             )
      *         )
      *     ),
@@ -1583,7 +1559,7 @@ class CardController extends Controller
             'phone' => 'required|string|max:255',
         ]);
 
-        $card = Card::with(['group', 'personType', 'parents', 'people'])
+        $card = Card::with(['group.garden.images', 'personType', 'parents', 'people'])
             ->where('phone', $request->phone)
             ->first();
 
@@ -1611,7 +1587,9 @@ class CardController extends Controller
         return response()->json([
             'message' => 'OTP sent successfully',
             'card_id' => $card->id,
-            'phone' => $card->phone
+            'phone' => $card->phone,
+            'garden_images' => $card->garden_images,
+            'garden' => $card->garden
         ]);
     }
 
