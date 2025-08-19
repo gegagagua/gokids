@@ -159,4 +159,15 @@ class Card extends Model
         }
         return null;
     }
+
+    /**
+     * Get full URL for image_path
+     */
+    public function getImageUrlAttribute()
+    {
+        if ($this->image_path) {
+            return url('storage/' . $this->image_path);
+        }
+        return null;
+    }
 }

@@ -1389,9 +1389,10 @@ class CardController extends Controller
      *                 @OA\Property(property="status", type="string", example="active"),
      *                 @OA\Property(property="group_id", type="integer", example=1),
      *                 @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
-     *                 @OA\Property(property="parent_code", type="string", example="K9M2P5", nullable=true),
-     *                 @OA\Property(property="image_path", type="string", example="cards/abc123.jpg", nullable=true),
-     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+                      *                 @OA\Property(property="parent_code", type="string", example="K9M2P5", nullable=true),
+                 *                 @OA\Property(property="image_path", type="string", example="cards/abc123.jpg", nullable=true),
+                 *                 @OA\Property(property="image_url", type="string", example="http://localhost/storage/cards/abc123.jpg", nullable=true),
+                 *                 @OA\Property(property="created_at", type="string", format="date-time"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time"),
      *                 @OA\Property(property="group", type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
@@ -1411,7 +1412,7 @@ class CardController extends Controller
      *                         @OA\Property(property="email", type="string", example="nino@example.com")
      *                     )
      *                 ),
-     *                 @OA\Property(property="people", type="array",
+                      *                 @OA\Property(property="people", type="array",
      *                     @OA\Items(
      *                         type="object",
      *                         @OA\Property(property="id", type="integer", example=1),
@@ -1420,6 +1421,22 @@ class CardController extends Controller
      *                         @OA\Property(property="email", type="string", example="giorgi@example.com"),
      *                         @OA\Property(property="relationship", type="string", example="მამა")
      *                     )
+     *                 ),
+     *                 @OA\Property(property="garden_images", type="array", @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="title", type="string", example="Main Entrance"),
+     *                     @OA\Property(property="image", type="string", example="garden_images/abc123.jpg"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time")
+     *                 )),
+     *                 @OA\Property(property="garden", type="object", nullable=true,
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Sunshine Garden"),
+     *                     @OA\Property(property="address", type="string", example="123 Main Street"),
+     *                     @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                     @OA\Property(property="email", type="string", example="garden@example.com"),
+     *                     @OA\Property(property="status", type="string", example="active"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time")
      *                 )
      *             )
      * )
@@ -1473,7 +1490,7 @@ class CardController extends Controller
         $otpRecord->update(['used' => true]);
 
         // Get all cards with this phone number
-        $cards = Card::with(['group.garden', 'personType', 'parents', 'people'])
+        $cards = Card::with(['group.garden.images', 'personType', 'parents', 'people'])
             ->where('phone', $request->phone)
             ->get();
 
@@ -1483,9 +1500,34 @@ class CardController extends Controller
             ], 404);
         }
 
+        // Transform cards to include garden images and garden info
+        $transformedCards = $cards->map(function ($card) {
+            return [
+                'id' => $card->id,
+                'child_first_name' => $card->child_first_name,
+                'child_last_name' => $card->child_last_name,
+                'parent_name' => $card->parent_name,
+                'phone' => $card->phone,
+                'status' => $card->status,
+                'group_id' => $card->group_id,
+                'person_type_id' => $card->person_type_id,
+                'parent_code' => $card->parent_code,
+                'image_path' => $card->image_path,
+                'image_url' => $card->image_url,
+                'created_at' => $card->created_at,
+                'updated_at' => $card->updated_at,
+                'group' => $card->group,
+                'personType' => $card->personType,
+                'parents' => $card->parents,
+                'people' => $card->people,
+                'garden_images' => $card->garden_images,
+                'garden' => $card->garden
+            ];
+        });
+
         return response()->json([
             'message' => 'Login successful',
-            'cards' => $cards
+            'cards' => $transformedCards
         ]);
     }
 
@@ -1511,6 +1553,7 @@ class CardController extends Controller
      *             @OA\Property(property="message", type="string", example="OTP sent successfully"),
      *             @OA\Property(property="card_id", type="integer", example=1),
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
+     *             @OA\Property(property="image_url", type="string", example="http://localhost/storage/cards/abc123.jpg", nullable=true),
      *             @OA\Property(property="garden_images", type="array", @OA\Items(
      *                 type="object",
      *                 @OA\Property(property="id", type="integer", example=1),
@@ -1588,6 +1631,7 @@ class CardController extends Controller
             'message' => 'OTP sent successfully',
             'card_id' => $card->id,
             'phone' => $card->phone,
+            'image_url' => $card->image_url,
             'garden_images' => $card->garden_images,
             'garden' => $card->garden
         ]);

@@ -2610,6 +2610,11 @@
                                                         "example": "cards/abc123.jpg",
                                                         "nullable": true
                                                     },
+                                                    "image_url": {
+                                                        "type": "string",
+                                                        "example": "http://localhost/storage/cards/abc123.jpg",
+                                                        "nullable": true
+                                                    },
                                                     "created_at": {
                                                         "type": "string",
                                                         "format": "date-time"
@@ -2699,6 +2704,64 @@
                                                             },
                                                             "type": "object"
                                                         }
+                                                    },
+                                                    "garden_images": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "title": {
+                                                                    "type": "string",
+                                                                    "example": "Main Entrance"
+                                                                },
+                                                                "image": {
+                                                                    "type": "string",
+                                                                    "example": "garden_images/abc123.jpg"
+                                                                },
+                                                                "created_at": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "garden": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Sunshine Garden"
+                                                            },
+                                                            "address": {
+                                                                "type": "string",
+                                                                "example": "123 Main Street"
+                                                            },
+                                                            "phone": {
+                                                                "type": "string",
+                                                                "example": "+995599123456"
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "example": "garden@example.com"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "active"
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
                                                     }
                                                 },
                                                 "type": "object"
@@ -2808,6 +2871,11 @@
                                         "phone": {
                                             "type": "string",
                                             "example": "+995599123456"
+                                        },
+                                        "image_url": {
+                                            "type": "string",
+                                            "example": "http://localhost/storage/cards/abc123.jpg",
+                                            "nullable": true
                                         },
                                         "garden_images": {
                                             "type": "array",
