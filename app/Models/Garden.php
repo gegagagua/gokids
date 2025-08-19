@@ -23,9 +23,14 @@ class Garden extends Model
         'referral_code',
         'referral',
         'status',
+        'balance',
     ];
 
     protected $hidden = ['password'];
+
+    protected $casts = [
+        'balance' => 'decimal:2',
+    ];
 
     public static function generateUniqueReferralCode()
     {
@@ -89,5 +94,16 @@ class Garden extends Model
             self::STATUS_PAUSED => 'Paused',
             self::STATUS_INACTIVE => 'Inactive',
         ];
+    }
+
+    /**
+     * Get formatted balance display
+     */
+    public function getFormattedBalanceAttribute()
+    {
+        if ($this->balance === null) {
+            return null;
+        }
+        return number_format($this->balance, 2) . ' ₾';
     }
 }

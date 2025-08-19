@@ -41,6 +41,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::get('/gardens/export', [GardenController::class, 'export']);
         Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
         Route::patch('/gardens/{id}/status', [GardenController::class, 'updateStatus']);
+        Route::patch('/gardens/{id}/dister', [GardenController::class, 'updateDister']);
         Route::apiResource('gardens', GardenController::class);
         
         // Dister routes (authenticated)
@@ -63,7 +64,6 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             Route::apiResource('cards', CardController::class);
             Route::delete('/cards/bulk-delete', [CardController::class, 'bulkDestroy']);
             Route::post('/cards/move-to-group', [CardController::class, 'moveToGroup']);
-            Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
             // New endpoints for updating only parent_verification and license
             Route::patch('/cards/{id}/parent-verification', [CardController::class, 'updateParentVerification']);
             Route::patch('/cards/{id}/license', [CardController::class, 'updateLicense']);
@@ -74,6 +74,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         
         
         Route::apiResource('parents', ParentModelController::class);
+        Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
     });
 
     // Card login routes (no authentication required)

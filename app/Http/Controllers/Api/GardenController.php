@@ -34,6 +34,8 @@ class GardenController extends Controller
      *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
      *     @OA\Parameter(name="email", in="query", required=false, description="Filter by email", @OA\Schema(type="string")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by status", @OA\Schema(type="string", enum={"active", "paused", "inactive"})),
+     *     @OA\Parameter(name="balance_min", in="query", required=false, description="Filter by minimum balance", @OA\Schema(type="number", format="float")),
+     *     @OA\Parameter(name="balance_max", in="query", required=false, description="Filter by maximum balance", @OA\Schema(type="number", format="float")),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
      *     @OA\Response(
      *         response=200,
@@ -52,6 +54,8 @@ class GardenController extends Controller
      *                     @OA\Property(property="phone", type="string", example="+995599123456"),
      *                     @OA\Property(property="email", type="string", example="sunshine@garden.ge"),
      *                     @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}),
+     *                     @OA\Property(property="balance", type="number", format="float", example=150.00, nullable=true),
+     *                     @OA\Property(property="formatted_balance", type="string", example="150.00 ₾", nullable=true),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
      *                     @OA\Property(property="city", type="object",
@@ -120,6 +124,12 @@ class GardenController extends Controller
         if ($request->filled('status')) {
             $query->where('status', $request->query('status'));
         }
+        if ($request->filled('balance_min')) {
+            $query->where('balance', '>=', $request->query('balance_min'));
+        }
+        if ($request->filled('balance_max')) {
+            $query->where('balance', '<=', $request->query('balance_max'));
+        }
 
         $perPage = $request->query('per_page', 15);
         $gardens = $query->paginate($perPage);
@@ -159,6 +169,8 @@ class GardenController extends Controller
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
      *             @OA\Property(property="email", example="sunshine@garden.ge"),
      *             @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}),
+     *             @OA\Property(property="balance", type="number", format="float", example=150.00, nullable=true),
+     *             @OA\Property(property="formatted_balance", type="string", example="150.00 ₾", nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time"),
      *             @OA\Property(
@@ -270,7 +282,8 @@ class GardenController extends Controller
      *             @OA\Property(property="email", type="string", format="email", example="newgarden@garden.ge", description="Contact email address"),
      *             @OA\Property(property="password", type="string", minLength=6, example="password123", description="Garden access password"),
      *             @OA\Property(property="referral", type="string", example="REF123", nullable=true, description="Optional referral code"),
-     *             @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}, nullable=true, description="Garden status (defaults to active)")
+     *             @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}, nullable=true, description="Garden status (defaults to active)"),
+     *             @OA\Property(property="balance", type="number", format="float", example=100.00, nullable=true, description="Optional garden balance")
      *         )
      *     ),
      *     @OA\Response(
@@ -287,6 +300,8 @@ class GardenController extends Controller
      *                 @OA\Property(property="phone", type="string", example="+995599654321"),
      *                 @OA\Property(property="email", type="string", example="newgarden@garden.ge"),
      *                 @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}),
+     *                 @OA\Property(property="balance", type="number", format="float", example=100.00, nullable=true),
+     *                 @OA\Property(property="formatted_balance", type="string", example="100.00 ₾", nullable=true),
      *                 @OA\Property(property="created_at", type="string", format="date-time"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time")
      *             ),
@@ -315,7 +330,8 @@ class GardenController extends Controller
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="email", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="password", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="status", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(property="status", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="balance", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     )
@@ -334,6 +350,7 @@ class GardenController extends Controller
             'password' => 'required|string|min:6',
             'referral' => 'nullable|string|max:255',
             'status' => 'nullable|string|in:active,paused,inactive',
+            'balance' => 'nullable|numeric|min:0|max:9999999.99',
         ]);
 
         // Create user for the garden
@@ -389,7 +406,8 @@ class GardenController extends Controller
      *             @OA\Property(property="email", type="string", format="email", example="updated@garden.ge", description="Contact email address"),
      *             @OA\Property(property="password", type="string", minLength=6, example="newpassword123", description="Garden access password"),
      *             @OA\Property(property="referral", type="string", example="REF123", nullable=true, description="Optional referral code"),
-     *             @OA\Property(property="status", type="string", example="paused", enum={"active", "paused", "inactive"}, nullable=true, description="Garden status")
+     *             @OA\Property(property="status", type="string", example="paused", enum={"active", "paused", "inactive"}, nullable=true, description="Garden status"),
+     *             @OA\Property(property="balance", type="number", format="float", example=200.00, nullable=true, description="Optional garden balance")
      *         )
      *     ),
      *     @OA\Response(
@@ -407,6 +425,8 @@ class GardenController extends Controller
      *             @OA\Property(property="email", type="string", example="updated@garden.ge"),
      *             @OA\Property(property="referral", type="string", example="REF123", nullable=true),
      *             @OA\Property(property="status", type="string", example="paused", enum={"active", "paused", "inactive"}),
+     *             @OA\Property(property="balance", type="number", format="float", example=200.00, nullable=true),
+     *             @OA\Property(property="formatted_balance", type="string", example="200.00 ₾", nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -435,7 +455,8 @@ class GardenController extends Controller
      *                 @OA\Property(property="email", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="password", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="referral", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="status", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(property="status", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="balance", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     )
@@ -456,6 +477,7 @@ class GardenController extends Controller
             'password' => 'sometimes|required|string|min:6',
             'referral' => 'nullable|string|max:255',
             'status' => 'nullable|string|in:active,paused,inactive',
+            'balance' => 'nullable|numeric|min:0|max:9999999.99',
         ]);
 
         // Hash the password if it's being updated
@@ -582,6 +604,114 @@ class GardenController extends Controller
             'name' => $garden->name,
             'status' => $garden->status,
             'updated_at' => $garden->updated_at,
+        ]);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/gardens/{id}/dister",
+     *     operationId="updateGardenDister",
+     *     tags={"Gardens"},
+     *     summary="Update garden dister and referral",
+     *     description="Update the dister assignment for a garden and generate new referral code",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Garden ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"dister_id"},
+     *             @OA\Property(
+     *                 property="dister_id",
+     *                 type="integer",
+     *                 example=1,
+     *                 description="ID of the dister to assign to the garden"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Garden dister updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="name", type="string", example="Garden Name"),
+     *             @OA\Property(property="dister_id", type="integer", example=1),
+     *             @OA\Property(property="referral_code", type="string", example="REF123ABC"),
+     *             @OA\Property(property="updated_at", type="string", format="date-time"),
+     *             @OA\Property(
+     *                 property="dister",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Dister Name"),
+     *                 @OA\Property(property="email", type="string", example="dister@example.com")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Garden or dister not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Garden or dister not found")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="dister_id", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function updateDister(Request $request, $id)
+    {
+        $garden = Garden::findOrFail($id);
+        $dister = \App\Models\Dister::findOrFail($request->dister_id);
+
+        $validated = $request->validate([
+            'dister_id' => 'required|exists:disters,id',
+        ]);
+
+        // Generate new referral code
+        $newReferralCode = Garden::generateUniqueReferralCode();
+
+        // Update garden with new dister and referral code
+        $garden->update([
+            'referral_code' => $newReferralCode,
+        ]);
+
+        // Update dister's gardens array to include this garden
+        $disterGardens = $dister->gardens ?? [];
+        if (!in_array($garden->id, $disterGardens)) {
+            $disterGardens[] = $garden->id;
+            $dister->update(['gardens' => $disterGardens]);
+        }
+
+        // Load the updated dister data
+        $garden->load('dister');
+
+        return response()->json([
+            'id' => $garden->id,
+            'name' => $garden->name,
+            'dister_id' => $dister->id,
+            'referral_code' => $garden->referral_code,
+            'updated_at' => $garden->updated_at,
+            'dister' => [
+                'id' => $dister->id,
+                'name' => $dister->name,
+                'email' => $dister->email,
+            ],
         ]);
     }
 

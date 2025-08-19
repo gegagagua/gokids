@@ -5795,6 +5795,26 @@
                         }
                     },
                     {
+                        "name": "balance_min",
+                        "in": "query",
+                        "description": "Filter by minimum balance",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float"
+                        }
+                    },
+                    {
+                        "name": "balance_max",
+                        "in": "query",
+                        "description": "Filter by maximum balance",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float"
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Items per page (pagination). Default: 15",
@@ -5876,6 +5896,17 @@
                                                         "type": "number",
                                                         "format": "float",
                                                         "example": 12.5,
+                                                        "nullable": true
+                                                    },
+                                                    "balance": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 500,
+                                                        "nullable": true
+                                                    },
+                                                    "formatted_balance": {
+                                                        "type": "string",
+                                                        "example": "500.00 ₾",
                                                         "nullable": true
                                                     },
                                                     "created_at": {
@@ -6054,6 +6085,13 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 12.5,
+                                        "nullable": true
+                                    },
+                                    "balance": {
+                                        "description": "Optional dister balance",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 500,
                                         "nullable": true
                                     }
                                 },
@@ -6235,6 +6273,23 @@
                                                 3
                                             ]
                                         },
+                                        "percent": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 12.5,
+                                            "nullable": true
+                                        },
+                                        "balance": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 500,
+                                            "nullable": true
+                                        },
+                                        "formatted_balance": {
+                                            "type": "string",
+                                            "example": "500.00 ₾",
+                                            "nullable": true
+                                        },
                                         "created_at": {
                                             "type": "string",
                                             "format": "date-time"
@@ -6362,6 +6417,13 @@
                                         "format": "float",
                                         "example": 12.5,
                                         "nullable": true
+                                    },
+                                    "balance": {
+                                        "description": "Optional dister balance",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 500,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -6419,6 +6481,17 @@
                                             "type": "number",
                                             "format": "float",
                                             "example": 12.5,
+                                            "nullable": true
+                                        },
+                                        "balance": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 500,
+                                            "nullable": true
+                                        },
+                                        "formatted_balance": {
+                                            "type": "string",
+                                            "example": "500.00 ₾",
                                             "nullable": true
                                         },
                                         "created_at": {
@@ -6948,6 +7021,26 @@
                         }
                     },
                     {
+                        "name": "balance_min",
+                        "in": "query",
+                        "description": "Filter by minimum balance",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float"
+                        }
+                    },
+                    {
+                        "name": "balance_max",
+                        "in": "query",
+                        "description": "Filter by maximum balance",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float"
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Items per page (pagination)",
@@ -7009,6 +7102,17 @@
                                                             "inactive"
                                                         ],
                                                         "example": "active"
+                                                    },
+                                                    "balance": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 150,
+                                                        "nullable": true
+                                                    },
+                                                    "formatted_balance": {
+                                                        "type": "string",
+                                                        "example": "150.00 ₾",
+                                                        "nullable": true
                                                     },
                                                     "created_at": {
                                                         "type": "string",
@@ -7188,6 +7292,13 @@
                                         ],
                                         "example": "active",
                                         "nullable": true
+                                    },
+                                    "balance": {
+                                        "description": "Optional garden balance",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -7240,6 +7351,17 @@
                                                         "inactive"
                                                     ],
                                                     "example": "active"
+                                                },
+                                                "balance": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 100,
+                                                    "nullable": true
+                                                },
+                                                "formatted_balance": {
+                                                    "type": "string",
+                                                    "example": "100.00 ₾",
+                                                    "nullable": true
                                                 },
                                                 "created_at": {
                                                     "type": "string",
@@ -7348,6 +7470,12 @@
                                                     "items": {
                                                         "type": "string"
                                                     }
+                                                },
+                                                "balance": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -7428,6 +7556,17 @@
                                                 "inactive"
                                             ],
                                             "example": "active"
+                                        },
+                                        "balance": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 150,
+                                            "nullable": true
+                                        },
+                                        "formatted_balance": {
+                                            "type": "string",
+                                            "example": "150.00 ₾",
+                                            "nullable": true
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -7590,6 +7729,13 @@
                                         ],
                                         "example": "paused",
                                         "nullable": true
+                                    },
+                                    "balance": {
+                                        "description": "Optional garden balance",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 200,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -7650,6 +7796,17 @@
                                                 "inactive"
                                             ],
                                             "example": "paused"
+                                        },
+                                        "balance": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 200,
+                                            "nullable": true
+                                        },
+                                        "formatted_balance": {
+                                            "type": "string",
+                                            "example": "200.00 ₾",
+                                            "nullable": true
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -7748,6 +7905,12 @@
                                                     }
                                                 },
                                                 "status": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "balance": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -7969,6 +8132,147 @@
                                         "errors": {
                                             "properties": {
                                                 "status": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/gardens/{id}/dister": {
+            "patch": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Update garden dister and referral",
+                "description": "Update the dister assignment for a garden and generate new referral code",
+                "operationId": "updateGardenDister",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Garden ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "dister_id"
+                                ],
+                                "properties": {
+                                    "dister_id": {
+                                        "description": "ID of the dister to assign to the garden",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Garden dister updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Garden Name"
+                                        },
+                                        "dister_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "referral_code": {
+                                            "type": "string",
+                                            "example": "REF123ABC"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "dister": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Dister Name"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "dister@example.com"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Garden or dister not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Garden or dister not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "dister_id": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"

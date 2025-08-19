@@ -23,6 +23,7 @@ class Dister extends Authenticatable
         'gardens',
         'percent',
         'main_dister',
+        'balance',
     ];
 
     protected $hidden = [
@@ -37,6 +38,7 @@ class Dister extends Authenticatable
         'password' => 'hashed',
         'percent' => 'decimal:2',
         'main_dister' => 'array',
+        'balance' => 'decimal:2',
     ];
 
     /**
@@ -104,5 +106,16 @@ class Dister extends Authenticatable
             return in_array($gardenId, $this->gardens);
         }
         return false;
+    }
+
+    /**
+     * Get formatted balance display
+     */
+    public function getFormattedBalanceAttribute()
+    {
+        if ($this->balance === null) {
+            return null;
+        }
+        return number_format($this->balance, 2) . ' ₾';
     }
 }
