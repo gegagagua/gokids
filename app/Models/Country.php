@@ -21,6 +21,11 @@ class Country extends Model
         return $this->hasMany(City::class);
     }
 
+    public function gardens()
+    {
+        return $this->hasMany(Garden::class);
+    }
+
     /**
      * Get the dister that owns the country.
      */

@@ -6837,6 +6837,15 @@
                         }
                     },
                     {
+                        "name": "country",
+                        "in": "query",
+                        "description": "Filter by country ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
                         "name": "tax_id",
                         "in": "query",
                         "description": "Filter by tax ID",
@@ -6942,6 +6951,25 @@
                                                         },
                                                         "type": "object"
                                                     },
+                                                    "country": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Georgia"
+                                                            },
+                                                            "tariff": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 0
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
                                                     "images": {
                                                         "type": "array",
                                                         "items": {
@@ -7035,6 +7063,12 @@
                                         "description": "ID of the associated city",
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "country": {
+                                        "description": "Optional country ID",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
                                     },
                                     "phone": {
                                         "description": "Contact phone number",
@@ -7181,6 +7215,12 @@
                                                         "type": "string"
                                                     }
                                                 },
+                                                "country": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
                                                 "phone": {
                                                     "type": "array",
                                                     "items": {
@@ -7268,7 +7308,6 @@
                                             "example": "+995599123456"
                                         },
                                         "email": {
-                                            "type": "string",
                                             "example": "sunshine@garden.ge"
                                         },
                                         "created_at": {
@@ -7295,6 +7334,25 @@
                                                 }
                                             },
                                             "type": "object"
+                                        },
+                                        "country": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Georgia"
+                                                },
+                                                "tariff": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0
+                                                }
+                                            },
+                                            "type": "object",
+                                            "nullable": true
                                         }
                                     },
                                     "type": "object"
@@ -7373,6 +7431,12 @@
                                         "type": "integer",
                                         "example": 2
                                     },
+                                    "country": {
+                                        "description": "Optional country ID",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
                                     "phone": {
                                         "description": "Contact phone number",
                                         "type": "string",
@@ -7429,6 +7493,11 @@
                                         "city_id": {
                                             "type": "integer",
                                             "example": 2
+                                        },
+                                        "country": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
                                         },
                                         "phone": {
                                             "type": "string",
@@ -7504,6 +7573,12 @@
                                                     }
                                                 },
                                                 "city_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "country": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"

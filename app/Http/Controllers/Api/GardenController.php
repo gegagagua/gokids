@@ -29,6 +29,7 @@ class GardenController extends Controller
      *     @OA\Parameter(name="name", in="query", required=false, description="Filter by garden name", @OA\Schema(type="string")),
      *     @OA\Parameter(name="address", in="query", required=false, description="Filter by address", @OA\Schema(type="string")),
      *     @OA\Parameter(name="city_id", in="query", required=false, description="Filter by city ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="country", in="query", required=false, description="Filter by country ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="tax_id", in="query", required=false, description="Filter by tax ID", @OA\Schema(type="string")),
      *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
      *     @OA\Parameter(name="email", in="query", required=false, description="Filter by email", @OA\Schema(type="string")),
@@ -56,6 +57,11 @@ class GardenController extends Controller
      *                         @OA\Property(property="name", type="string", example="Tbilisi"),
      *                         @OA\Property(property="region", type="string", example="Tbilisi")
      *                     ),
+     *                     @OA\Property(property="country", type="object", nullable=true,
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Georgia"),
+     *                         @OA\Property(property="tariff", type="number", format="float", example=0.00)
+     *                     ),
      *                     @OA\Property(property="images", type="array",
      *                         @OA\Items(
      *                             type="object",
@@ -75,7 +81,7 @@ class GardenController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Garden::with(['city', 'images']);
+        $query = Garden::with(['city', 'country', 'images']);
 
         // If logged-in user is a dister, restrict to their assigned gardens
         if ($request->user() instanceof \App\Models\User && $request->user()->type === 'dister') {
@@ -96,6 +102,9 @@ class GardenController extends Controller
         }
         if ($request->filled('city_id')) {
             $query->where('city_id', $request->query('city_id'));
+        }
+        if ($request->filled('country')) {
+            $query->where('country', $request->query('country'));
         }
         if ($request->filled('tax_id')) {
             $query->where('tax_id', $request->query('tax_id'));
@@ -143,7 +152,7 @@ class GardenController extends Controller
      *             @OA\Property(property="tax_id", type="string", example="123456789"),
      *             @OA\Property(property="city_id", type="integer", example=1),
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
-     *             @OA\Property(property="email", type="string", example="sunshine@garden.ge"),
+     *             @OA\Property(property="email", example="sunshine@garden.ge"),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time"),
      *             @OA\Property(
@@ -152,6 +161,14 @@ class GardenController extends Controller
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="Tbilisi"),
      *                 @OA\Property(property="region", type="string", example="Tbilisi")
+     *             ),
+     *             @OA\Property(
+     *                 property="country",
+     *                 type="object",
+     *                 nullable=true,
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Georgia"),
+     *                 @OA\Property(property="tariff", type="number", format="float", example=0.00)
      *             )
      *         )
      *     ),
@@ -174,7 +191,7 @@ class GardenController extends Controller
             }
         }
 
-        $garden = Garden::with(['city', 'images'])->findOrFail($id);
+        $garden = Garden::with(['city', 'country', 'images'])->findOrFail($id);
         $garden->makeVisible('referral_code');
         return $garden;
     }
@@ -242,6 +259,7 @@ class GardenController extends Controller
      *             @OA\Property(property="address", type="string", maxLength=255, example="456 Oak Avenue", description="Garden address"),
      *             @OA\Property(property="tax_id", type="string", maxLength=255, example="987654321", description="Tax identification number"),
      *             @OA\Property(property="city_id", type="integer", example=1, description="ID of the associated city"),
+     *             @OA\Property(property="country", type="integer", example=1, nullable=true, description="Optional country ID"),
      *             @OA\Property(property="phone", type="string", maxLength=255, example="+995599654321", description="Contact phone number"),
      *             @OA\Property(property="email", type="string", format="email", example="newgarden@garden.ge", description="Contact email address"),
      *             @OA\Property(property="password", type="string", minLength=6, example="password123", description="Garden access password"),
@@ -285,6 +303,7 @@ class GardenController extends Controller
      *                 @OA\Property(property="address", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="tax_id", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="city_id", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="country", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="email", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="password", type="array", @OA\Items(type="string"))
@@ -300,6 +319,7 @@ class GardenController extends Controller
             'address' => 'required|string|max:255',
             'tax_id' => 'required|string|max:255',
             'city_id' => 'required|exists:cities,id',
+            'country' => 'nullable|exists:countries,id',
             'phone' => 'required|string|max:255',
             'email' => 'required|email|unique:gardens,email|unique:users,email',
             'password' => 'required|string|min:6',
@@ -354,6 +374,7 @@ class GardenController extends Controller
      *             @OA\Property(property="address", type="string", maxLength=255, example="789 Pine Street", description="Garden address"),
      *             @OA\Property(property="tax_id", type="string", maxLength=255, example="111222333", description="Tax identification number"),
      *             @OA\Property(property="city_id", type="integer", example=2, description="ID of the associated city"),
+     *             @OA\Property(property="country", type="integer", example=1, nullable=true, description="Optional country ID"),
      *             @OA\Property(property="phone", type="string", maxLength=255, example="+995599111222", description="Contact phone number"),
      *             @OA\Property(property="email", type="string", format="email", example="updated@garden.ge", description="Contact email address"),
      *             @OA\Property(property="password", type="string", minLength=6, example="newpassword123", description="Garden access password"),
@@ -370,6 +391,7 @@ class GardenController extends Controller
      *             @OA\Property(property="address", type="string", example="789 Pine Street"),
      *             @OA\Property(property="tax_id", type="string", example="111222333"),
      *             @OA\Property(property="city_id", type="integer", example=2),
+     *             @OA\Property(property="country", type="integer", example=1, nullable=true),
      *             @OA\Property(property="phone", type="string", example="+995599111222"),
      *             @OA\Property(property="email", type="string", example="updated@garden.ge"),
      *             @OA\Property(property="referral", type="string", example="REF123", nullable=true),
@@ -396,6 +418,7 @@ class GardenController extends Controller
      *                 @OA\Property(property="address", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="tax_id", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="city_id", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="country", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="email", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="password", type="array", @OA\Items(type="string")),
@@ -414,6 +437,7 @@ class GardenController extends Controller
             'address' => 'sometimes|required|string|max:255',
             'tax_id' => 'sometimes|required|string|max:255',
             'city_id' => 'sometimes|required|exists:cities,id',
+            'country' => 'nullable|exists:countries,id',
             'phone' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:gardens,email,' . $id,
             'password' => 'sometimes|required|string|min:6',
