@@ -10131,27 +10131,17 @@
                     "People"
                 ],
                 "summary": "Get all people",
-                "description": "Retrieve a list of all people with their associated person type and card information. Supports filtering by first_name, last_name, person_type_id, and card_id.",
+                "description": "Retrieve a list of all people with their associated person type and card information. Supports filtering by name, person_type_id, and card_id.",
                 "operationId": "getPeople",
                 "parameters": [
                     {
-                        "name": "first_name",
+                        "name": "name",
                         "in": "query",
-                        "description": "Filter by first name",
+                        "description": "Filter by name",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "example": "John"
-                        }
-                    },
-                    {
-                        "name": "last_name",
-                        "in": "query",
-                        "description": "Filter by last name",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "example": "Doe"
+                            "example": "John Doe"
                         }
                     },
                     {
@@ -10188,13 +10178,9 @@
                                                 "type": "integer",
                                                 "example": 1
                                             },
-                                            "first_name": {
+                                            "name": {
                                                 "type": "string",
-                                                "example": "John"
-                                            },
-                                            "last_name": {
-                                                "type": "string",
-                                                "example": "Doe"
+                                                "example": "John Doe"
                                             },
                                             "phone": {
                                                 "type": "string",
@@ -10360,13 +10346,7 @@
                                         },
                                         "errors": {
                                             "properties": {
-                                                "first_name": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "last_name": {
+                                                "name": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
@@ -10438,13 +10418,9 @@
                                             "type": "integer",
                                             "example": 1
                                         },
-                                        "first_name": {
+                                        "name": {
                                             "type": "string",
-                                            "example": "John"
-                                        },
-                                        "last_name": {
-                                            "type": "string",
-                                            "example": "Doe"
+                                            "example": "John Doe"
                                         },
                                         "phone": {
                                             "type": "string",
@@ -10550,17 +10526,11 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "first_name": {
-                                        "description": "Person's first name",
+                                    "name": {
+                                        "description": "Person's full name",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "Updated John"
-                                    },
-                                    "last_name": {
-                                        "description": "Person's last name",
-                                        "type": "string",
-                                        "maxLength": 255,
-                                        "example": "Updated Doe"
+                                        "example": "Updated John Doe"
                                     },
                                     "phone": {
                                         "description": "Contact phone number",
@@ -10595,13 +10565,9 @@
                                             "type": "integer",
                                             "example": 1
                                         },
-                                        "first_name": {
+                                        "name": {
                                             "type": "string",
-                                            "example": "Updated John"
-                                        },
-                                        "last_name": {
-                                            "type": "string",
-                                            "example": "Updated Doe"
+                                            "example": "Updated John Doe"
                                         },
                                         "phone": {
                                             "type": "string",
@@ -10657,13 +10623,7 @@
                                         },
                                         "errors": {
                                             "properties": {
-                                                "first_name": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "last_name": {
+                                                "name": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
