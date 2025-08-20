@@ -7378,6 +7378,12 @@
                                                         "example": "150.00 ₾",
                                                         "nullable": true
                                                     },
+                                                    "percent": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 15.5,
+                                                        "nullable": true
+                                                    },
                                                     "created_at": {
                                                         "type": "string",
                                                         "format": "date-time"
@@ -7562,6 +7568,13 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 100,
+                                        "nullable": true
+                                    },
+                                    "percent": {
+                                        "description": "Optional garden percentage (0-100)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15.5,
                                         "nullable": true
                                     }
                                 },
@@ -7832,6 +7845,12 @@
                                             "example": "150.00 ₾",
                                             "nullable": true
                                         },
+                                        "percent": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 15.5,
+                                            "nullable": true
+                                        },
                                         "created_at": {
                                             "type": "string",
                                             "format": "date-time"
@@ -8000,6 +8019,13 @@
                                         "format": "float",
                                         "example": 200,
                                         "nullable": true
+                                    },
+                                    "percent": {
+                                        "description": "Optional garden percentage (0-100)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15.5,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -8060,6 +8086,12 @@
                                                 "inactive"
                                             ],
                                             "example": "paused"
+                                        },
+                                        "percent": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 15.5,
+                                            "nullable": true
                                         },
                                         "balance": {
                                             "type": "number",
@@ -8175,6 +8207,12 @@
                                                     }
                                                 },
                                                 "balance": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "percent": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
