@@ -60,6 +60,7 @@ class AuthController extends Controller
             'email' => $fields['email'],
             'password' => bcrypt($fields['password']),
             'type' => 'user', // Default type for regular users
+            'balance' => 0.00, // Default balance for new users
         ]);
 
         $token = $user->createToken('api_token')->plainTextToken;
@@ -70,6 +71,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'type' => $user->type,
+                'balance' => $user->balance,
             ],
             'token' => $token,
         ], 200);
@@ -128,6 +130,11 @@ class AuthController extends Controller
             ],
             'token' => $token,
         ];
+
+        // Add balance for user type 'user'
+        if ($user->type === 'user') {
+            $response['user']['balance'] = $user->balance ?? 0.00;
+        }
 
         if ($user->type === 'garden') {
             $garden = \App\Models\Garden::with(['city', 'country', 'images'])->where('email', $user->email)->first();
