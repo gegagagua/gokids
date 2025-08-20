@@ -69,6 +69,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             Route::patch('/cards/{id}/parent-verification', [CardController::class, 'updateParentVerification']);
             Route::patch('/cards/{id}/license', [CardController::class, 'updateLicense']);
             Route::patch('/cards/{id}/status', [CardController::class, 'updateStatus']);
+            Route::patch('/cards/{id}/change-main-garden-image', [CardController::class, 'changeMainGardenImage']);
             Route::post('/cards/{id}/regenerate-code', [CardController::class, 'regenerateCode']);
             Route::post('/cards/{id}/restore', [CardController::class, 'restore']);
         });

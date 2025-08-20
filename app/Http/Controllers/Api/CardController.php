@@ -1521,6 +1521,7 @@ class CardController extends Controller
                 'person_type_id' => $card->person_type_id,
                 'parent_code' => $card->parent_code,
                 'image_path' => $card->image_path,
+                'active_garden_image' => $card->active_garden_image,
                 'image_url' => $card->image_url,
                 'created_at' => $card->created_at,
                 'updated_at' => $card->updated_at,
@@ -1779,5 +1780,102 @@ class CardController extends Controller
                 'garden' => $card->garden
             ]
         ]);
+    }
+
+    /**
+     * Change main garden image for a card
+     *
+     * @OA\Patch(
+     *     path="/api/cards/{id}/change-main-garden-image",
+     *     operationId="changeMainGardenImage",
+     *     tags={"Cards"},
+     *     summary="Change main garden image for a card",
+     *     description="Update the active_garden_image field for a specific card with garden image ID",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Card ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"garden_image_id"},
+     *             @OA\Property(
+     *                 property="garden_image_id",
+     *                 type="integer",
+     *                 example=1,
+     *                 description="ID of the garden image from garden_images table"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Main garden image updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Main garden image updated successfully"),
+     *             @OA\Property(property="card", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="active_garden_image", type="integer", example=1),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Card or garden image not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Card or garden image not found")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="garden_image_id", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function changeMainGardenImage(Request $request, $id)
+    {
+        $request->validate([
+            'garden_image_id' => 'required|integer|exists:garden_images,id',
+        ]);
+
+        $card = Card::findOrFail($id);
+
+        // Check if the garden image belongs to the same garden as the card
+        $gardenImage = \App\Models\GardenImage::findOrFail($request->garden_image_id);
+        
+        if ($card->group && $card->group->garden) {
+            if ($gardenImage->garden_id !== $card->group->garden->id) {
+                return response()->json([
+                    'message' => 'Garden image does not belong to the same garden as the card'
+                ], 403);
+            }
+        }
+
+        // Update the active_garden_image field
+        $card->update([
+            'active_garden_image' => $request->garden_image_id
+        ]);
+
+        return response()->json([
+            'message' => 'Main garden image updated successfully',
+            'card' => [
+                'id' => $card->id,
+                'active_garden_image' => $card->active_garden_image,
+                'updated_at' => $card->updated_at,
+            ]
+        ], 200);
     }
 }
