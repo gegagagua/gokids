@@ -20,21 +20,14 @@ class PeopleController extends Controller
      *     operationId="getPeople",
      *     tags={"People"},
      *     summary="Get all people",
-     *     description="Retrieve a list of all people with their associated person type and card information. Supports filtering by first_name, last_name, person_type_id, and card_id.",
+     *     description="Retrieve a list of all people with their associated person type and card information. Supports filtering by name, person_type_id, and card_id.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
-     *         name="first_name",
+     *         name="name",
      *         in="query",
      *         required=false,
-     *         description="Filter by first name",
-     *         @OA\Schema(type="string", example="John")
-     *     ),
-     *     @OA\Parameter(
-     *         name="last_name",
-     *         in="query",
-     *         required=false,
-     *         description="Filter by last name",
-     *         @OA\Schema(type="string", example="Doe")
+     *         description="Filter by name",
+     *         @OA\Schema(type="string", example="John Doe")
      *     ),
      *     @OA\Parameter(
      *         name="person_type_id",
@@ -58,8 +51,8 @@ class PeopleController extends Controller
      *             @OA\Items(
      *                 type="object",
      *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="first_name", type="string", example="John"),
-     *                 @OA\Property(property="last_name", type="string", example="Doe"),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *
      *                 @OA\Property(property="phone", type="string", example="+995599123456"),
      *                 @OA\Property(property="person_type_id", type="integer", example=1),
      *                 @OA\Property(property="card_id", type="integer", example=1),
@@ -87,11 +80,8 @@ class PeopleController extends Controller
     {
         $query = People::with(['personType', 'card']);
         
-        if ($request->filled('first_name')) {
-            $query->where('first_name', 'like', '%' . $request->query('first_name') . '%');
-        }
-        if ($request->filled('last_name')) {
-            $query->where('last_name', 'like', '%' . $request->query('last_name') . '%');
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->query('name') . '%');
         }
         if ($request->filled('person_type_id')) {
             $query->where('person_type_id', $request->query('person_type_id'));
@@ -124,8 +114,8 @@ class PeopleController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="first_name", type="string", example="John"),
-     *             @OA\Property(property="last_name", type="string", example="Doe"),
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
      *             @OA\Property(property="person_type_id", type="integer", example=1),
      *             @OA\Property(property="card_id", type="integer", example=1),
@@ -171,9 +161,9 @@ class PeopleController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"first_name", "last_name", "phone", "person_type_id", "card_id"},
-     *             @OA\Property(property="first_name", type="string", maxLength=255, example="John", description="Person's first name"),
-     *             @OA\Property(property="last_name", type="string", maxLength=255, example="Doe", description="Person's last name"),
+     *             required={"name", "phone", "person_type_id", "card_id"},
+     *             @OA\Property(property="name", type="string", maxLength=255, example="John Doe", description="Person's full name"),
+     *
      *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599123456", description="Contact phone number"),
      *             @OA\Property(property="person_type_id", type="integer", example=1, description="ID of the associated person type"),
      *             @OA\Property(property="card_id", type="integer", example=1, description="ID of the associated card")
@@ -185,8 +175,7 @@ class PeopleController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="id", type="integer", example=2),
-     *             @OA\Property(property="first_name", type="string", example="John"),
-     *             @OA\Property(property="last_name", type="string", example="Doe"),
+     *             @OA\Property(property="name", type="string", example="John Doe"),
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
      *             @OA\Property(property="person_type_id", type="integer", example=1),
      *             @OA\Property(property="card_id", type="integer", example=1),

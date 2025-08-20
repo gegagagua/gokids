@@ -2863,93 +2863,14 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "OTP sent successfully",
+                        "description": "Login successful",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "OTP sent successfully"
-                                        },
-                                        "card_id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "phone": {
-                                            "type": "string",
-                                            "example": "+995599123456"
-                                        },
-                                        "image_url": {
-                                            "type": "string",
-                                            "example": "http://localhost/storage/cards/abc123.jpg",
-                                            "nullable": true
-                                        },
-                                        "garden_images": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "title": {
-                                                        "type": "string",
-                                                        "example": "Main Entrance"
-                                                    },
-                                                    "image": {
-                                                        "type": "string",
-                                                        "example": "garden_images/abc123.jpg"
-                                                    },
-                                                    "image_url": {
-                                                        "type": "string",
-                                                        "example": "http://localhost/storage/garden_images/abc123.jpg"
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "garden": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "name": {
-                                                    "type": "string",
-                                                    "example": "Sunshine Garden"
-                                                },
-                                                "address": {
-                                                    "type": "string",
-                                                    "example": "123 Main Street"
-                                                },
-                                                "phone": {
-                                                    "type": "string",
-                                                    "example": "+995599123456"
-                                                },
-                                                "email": {
-                                                    "type": "string",
-                                                    "example": "garden@example.com"
-                                                },
-                                                "status": {
-                                                    "type": "string",
-                                                    "example": "active"
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                }
-                                            },
-                                            "type": "object",
-                                            "nullable": true
+                                            "example": "Login successful"
                                         },
                                         "token": {
                                             "description": "API token for authentication",
@@ -10352,24 +10273,17 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "first_name",
-                                    "last_name",
+                                    "name",
                                     "phone",
                                     "person_type_id",
                                     "card_id"
                                 ],
                                 "properties": {
-                                    "first_name": {
-                                        "description": "Person's first name",
+                                    "name": {
+                                        "description": "Person's full name",
                                         "type": "string",
                                         "maxLength": 255,
-                                        "example": "John"
-                                    },
-                                    "last_name": {
-                                        "description": "Person's last name",
-                                        "type": "string",
-                                        "maxLength": 255,
-                                        "example": "Doe"
+                                        "example": "John Doe"
                                     },
                                     "phone": {
                                         "description": "Contact phone number",
@@ -10404,13 +10318,9 @@
                                             "type": "integer",
                                             "example": 2
                                         },
-                                        "first_name": {
+                                        "name": {
                                             "type": "string",
-                                            "example": "John"
-                                        },
-                                        "last_name": {
-                                            "type": "string",
-                                            "example": "Doe"
+                                            "example": "John Doe"
                                         },
                                         "phone": {
                                             "type": "string",
