@@ -61,6 +61,14 @@ class Garden extends Model
     }
 
     /**
+     * Get the dister associated with this garden
+     */
+    public function getDisterAttribute()
+    {
+        return \App\Models\Dister::whereJsonContains('gardens', $this->id)->first();
+    }
+
+    /**
      * Check if garden is active
      */
     public function isActive()

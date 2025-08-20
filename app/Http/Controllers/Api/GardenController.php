@@ -87,7 +87,7 @@ class GardenController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Garden::with(['city', 'country', 'images']);
+        $query = Garden::with(['city', 'country', 'images', 'dister']);
 
         // If logged-in user is a dister, restrict to their assigned gardens
         if ($request->user() instanceof \App\Models\User && $request->user()->type === 'dister') {
