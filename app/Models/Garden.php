@@ -32,6 +32,8 @@ class Garden extends Model
         'balance' => 'decimal:2',
     ];
 
+    protected $appends = ['dister'];
+
     public static function generateUniqueReferralCode()
     {
         do {
