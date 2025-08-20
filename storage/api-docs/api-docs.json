@@ -459,6 +459,88 @@
                 }
             }
         },
+        "/api/me": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get authenticated user information",
+                "description": "Get current authenticated user information with the same format as login response",
+                "operationId": "getMe",
+                "responses": {
+                    "200": {
+                        "description": "User information retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@example.com"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "user"
+                                                },
+                                                "balance": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 150.75,
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "garden": {
+                                            "description": "Garden data if user type is garden",
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "dister": {
+                                            "description": "Dister data if user type is dister",
+                                            "type": "object",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/cards": {
             "get": {
                 "tags": [
@@ -7378,7 +7460,7 @@
                                                         "example": "150.00 ₾",
                                                         "nullable": true
                                                     },
-                                                    "percent": {
+                                                    "percents": {
                                                         "type": "number",
                                                         "format": "float",
                                                         "example": 15.5,
@@ -7570,7 +7652,7 @@
                                         "example": 100,
                                         "nullable": true
                                     },
-                                    "percent": {
+                                    "percents": {
                                         "description": "Optional garden percentage (0-100)",
                                         "type": "number",
                                         "format": "float",
@@ -7845,7 +7927,7 @@
                                             "example": "150.00 ₾",
                                             "nullable": true
                                         },
-                                        "percent": {
+                                        "percents": {
                                             "type": "number",
                                             "format": "float",
                                             "example": 15.5,
@@ -8020,7 +8102,7 @@
                                         "example": 200,
                                         "nullable": true
                                     },
-                                    "percent": {
+                                    "percents": {
                                         "description": "Optional garden percentage (0-100)",
                                         "type": "number",
                                         "format": "float",
@@ -8087,7 +8169,7 @@
                                             ],
                                             "example": "paused"
                                         },
-                                        "percent": {
+                                        "percents": {
                                             "type": "number",
                                             "format": "float",
                                             "example": 15.5,
@@ -8212,7 +8294,7 @@
                                                         "type": "string"
                                                     }
                                                 },
-                                                "percent": {
+                                                "percents": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"

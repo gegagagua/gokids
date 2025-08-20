@@ -35,6 +35,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::apiResource('people', PeopleController::class);
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         // Place specific routes before resource to avoid {garden} binding capturing 'export'

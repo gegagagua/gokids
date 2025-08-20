@@ -370,4 +370,85 @@ class AuthController extends Controller
 
         return response()->json(['message' => 'Password reset successfully.']);
     }
+
+    /**
+     * Get authenticated user information
+     *
+     * @OA\Get(
+     *     path="/api/me",
+     *     operationId="getMe",
+     *     tags={"Auth"},
+     *     summary="Get authenticated user information",
+     *     description="Get current authenticated user information with the same format as login response",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="User information retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="email", type="string", example="john@example.com"),
+     *                 @OA\Property(property="type", type="string", example="user"),
+     *                 @OA\Property(property="balance", type="number", format="float", example=150.75, nullable=true)
+     *             ),
+     *             @OA\Property(property="garden", type="object", nullable=true, description="Garden data if user type is garden"),
+     *             @OA\Property(property="dister", type="object", nullable=true, description="Dister data if user type is dister")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     )
+     * )
+     */
+    public function me(Request $request)
+    {
+        $user = $request->user();
+
+        $response = [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'type' => $user->type !== 'garden' && $user->type !== 'dister' ? 'admin' : $user->type,
+            ],
+        ];
+
+        // Add balance for user type 'user'
+        if ($user->type === 'user') {
+            $response['user']['balance'] = $user->balance ?? 0.00;
+        }
+
+        if ($user->type === 'garden') {
+            $garden = \App\Models\Garden::with(['city', 'country', 'images'])->where('email', $user->email)->first();
+            if ($garden) {
+                $response['garden'] = $garden;
+                
+                // First, try to find dister who has direct access to this garden
+                $dister = \App\Models\Dister::whereJsonContains('gardens', $garden->id)->first();
+                
+                // If no direct dister found, try to find dister who owns the country where the garden is located
+                if (!$dister && $garden->country) {
+                    $dister = \App\Models\Dister::where('country', $garden->country->id)->first();
+                }
+                
+                if ($dister) {
+                    $dister->load(['country', 'city']);
+                    $response['dister'] = $dister;
+                }
+            }
+        } elseif ($user->type === 'dister') {
+            $dister = \App\Models\Dister::with(['country', 'city'])->where('email', $user->email)->first();
+            if ($dister) {
+                $response['dister'] = $dister;
+            }
+        }
+
+        return response()->json($response, 200);
+    }
 }
