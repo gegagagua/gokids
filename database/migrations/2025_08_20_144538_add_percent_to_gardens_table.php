@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('gardens', function (Blueprint $table) {
-            //
+            $table->decimal('percent', 5, 2)->nullable()->after('balance');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('gardens', function (Blueprint $table) {
-            //
+            $table->dropColumn('percent');
         });
     }
 };
