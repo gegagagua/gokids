@@ -139,12 +139,21 @@ class Card extends Model
     }
 
     /**
-     * Get garden images through group relationship
+     * Get garden images through group relationship with full URLs
      */
     public function getGardenImagesAttribute()
     {
         if ($this->group && $this->group->garden) {
-            return $this->group->garden->images;
+            return $this->group->garden->images->map(function ($image) {
+                return [
+                    'id' => $image->id,
+                    'title' => $image->title,
+                    'image' => $image->image,
+                    'image_url' => $image->image_url,
+                    'created_at' => $image->created_at,
+                    'updated_at' => $image->updated_at,
+                ];
+            });
         }
         return collect();
     }

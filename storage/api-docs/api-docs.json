@@ -2721,7 +2721,15 @@
                                                                     "type": "string",
                                                                     "example": "garden_images/abc123.jpg"
                                                                 },
+                                                                "image_url": {
+                                                                    "type": "string",
+                                                                    "example": "http://localhost/storage/garden_images/abc123.jpg"
+                                                                },
                                                                 "created_at": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
+                                                                },
+                                                                "updated_at": {
                                                                     "type": "string",
                                                                     "format": "date-time"
                                                                 }
@@ -2893,7 +2901,15 @@
                                                         "type": "string",
                                                         "example": "garden_images/abc123.jpg"
                                                     },
+                                                    "image_url": {
+                                                        "type": "string",
+                                                        "example": "http://localhost/storage/garden_images/abc123.jpg"
+                                                    },
                                                     "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
                                                         "type": "string",
                                                         "format": "date-time"
                                                     }
