@@ -1496,6 +1496,12 @@ class CardController extends Controller
             ->where('phone', $request->phone)
             ->get();
 
+        // Generate token for the first card (assuming one phone can have multiple cards)
+        $token = null;
+        if ($cards->isNotEmpty()) {
+            $token = $cards->first()->createToken('card-token')->plainTextToken;
+        }
+
         if ($cards->isEmpty()) {
             return response()->json([
                 'message' => 'No cards found for this phone number'
@@ -1529,6 +1535,7 @@ class CardController extends Controller
 
         return response()->json([
             'message' => 'Login successful',
+            'token' => $token,
             'cards' => $transformedCards
         ]);
     }
@@ -1549,31 +1556,10 @@ class CardController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="OTP sent successfully",
+     *         description="Login successful",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="message", type="string", example="OTP sent successfully"),
-     *             @OA\Property(property="card_id", type="integer", example=1),
-     *             @OA\Property(property="phone", type="string", example="+995599123456"),
-     *             @OA\Property(property="image_url", type="string", example="http://localhost/storage/cards/abc123.jpg", nullable=true),
-     *             @OA\Property(property="garden_images", type="array", @OA\Items(
-     *                 type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="title", type="string", example="Main Entrance"),
-     *                 @OA\Property(property="image", type="string", example="garden_images/abc123.jpg"),
-     *                 @OA\Property(property="image_url", type="string", example="http://localhost/storage/garden_images/abc123.jpg"),
-     *                 @OA\Property(property="created_at", type="string", format="date-time"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time")
-     *             )),
-     *             @OA\Property(property="garden", type="object", nullable=true,
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="name", type="string", example="Sunshine Garden"),
-     *                 @OA\Property(property="address", type="string", example="123 Main Street"),
-     *                 @OA\Property(property="phone", type="string", example="+995599123456"),
-     *                 @OA\Property(property="email", type="string", example="garden@example.com"),
-     *                 @OA\Property(property="status", type="string", example="active"),
-     *                 @OA\Property(property="created_at", type="string", format="date-time")
-     *             ),
+     *             @OA\Property(property="message", type="string", example="Login successful"),
      *             @OA\Property(property="token", type="string", example="1|randomTokenStringHere", description="API token for authentication")
      *         )
      *     ),
@@ -1632,17 +1618,8 @@ class CardController extends Controller
             ], 500);
         }
 
-        // Generate a token for the card
-        $token = $card->createToken('card-token')->plainTextToken;
-
         return response()->json([
-            'message' => 'OTP sent successfully',
-            'card_id' => $card->id,
-            'phone' => $card->phone,
-            'image_url' => $card->image_url,
-            'garden_images' => $card->garden_images,
-            'garden' => $card->garden,
-            'token' => $token
+            'message' => 'Login successful'
         ]);
     }
 
