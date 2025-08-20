@@ -24,14 +24,14 @@ class Garden extends Model
         'referral',
         'status',
         'balance',
-        'percent',
+        'percents',
     ];
 
     protected $hidden = ['password'];
 
     protected $casts = [
         'balance' => 'decimal:2',
-        'percent' => 'decimal:2',
+        'percents' => 'decimal:2',
     ];
 
     protected $appends = ['dister'];

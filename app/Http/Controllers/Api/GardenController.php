@@ -56,7 +56,7 @@ class GardenController extends Controller
      *                     @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}),
      *                     @OA\Property(property="balance", type="number", format="float", example=150.00, nullable=true),
      *                     @OA\Property(property="formatted_balance", type="string", example="150.00 ₾", nullable=true),
-     *                     @OA\Property(property="percent", type="number", format="float", example=15.50, nullable=true),
+     *                     @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
      *                     @OA\Property(property="city", type="object",
@@ -172,7 +172,7 @@ class GardenController extends Controller
      *             @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}),
      *             @OA\Property(property="balance", type="number", format="float", example=150.00, nullable=true),
      *             @OA\Property(property="formatted_balance", type="string", example="150.00 ₾", nullable=true),
-     *             @OA\Property(property="percent", type="number", format="float", example=15.50, nullable=true),
+     *             @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time"),
      *             @OA\Property(
@@ -286,7 +286,7 @@ class GardenController extends Controller
      *             @OA\Property(property="referral", type="string", example="REF123", nullable=true, description="Optional referral code"),
      *             @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}, nullable=true, description="Garden status (defaults to active)"),
      *             @OA\Property(property="balance", type="number", format="float", example=100.00, nullable=true, description="Optional garden balance"),
-     *             @OA\Property(property="percent", type="number", format="float", example=15.50, nullable=true, description="Optional garden percentage (0-100)")
+     *             @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true, description="Optional garden percentage (0-100)")
      *         )
      *     ),
      *     @OA\Response(
@@ -354,7 +354,7 @@ class GardenController extends Controller
             'referral' => 'nullable|string|max:255',
             'status' => 'nullable|string|in:active,paused,inactive',
             'balance' => 'nullable|numeric|min:0|max:9999999.99',
-            'percent' => 'nullable|numeric|min:0|max:100.00',
+            'percents' => 'nullable|numeric|min:0|max:100.00',
         ]);
 
         // Create user for the garden
@@ -412,7 +412,7 @@ class GardenController extends Controller
      *             @OA\Property(property="referral", type="string", example="REF123", nullable=true, description="Optional referral code"),
      *             @OA\Property(property="status", type="string", example="paused", enum={"active", "paused", "inactive"}, nullable=true, description="Garden status"),
      *             @OA\Property(property="balance", type="number", format="float", example=200.00, nullable=true, description="Optional garden balance"),
-     *             @OA\Property(property="percent", type="number", format="float", example=15.50, nullable=true, description="Optional garden percentage (0-100)")
+     *             @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true, description="Optional garden percentage (0-100)")
      *         )
      *     ),
      *     @OA\Response(
@@ -430,7 +430,7 @@ class GardenController extends Controller
      *             @OA\Property(property="email", type="string", example="updated@garden.ge"),
      *             @OA\Property(property="referral", type="string", example="REF123", nullable=true),
      *             @OA\Property(property="status", type="string", example="paused", enum={"active", "paused", "inactive"}),
-     *             @OA\Property(property="percent", type="number", format="float", example=15.50, nullable=true),
+     *             @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true),
      *             @OA\Property(property="balance", type="number", format="float", example=200.00, nullable=true),
      *             @OA\Property(property="formatted_balance", type="string", example="200.00 ₾", nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
@@ -463,7 +463,7 @@ class GardenController extends Controller
      *                 @OA\Property(property="referral", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="status", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="balance", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="percent", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(property="percents", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     )
@@ -485,7 +485,7 @@ class GardenController extends Controller
             'referral' => 'nullable|string|max:255',
             'status' => 'nullable|string|in:active,paused,inactive',
             'balance' => 'nullable|numeric|min:0|max:9999999.99',
-            'percent' => 'nullable|numeric|min:0|max:100.00',
+            'percents' => 'nullable|numeric|min:0|max:100.00',
         ]);
 
         // Hash the password if it's being updated
