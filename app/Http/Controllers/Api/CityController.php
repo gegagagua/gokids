@@ -45,7 +45,10 @@ class CityController extends Controller
      *                         @OA\Property(property="id", type="integer", example=1),
      *                         @OA\Property(property="name", type="string", example="საქართველო"),
      *                         @OA\Property(property="tariff", type="number", format="float", example=0.00),
-     *                         @OA\Property(property="formatted_tariff", type="string", example="უფასო")
+     *                         @OA\Property(property="price", type="number", format="float", example=10.00),
+     *                         @OA\Property(property="dister", type="integer", nullable=true, example=null),
+     *                         @OA\Property(property="created_at", type="string", format="date-time"),
+     *                         @OA\Property(property="updated_at", type="string", format="date-time")
      *                     )
      *                 )
      *             ),
@@ -104,7 +107,10 @@ class CityController extends Controller
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="საქართველო"),
      *                 @OA\Property(property="tariff", type="number", format="float", example=0.00),
-     *                 @OA\Property(property="formatted_tariff", type="string", example="უფასო")
+     *                 @OA\Property(property="price", type="number", format="float", example=10.00),
+     *                 @OA\Property(property="dister", type="integer", nullable=true, example=null),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
      *             )
      *         )
      *     ),
@@ -155,7 +161,10 @@ class CityController extends Controller
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="საქართველო"),
      *                 @OA\Property(property="tariff", type="number", format="float", example=0.00),
-     *                 @OA\Property(property="formatted_tariff", type="string", example="უფასო")
+     *                 @OA\Property(property="price", type="number", format="float", example=10.00),
+     *                 @OA\Property(property="dister", type="integer", nullable=true, example=null),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
      *             )
      *         )
      *     ),
@@ -225,7 +234,10 @@ class CityController extends Controller
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="საქართველო"),
      *                 @OA\Property(property="tariff", type="number", format="float", example=0.00),
-     *                 @OA\Property(property="formatted_tariff", type="string", example="უფასო")
+     *                 @OA\Property(property="price", type="number", format="float", example=10.00),
+     *                 @OA\Property(property="dister", type="integer", nullable=true, example=null),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
      *             )
      *         )
      *     ),

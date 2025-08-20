@@ -3345,9 +3345,23 @@
                                                                 "format": "float",
                                                                 "example": 0
                                                             },
-                                                            "formatted_tariff": {
+                                                            "price": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 10
+                                                            },
+                                                            "dister": {
+                                                                "type": "integer",
+                                                                "example": null,
+                                                                "nullable": true
+                                                            },
+                                                            "created_at": {
                                                                 "type": "string",
-                                                                "example": "უფასო"
+                                                                "format": "date-time"
+                                                            },
+                                                            "updated_at": {
+                                                                "type": "string",
+                                                                "format": "date-time"
                                                             }
                                                         },
                                                         "type": "object"
@@ -3452,9 +3466,23 @@
                                                     "format": "float",
                                                     "example": 0
                                                 },
-                                                "formatted_tariff": {
+                                                "price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 10
+                                                },
+                                                "dister": {
+                                                    "type": "integer",
+                                                    "example": null,
+                                                    "nullable": true
+                                                },
+                                                "created_at": {
                                                     "type": "string",
-                                                    "example": "უფასო"
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 }
                                             },
                                             "type": "object"
@@ -3568,9 +3596,23 @@
                                                     "format": "float",
                                                     "example": 0
                                                 },
-                                                "formatted_tariff": {
+                                                "price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 10
+                                                },
+                                                "dister": {
+                                                    "type": "integer",
+                                                    "example": null,
+                                                    "nullable": true
+                                                },
+                                                "created_at": {
                                                     "type": "string",
-                                                    "example": "უფასო"
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 }
                                             },
                                             "type": "object"
@@ -3683,9 +3725,23 @@
                                                     "format": "float",
                                                     "example": 0
                                                 },
-                                                "formatted_tariff": {
+                                                "price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 10
+                                                },
+                                                "dister": {
+                                                    "type": "integer",
+                                                    "example": null,
+                                                    "nullable": true
+                                                },
+                                                "created_at": {
                                                     "type": "string",
-                                                    "example": "უფასო"
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 }
                                             },
                                             "type": "object"
