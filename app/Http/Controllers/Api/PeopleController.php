@@ -215,8 +215,7 @@ class PeopleController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
             'person_type_id' => 'required|exists:person_types,id',
             'card_id' => 'required|exists:cards,id',
@@ -297,8 +296,7 @@ class PeopleController extends Controller
         $person = People::findOrFail($id);
 
         $validated = $request->validate([
-            'first_name' => 'sometimes|required|string|max:255',
-            'last_name' => 'sometimes|required|string|max:255',
+            'name' => 'sometimes|required|string|max:255',
             'phone' => 'sometimes|required|string|max:20',
             'person_type_id' => 'sometimes|required|exists:person_types,id',
             'card_id' => 'sometimes|required|exists:cards,id',

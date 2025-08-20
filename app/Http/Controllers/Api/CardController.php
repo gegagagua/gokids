@@ -248,7 +248,7 @@ class CardController extends Controller
             'group', 
             'personType', 
             'parents' => function($query) {
-                $query->select('id', 'first_name', 'last_name', 'status', 'phone', 'code', 'group_id', 'card_id', 'created_at', 'updated_at');
+                $query->select('id', 'name', 'status', 'phone', 'code', 'group_id', 'card_id', 'created_at', 'updated_at');
             },
             'people' => function($query) {
                 $query->with('personType:id,name');
@@ -276,12 +276,12 @@ class CardController extends Controller
         
         // Format the response to include full names for parents and people
         $card->parents = $card->parents->map(function($parent) {
-            $parent->full_name = $parent->first_name . ' ' . $parent->last_name;
+            $parent->full_name = $parent->name;
             return $parent;
         });
         
         $card->people = $card->people->map(function($person) {
-            $person->full_name = $person->first_name . ' ' . $person->last_name;
+            $person->full_name = $person->name;
             return $person;
         });
         
