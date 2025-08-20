@@ -2950,6 +2950,11 @@
                                             },
                                             "type": "object",
                                             "nullable": true
+                                        },
+                                        "token": {
+                                            "description": "API token for authentication",
+                                            "type": "string",
+                                            "example": "1|randomTokenStringHere"
                                         }
                                     },
                                     "type": "object"
@@ -3026,6 +3031,223 @@
                 "responses": {
                     "200": {
                         "description": "Excel file"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/cards/me": {
+            "get": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Get authenticated card data",
+                "description": "Get card data using token authentication and optional phone validation",
+                "operationId": "getCardMe",
+                "parameters": [
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "Phone number to validate against the authenticated card",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "+995599123456"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Card data retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card data retrieved successfully"
+                                        },
+                                        "card": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "child_first_name": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "child_last_name": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                },
+                                                "parent_name": {
+                                                    "type": "string",
+                                                    "example": "Jane Doe"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599123456"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "active"
+                                                },
+                                                "parent_code": {
+                                                    "type": "string",
+                                                    "example": "ABC123"
+                                                },
+                                                "image_url": {
+                                                    "type": "string",
+                                                    "example": "http://localhost/storage/cards/abc123.jpg",
+                                                    "nullable": true
+                                                },
+                                                "parent_verification": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "license": {
+                                                    "type": "object",
+                                                    "nullable": true
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "group": {
+                                                    "type": "object",
+                                                    "nullable": true
+                                                },
+                                                "personType": {
+                                                    "type": "object",
+                                                    "nullable": true
+                                                },
+                                                "parents": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "people": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "garden_images": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "title": {
+                                                                "type": "string",
+                                                                "example": "Main Entrance"
+                                                            },
+                                                            "image": {
+                                                                "type": "string",
+                                                                "example": "garden_images/abc123.jpg"
+                                                            },
+                                                            "image_url": {
+                                                                "type": "string",
+                                                                "example": "http://localhost/storage/garden_images/abc123.jpg"
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "updated_at": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "garden": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Sunshine Garden"
+                                                        },
+                                                        "address": {
+                                                            "type": "string",
+                                                            "example": "123 Main Street"
+                                                        },
+                                                        "phone": {
+                                                            "type": "string",
+                                                            "example": "+995599123456"
+                                                        },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "garden@example.com"
+                                                        },
+                                                        "status": {
+                                                            "type": "string",
+                                                            "example": "active"
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    },
+                                                    "type": "object",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Phone number mismatch",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Phone number does not match authenticated card"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [

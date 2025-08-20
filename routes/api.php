@@ -83,6 +83,11 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/cards/send-otp', [CardController::class, 'sendOtp']);
     Route::post('/cards/verify-otp', [CardController::class, 'verifyOtp']);
     
+    // Card authenticated routes
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/cards/me', [CardController::class, 'me']);
+    });
+    
     // Device login route (no authentication required)
     Route::post('/devices/login', [DeviceController::class, 'deviceLogin']);
 });

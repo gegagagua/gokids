@@ -1573,7 +1573,8 @@ class CardController extends Controller
      *                 @OA\Property(property="email", type="string", example="garden@example.com"),
      *                 @OA\Property(property="status", type="string", example="active"),
      *                 @OA\Property(property="created_at", type="string", format="date-time")
-     *             )
+     *             ),
+     *             @OA\Property(property="token", type="string", example="1|randomTokenStringHere", description="API token for authentication")
      *         )
      *     ),
      *     @OA\Response(
@@ -1631,13 +1632,17 @@ class CardController extends Controller
             ], 500);
         }
 
+        // Generate a token for the card
+        $token = $card->createToken('card-token')->plainTextToken;
+
         return response()->json([
             'message' => 'OTP sent successfully',
             'card_id' => $card->id,
             'phone' => $card->phone,
             'image_url' => $card->image_url,
             'garden_images' => $card->garden_images,
-            'garden' => $card->garden
+            'garden' => $card->garden,
+            'token' => $token
         ]);
     }
 
@@ -1675,5 +1680,127 @@ class CardController extends Controller
         }
 
         return Excel::download(new CardsExport($allowedGardenIds, $requestedIds), 'cards.xlsx');
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/cards/me",
+     *     operationId="getCardMe",
+     *     tags={"Cards"},
+     *     summary="Get authenticated card data",
+     *     description="Get card data using token authentication and optional phone validation",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="phone",
+     *         in="query",
+     *         required=false,
+     *         description="Phone number to validate against the authenticated card",
+     *         @OA\Schema(type="string", example="+995599123456")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Card data retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Card data retrieved successfully"),
+     *             @OA\Property(property="card", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="child_first_name", type="string", example="John"),
+     *                 @OA\Property(property="child_last_name", type="string", example="Doe"),
+     *                 @OA\Property(property="parent_name", type="string", example="Jane Doe"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                 @OA\Property(property="status", type="string", example="active"),
+     *                 @OA\Property(property="parent_code", type="string", example="ABC123"),
+     *                 @OA\Property(property="image_url", type="string", example="http://localhost/storage/cards/abc123.jpg", nullable=true),
+     *                 @OA\Property(property="parent_verification", type="boolean", example=true),
+     *                 @OA\Property(property="license", type="object", nullable=true),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(property="group", type="object", nullable=true),
+     *                 @OA\Property(property="personType", type="object", nullable=true),
+     *                 @OA\Property(property="parents", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="people", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="garden_images", type="array", @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="title", type="string", example="Main Entrance"),
+     *                     @OA\Property(property="image", type="string", example="garden_images/abc123.jpg"),
+     *                     @OA\Property(property="image_url", type="string", example="http://localhost/storage/garden_images/abc123.jpg"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )),
+     *                 @OA\Property(property="garden", type="object", nullable=true,
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Sunshine Garden"),
+     *                     @OA\Property(property="address", type="string", example="123 Main Street"),
+     *                     @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                     @OA\Property(property="email", type="string", example="garden@example.com"),
+     *                     @OA\Property(property="status", type="string", example="active"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unauthenticated")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Phone number mismatch",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Phone number does not match authenticated card")
+     *         )
+     *     )
+     * )
+     */
+    public function me(Request $request)
+    {
+        $card = $request->user();
+        
+        if (!$card) {
+            return response()->json([
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
+
+        // If phone is provided, validate it matches the authenticated card
+        if ($request->has('phone') && $request->phone !== $card->phone) {
+            return response()->json([
+                'message' => 'Phone number does not match authenticated card'
+            ], 403);
+        }
+
+        // Load all related data like in verify-otp
+        $card->load(['group.garden.images', 'personType', 'parents', 'people']);
+
+        return response()->json([
+            'message' => 'Card data retrieved successfully',
+            'card' => [
+                'id' => $card->id,
+                'child_first_name' => $card->child_first_name,
+                'child_last_name' => $card->child_last_name,
+                'parent_name' => $card->parent_name,
+                'phone' => $card->phone,
+                'status' => $card->status,
+                'parent_code' => $card->parent_code,
+                'image_url' => $card->image_url,
+                'parent_verification' => $card->parent_verification,
+                'license' => $card->license,
+                'created_at' => $card->created_at,
+                'updated_at' => $card->updated_at,
+                'group' => $card->group,
+                'personType' => $card->personType,
+                'parents' => $card->parents,
+                'people' => $card->people,
+                'garden_images' => $card->garden_images,
+                'garden' => $card->garden
+            ]
+        ]);
     }
 }
