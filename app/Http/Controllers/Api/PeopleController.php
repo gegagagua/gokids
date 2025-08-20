@@ -191,8 +191,8 @@ class PeopleController extends Controller
      *             @OA\Property(
      *                 property="errors",
      *                 type="object",
-     *                 @OA\Property(property="first_name", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="last_name", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="name", type="array", @OA\Items(type="string")),
+     *
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="person_type_id", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="card_id", type="array", @OA\Items(type="string"))
@@ -233,8 +233,8 @@ class PeopleController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             @OA\Property(property="first_name", type="string", maxLength=255, example="Updated John", description="Person's first name"),
-     *             @OA\Property(property="last_name", type="string", maxLength=255, example="Updated Doe", description="Person's last name"),
+     *             @OA\Property(property="name", type="string", maxLength=255, example="Updated John Doe", description="Person's full name"),
+     *
      *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599654321", description="Contact phone number"),
      *             @OA\Property(property="person_type_id", type="integer", example=2, description="ID of the associated person type"),
      *             @OA\Property(property="card_id", type="integer", example=2, description="ID of the associated card")
@@ -246,8 +246,8 @@ class PeopleController extends Controller
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="first_name", type="string", example="Updated John"),
-     *             @OA\Property(property="last_name", type="string", example="Updated Doe"),
+     *             @OA\Property(property="name", type="string", example="Updated John Doe"),
+     *
      *             @OA\Property(property="phone", type="string", example="+995599654321"),
      *             @OA\Property(property="person_type_id", type="integer", example=2),
      *             @OA\Property(property="card_id", type="integer", example=2),
@@ -270,8 +270,8 @@ class PeopleController extends Controller
      *             @OA\Property(
      *                 property="errors",
      *                 type="object",
-     *                 @OA\Property(property="first_name", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="last_name", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="name", type="array", @OA\Items(type="string")),
+     *
      *                 @OA\Property(property="phone", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="person_type_id", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="card_id", type="array", @OA\Items(type="string"))
