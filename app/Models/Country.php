@@ -38,7 +38,7 @@ class Country extends Model
      */
     public function dister()
     {
-        return $this->belongsTo(Dister::class);
+        return $this->belongsTo(Dister::class, 'dister');
     }
 
     /**
