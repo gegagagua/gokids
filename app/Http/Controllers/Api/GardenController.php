@@ -694,12 +694,24 @@ class GardenController extends Controller
         // Generate new referral code
         $newReferralCode = Garden::generateUniqueReferralCode();
 
-        // Update garden with new dister and referral code
+        // Update garden with new referral code
         $garden->update([
             'referral_code' => $newReferralCode,
         ]);
 
-        // Update dister's gardens array to include this garden
+        // Remove this garden ID from ALL existing disters' gardens array
+        // This ensures each garden has only one dister (one-to-one relationship)
+        $allDisters = \App\Models\Dister::whereJsonContains('gardens', $garden->id)->get();
+        foreach ($allDisters as $existingDister) {
+            $existingGardens = $existingDister->gardens ?? [];
+            // Filter out the current garden ID and reindex array
+            $existingGardens = array_values(array_filter($existingGardens, function($gardenId) use ($garden) {
+                return $gardenId != $garden->id;
+            }));
+            $existingDister->update(['gardens' => $existingGardens]);
+        }
+
+        // Update new dister's gardens array to include this garden
         $disterGardens = $dister->gardens ?? [];
         if (!in_array($garden->id, $disterGardens)) {
             $disterGardens[] = $garden->id;
