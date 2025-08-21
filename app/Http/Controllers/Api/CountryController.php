@@ -98,7 +98,11 @@ class CountryController extends Controller
      *             @OA\Property(property="formatted_tariff", type="string", example="უფასო"),
      *             @OA\Property(property="price", type="number", format="float", example=10.00),
      *             @OA\Property(property="formatted_price", type="string", example="10.00 ₾"),
-     *             @OA\Property(property="dister", type="integer", example=1, nullable=true),
+     *             @OA\Property(property="dister", type="object", nullable=true, description="Dister information",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Dister Name"),
+     *                 @OA\Property(property="email", type="string", example="dister@example.com")
+     *             ),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -146,7 +150,11 @@ class CountryController extends Controller
      *             @OA\Property(property="formatted_tariff", type="string", example="უფასო"),
      *             @OA\Property(property="price", type="number", format="float", example=10.00),
      *             @OA\Property(property="formatted_price", type="string", example="10.00 ₾"),
-     *             @OA\Property(property="dister", type="integer", example=1, nullable=true),
+     *             @OA\Property(property="dister", type="object", nullable=true, description="Dister information",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Dister Name"),
+     *                 @OA\Property(property="email", type="string", example="dister@example.com")
+     *             ),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -218,7 +226,11 @@ class CountryController extends Controller
      *             @OA\Property(property="formatted_tariff", type="string", example="10.50 ₾"),
      *             @OA\Property(property="price", type="number", format="float", example=15.00),
      *             @OA\Property(property="formatted_price", type="string", example="15.00 ₾"),
-     *             @OA\Property(property="dister", type="integer", example=1, nullable=true),
+     *             @OA\Property(property="dister", type="object", nullable=true, description="Dister information",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Dister Name"),
+     *                 @OA\Property(property="email", type="string", example="dister@example.com")
+     *             ),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )

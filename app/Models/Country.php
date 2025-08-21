@@ -18,6 +18,11 @@ class Country extends Model
         'price' => 'decimal:2',
     ];
 
+    protected $appends = [
+        'formatted_tariff',
+        'formatted_price',
+    ];
+
     public function cities()
     {
         return $this->hasMany(City::class);

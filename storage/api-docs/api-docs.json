@@ -4076,8 +4076,22 @@
                                                         "example": "10.00 ₾"
                                                     },
                                                     "dister": {
-                                                        "type": "integer",
-                                                        "example": 1,
+                                                        "description": "Dister information",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Dister Name"
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "example": "dister@example.com"
+                                                            }
+                                                        },
+                                                        "type": "object",
                                                         "nullable": true
                                                     },
                                                     "created_at": {
@@ -4199,8 +4213,22 @@
                                             "example": "10.00 ₾"
                                         },
                                         "dister": {
-                                            "type": "integer",
-                                            "example": 1,
+                                            "description": "Dister information",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Dister Name"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "dister@example.com"
+                                                }
+                                            },
+                                            "type": "object",
                                             "nullable": true
                                         },
                                         "created_at": {
@@ -4324,8 +4352,22 @@
                                             "example": "10.00 ₾"
                                         },
                                         "dister": {
-                                            "type": "integer",
-                                            "example": 1,
+                                            "description": "Dister information",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Dister Name"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "dister@example.com"
+                                                }
+                                            },
+                                            "type": "object",
                                             "nullable": true
                                         },
                                         "created_at": {
@@ -4454,8 +4496,22 @@
                                             "example": "15.00 ₾"
                                         },
                                         "dister": {
-                                            "type": "integer",
-                                            "example": 1,
+                                            "description": "Dister information",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Dister Name"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "dister@example.com"
+                                                }
+                                            },
+                                            "type": "object",
                                             "nullable": true
                                         },
                                         "created_at": {
