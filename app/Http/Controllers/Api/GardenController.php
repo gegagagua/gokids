@@ -706,8 +706,8 @@ class GardenController extends Controller
             $dister->update(['gardens' => $disterGardens]);
         }
 
-        // Load the updated dister data
-        $garden->load('dister');
+        // Get the dister data using the accessor
+        $gardenDister = $garden->dister;
 
         return response()->json([
             'id' => $garden->id,
@@ -715,11 +715,11 @@ class GardenController extends Controller
             'dister_id' => $dister->id,
             'referral_code' => $garden->referral_code,
             'updated_at' => $garden->updated_at,
-            'dister' => [
-                'id' => $dister->id,
-                'name' => $dister->name,
-                'email' => $dister->email,
-            ],
+            'dister' => $gardenDister ? [
+                'id' => $gardenDister->id,
+                'name' => $gardenDister->name,
+                'email' => $gardenDister->email,
+            ] : null,
         ]);
     }
 

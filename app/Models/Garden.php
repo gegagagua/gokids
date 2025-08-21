@@ -67,6 +67,15 @@ class Garden extends Model
     /**
      * Get the dister associated with this garden
      */
+    public function dister()
+    {
+        return $this->belongsTo(\App\Models\Dister::class, 'id', 'gardens')
+            ->whereJsonContains('gardens', $this->id);
+    }
+
+    /**
+     * Get the dister associated with this garden (accessor)
+     */
     public function getDisterAttribute()
     {
         return \App\Models\Dister::whereJsonContains('gardens', $this->id)->first();
