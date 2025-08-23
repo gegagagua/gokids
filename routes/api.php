@@ -76,7 +76,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         
         
         Route::apiResource('parents', ParentModelController::class);
-        Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
+       
     });
 
     // Card login routes (no authentication required)
@@ -84,6 +84,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
 
     Route::post('/cards/send-otp', [CardController::class, 'sendOtp']);
     Route::post('/cards/verify-otp', [CardController::class, 'verifyOtp']);
+    Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
     
     // Card authenticated routes
     Route::middleware('auth:sanctum')->group(function () {
