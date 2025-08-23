@@ -62,7 +62,11 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::middleware(['garden.filter', ForceJsonResponse::class])->group(function () {
             // Specific routes before resource to avoid binding conflicts
             Route::get('/cards/export', [CardController::class, 'export']);
-            Route::apiResource('cards', CardController::class);
+            Route::get('/cards', [CardController::class, 'index']);
+            Route::post('/cards', [CardController::class, 'store']);
+            Route::get('/cards/{id}', [CardController::class, 'show']);
+            Route::put('/cards/{id}', [CardController::class, 'update']);
+            Route::patch('/cards/{id}', [CardController::class, 'update']);
             Route::delete('/cards/bulk-delete', [CardController::class, 'bulkDestroy']);
             Route::post('/cards/move-to-group', [CardController::class, 'moveToGroup']);
             // New endpoints for updating only parent_verification and license
@@ -73,6 +77,9 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             Route::post('/cards/{id}/regenerate-code', [CardController::class, 'regenerateCode']);
             Route::post('/cards/{id}/restore', [CardController::class, 'restore']);
         });
+        
+        // Public card delete route (no authentication required)
+        Route::delete('/cards/{id}', [CardController::class, 'destroy']);
         
         
         Route::apiResource('parents', ParentModelController::class);
