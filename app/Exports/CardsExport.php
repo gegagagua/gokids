@@ -61,7 +61,7 @@ class CardsExport implements FromCollection, WithHeadings, WithMapping
     public function map($card): array
     {
         $license = $card->license ? json_encode($card->license) : '';
-        $parents = $card->parents ? $card->parents->map(fn($p) => trim($p->name ?? '').($p->phone ? ' ('.$p->phone.')' : ''))->implode('; ') : '';
+        $parents = $card->parents ? $card->parents->map(fn($p) => trim(($p->first_name ?? '').' '.($p->last_name ?? '')).($p->phone ? ' ('.$p->phone.')' : ''))->implode('; ') : '';
         $people = $card->people ? $card->people->map(fn($p) => trim($p->name ?? '').($p->relationship ? ' - '.$p->relationship : ''))->implode('; ') : '';
 
         return [

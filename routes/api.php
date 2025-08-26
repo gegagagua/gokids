@@ -91,6 +91,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         
         // Public card delete route (no authentication required)
         Route::delete('/cards/{id}', [CardController::class, 'destroy']);
+        Route::get('/cards/spam', [CardController::class, 'getSpamCards']);
         Route::apiResource('parents', ParentModelController::class);
        
     });
@@ -110,6 +111,5 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     
     // Device login route (no authentication required)
     Route::post('/devices/login', [DeviceController::class, 'deviceLogin']);
-    Route::get('/cards/spam', [CardController::class, 'getSpamCards']);
 });
 

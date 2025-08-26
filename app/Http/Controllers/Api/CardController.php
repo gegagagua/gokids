@@ -248,7 +248,7 @@ class CardController extends Controller
             'group', 
             'personType', 
             'parents' => function($query) {
-                $query->select('id', 'name', 'status', 'phone', 'code', 'group_id', 'card_id', 'created_at', 'updated_at');
+                $query->select('id', 'first_name', 'last_name', 'status', 'phone', 'code', 'group_id', 'card_id', 'created_at', 'updated_at');
             },
             'people' => function($query) {
                 $query->with('personType:id,name');
@@ -276,7 +276,7 @@ class CardController extends Controller
         
         // Format the response to include full names for parents and people
         $card->parents = $card->parents->map(function($parent) {
-            $parent->full_name = $parent->name;
+            $parent->full_name = ($parent->first_name ?? '') . ' ' . ($parent->last_name ?? '');
             return $parent;
         });
         
@@ -1924,7 +1924,7 @@ class CardController extends Controller
 
     public function getSpamCards()
     {
-        $query = Card::with(['group.garden', 'personType', 'parents', 'people'])
+        $query = Card::with(['group.garden', 'personType'])
             ->where('spam', 1);
 
         return $query->get();
