@@ -1934,13 +1934,12 @@ class CardController extends Controller
      * )
      */
 
-    public function getSpamCards(Request $request)
+    public function getSpamCards()
     {
         $query = Card::with(['group.garden', 'personType', 'parents', 'people'])
             ->where('spam', 1);
 
-        $perPage = $request->query('per_page', 15);
-        return $query->paginate($perPage);
+        return $query->get();
     }
 
     /**
