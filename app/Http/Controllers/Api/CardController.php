@@ -1879,53 +1879,9 @@ class CardController extends Controller
         ], 200);
     }
 
-    /**
-     * Get all spam cards
-     *
-     * @OA\Get(
-     *     path="/api/cards/spam",
-     *     operationId="getSpamCards",
-     *     tags={"Cards"},
-     *     summary="Get all spam cards",
-     *     description="Retrieve a list of all cards marked as spam.",
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful operation",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     type="object",
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="child_first_name", type="string", example="Giorgi"),
-     *                     @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
-     *                     @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
-     *                     @OA\Property(property="phone", type="string", example="+995599123456"),
-     *                     @OA\Property(property="status", type="string", example="active"),
-     *                     @OA\Property(property="group_id", type="integer", example=1),
-     *                     @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
-     *                     @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
-     *                     @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
-     *                     @OA\Property(
-     *                         property="license",
-     *                         type="object",
-     *                         nullable=true,
-     *                         @OA\Property(property="type", type="string", example="boolean"),
-     *                         @OA\Property(property="value", example=true)
-     *                     )
-     *                 )
-     *             )
-     *         )
-     *     )
-     * )
-     */
-
-    public function getSpamCards()
+    public function getAllSpamCards()
     {
-        $query = Card::with(['group.garden', 'personType'])
-            ->where('spam', 1);
+        $query = Card::where('spam', 1);
 
         return $query->get();
     }
