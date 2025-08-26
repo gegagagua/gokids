@@ -11,10 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Columns already exist, just add foreign key constraints
         Schema::table('countries', function (Blueprint $table) {
-            $table->unsignedBigInteger('sms_gateway_id')->nullable()->after('dister');
-            $table->unsignedBigInteger('payment_gateway_id')->nullable()->after('sms_gateway_id');
-            
+            // Add foreign key constraints to existing columns
             $table->foreign('sms_gateway_id')->references('id')->on('sms_gateways')->onDelete('set null');
             $table->foreign('payment_gateway_id')->references('id')->on('payment_gateways')->onDelete('set null');
         });
@@ -28,7 +27,6 @@ return new class extends Migration
         Schema::table('countries', function (Blueprint $table) {
             $table->dropForeign(['sms_gateway_id']);
             $table->dropForeign(['payment_gateway_id']);
-            $table->dropColumn(['sms_gateway_id', 'payment_gateway_id']);
         });
     }
 };
