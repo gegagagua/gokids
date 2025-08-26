@@ -36,6 +36,7 @@ class GardenController extends Controller
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by status", @OA\Schema(type="string", enum={"active", "paused", "inactive"})),
      *     @OA\Parameter(name="balance_min", in="query", required=false, description="Filter by minimum balance", @OA\Schema(type="number", format="float")),
      *     @OA\Parameter(name="balance_max", in="query", required=false, description="Filter by maximum balance", @OA\Schema(type="number", format="float")),
+     *     @OA\Parameter(name="page", in="query", required=false, description="Page number (pagination)", @OA\Schema(type="integer", default=1)),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
      *     @OA\Response(
      *         response=200,
@@ -133,7 +134,8 @@ class GardenController extends Controller
         }
 
         $perPage = $request->query('per_page', 15);
-        $gardens = $query->paginate($perPage);
+        $page = $request->query('page', 1);
+        $gardens = $query->paginate($perPage, ['*'], 'page', $page);
         // დაამატე referral_code ყველა garden-ს
         $gardens->getCollection()->transform(function ($garden) {
             $garden->makeVisible('referral_code');

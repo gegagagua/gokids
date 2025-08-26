@@ -1937,7 +1937,7 @@ class CardController extends Controller
     public function getSpamCards(Request $request)
     {
         $query = Card::with(['group.garden', 'personType', 'parents', 'people'])
-            ->where('spam', true);
+            ->where('spam', 1);
 
         $perPage = $request->query('per_page', 15);
         return $query->paginate($perPage);
