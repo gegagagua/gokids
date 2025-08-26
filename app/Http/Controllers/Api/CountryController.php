@@ -299,6 +299,7 @@ class CountryController extends Controller
             'name' => 'sometimes|required|string|max:255|unique:countries,name,' . $id,
             'tariff' => 'sometimes|required|numeric|min:0|max:999999.99',
             'price' => 'sometimes|required|numeric|min:0|max:999999.99',
+            'exchange_rate' => 'nullable|numeric|min:0|max:999999.9999',
             'dister' => 'nullable|exists:disters,id',
             'sms_gateway_id' => 'nullable|exists:sms_gateways,id',
             'payment_gateway_id' => 'nullable|exists:payment_gateways,id',

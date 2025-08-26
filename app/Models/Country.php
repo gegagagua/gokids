@@ -10,6 +10,7 @@ class Country extends Model
         'name',
         'tariff',
         'price',
+        'exchange_rate',
         'dister',
         'sms_gateway_id',
         'payment_gateway_id',
@@ -19,6 +20,7 @@ class Country extends Model
     protected $casts = [
         'tariff' => 'decimal:2',
         'price' => 'decimal:2',
+        'exchange_rate' => 'decimal:4',
     ];
 
     protected $appends = [
