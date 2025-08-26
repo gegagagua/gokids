@@ -3385,6 +3385,84 @@
                 ]
             }
         },
+        "/api/cards/{id}/delete-as-spam": {
+            "patch": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Mark card as spam",
+                "description": "Mark a specific card as spam by setting the spam field to 1",
+                "operationId": "deleteAsSpam",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Card ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Card marked as spam successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card marked as spam successfully"
+                                        },
+                                        "card": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "spam": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Card not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/cities": {
             "get": {
                 "tags": [
@@ -4213,6 +4291,13 @@
                                         "description": "Optional payment gateway ID",
                                         "type": "integer",
                                         "example": 1,
+                                        "nullable": true
+                                    },
+                                    "language": {
+                                        "description": "Optional language code (e.g., ka, en, ru)",
+                                        "type": "string",
+                                        "maxLength": 10,
+                                        "example": "ka",
                                         "nullable": true
                                     }
                                 },

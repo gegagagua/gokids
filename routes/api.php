@@ -72,6 +72,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             // Specific routes before resource to avoid binding conflicts
             Route::get('/cards/export', [CardController::class, 'export']);
             Route::get('/cards', [CardController::class, 'index']);
+            
             Route::post('/cards', [CardController::class, 'store']);
             Route::get('/cards/{id}', [CardController::class, 'show']);
             Route::put('/cards/{id}', [CardController::class, 'update']);
@@ -90,7 +91,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         
         // Public card delete route (no authentication required)
         Route::delete('/cards/{id}', [CardController::class, 'destroy']);
-        
+        Route::get('/cards/spam', [CardController::class, 'getSpamCards']);
         
         Route::apiResource('parents', ParentModelController::class);
        
