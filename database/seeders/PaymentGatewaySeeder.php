@@ -13,19 +13,22 @@ class PaymentGatewaySeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('payment_gateways')->insert([
-            [
-                'id' => 1,
-                'name' => 'BOG',
-                'base_url' => 'https://api.bog.ge/v1/payment',
-                'config' => json_encode([
-                    'merchant_id' => '',
-                    'api_key' => ''
-                ]),
-                'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
+        // Check if records already exist
+        if (DB::table('payment_gateways')->count() === 0) {
+            DB::table('payment_gateways')->insert([
+                [
+                    'id' => 1,
+                    'name' => 'BOG',
+                    'base_url' => 'https://api.bog.ge/v1/payment',
+                    'config' => json_encode([
+                        'merchant_id' => '',
+                        'api_key' => ''
+                    ]),
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+            ]);
+        }
     }
 }
