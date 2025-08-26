@@ -1494,6 +1494,7 @@ class CardController extends Controller
         // Get all cards with this phone number
         $cards = Card::with(['group.garden.images', 'personType', 'parents', 'people'])
             ->where('phone', $request->phone)
+            ->where('spam', '!=', 1)
             ->get();
 
         // Generate token for the first card (assuming one phone can have multiple cards)
