@@ -25,11 +25,13 @@ class Card extends Model
         'parent_verification',
         'license',
         'deleted',
+        'spam',
     ];
 
     protected $casts = [
         'parent_verification' => 'boolean',
         'license' => 'array',
+        'spam' => 'boolean',
     ];
 
     protected static function boot()

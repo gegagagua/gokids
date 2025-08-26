@@ -1878,4 +1878,62 @@ class CardController extends Controller
             ]
         ], 200);
     }
+
+    /**
+     * Mark card as spam
+     *
+     * @OA\Patch(
+     *     path="/api/cards/{id}/delete-as-spam",
+     *     operationId="deleteAsSpam",
+     *     tags={"Cards"},
+     *     summary="Mark card as spam",
+     *     description="Mark a specific card as spam by setting the spam field to 1",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Card ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Card marked as spam successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Card marked as spam successfully"),
+     *             @OA\Property(property="card", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="spam", type="boolean", example=true),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Card not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Card not found")
+     *         )
+     *     )
+     * )
+     */
+    public function deleteAsSpam($id)
+    {
+        $card = Card::findOrFail($id);
+
+        // Mark card as spam
+        $card->update([
+            'spam' => true
+        ]);
+
+        return response()->json([
+            'message' => 'Card marked as spam successfully',
+            'card' => [
+                'id' => $card->id,
+                'spam' => $card->spam,
+                'updated_at' => $card->updated_at,
+            ]
+        ], 200);
+    }
 }

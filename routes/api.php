@@ -83,6 +83,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             Route::patch('/cards/{id}/license', [CardController::class, 'updateLicense']);
             Route::patch('/cards/{id}/status', [CardController::class, 'updateStatus']);
             Route::patch('/cards/{id}/change-main-garden-image', [CardController::class, 'changeMainGardenImage']);
+            
             Route::post('/cards/{id}/regenerate-code', [CardController::class, 'regenerateCode']);
             Route::post('/cards/{id}/restore', [CardController::class, 'restore']);
         });
@@ -101,6 +102,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/cards/send-otp', [CardController::class, 'sendOtp']);
     Route::post('/cards/verify-otp', [CardController::class, 'verifyOtp']);
     Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
+    Route::patch('/cards/{id}/delete-as-spam', [CardController::class, 'deleteAsSpam']);
     
     // Card authenticated routes
     Route::middleware('auth:sanctum')->group(function () {
