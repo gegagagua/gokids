@@ -1881,7 +1881,8 @@ class CardController extends Controller
 
     public function getAllSpamCards()
     {
-        $query = Card::where('spam', 1);
+        $query = Card::with(['group.garden:id,name'])
+            ->where('spam', 1);
 
         return $query->get();
     }
