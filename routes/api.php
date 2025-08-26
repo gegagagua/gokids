@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\DisterController;
 use App\Http\Controllers\Api\SmsGatewayController;
+use App\Http\Controllers\Api\PaymentGatewayController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/person-types', [PersonTypeController::class, 'index']);
@@ -24,6 +25,10 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     
     // SMS Gateway routes (public)
     Route::get('/sms-gateways', [SmsGatewayController::class, 'index']);
+    
+    // Payment Gateway routes (public)
+    Route::get('/payment-gateways', [PaymentGatewayController::class, 'index']);
+    
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/request-password-reset', [AuthController::class, 'requestPasswordReset']);
