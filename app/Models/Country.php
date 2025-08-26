@@ -11,6 +11,8 @@ class Country extends Model
         'tariff',
         'price',
         'dister',
+        'sms_gateway_id',
+        'payment_gateway_id',
     ];
 
     protected $casts = [
@@ -39,6 +41,22 @@ class Country extends Model
     public function dister()
     {
         return $this->belongsTo(Dister::class, 'dister');
+    }
+
+    /**
+     * Get the SMS gateway for this country.
+     */
+    public function smsGateway()
+    {
+        return $this->belongsTo(SmsGateway::class, 'sms_gateway_id');
+    }
+
+    /**
+     * Get the payment gateway for this country.
+     */
+    public function paymentGateway()
+    {
+        return $this->belongsTo(PaymentGateway::class, 'payment_gateway_id');
     }
 
     /**

@@ -45,6 +45,14 @@ class CountryController extends Controller
  *                         @OA\Property(property="name", type="string", example="Dister Name"),
  *                         @OA\Property(property="email", type="string", example="dister@example.com")
  *                     ),
+ *                     @OA\Property(property="sms_gateway", type="object", nullable=true, description="SMS Gateway information",
+ *                         @OA\Property(property="id", type="integer", example=1),
+ *                         @OA\Property(property="name", type="string", example="Geo Sms - ubill")
+ *                     ),
+ *                     @OA\Property(property="payment_gateway", type="object", nullable=true, description="Payment Gateway information",
+ *                         @OA\Property(property="id", type="integer", example=1),
+ *                         @OA\Property(property="name", type="string", example="BOG")
+ *                     ),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time")
      *                 )
@@ -58,7 +66,7 @@ class CountryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Country::with('dister');
+        $query = Country::with(['dister', 'smsGateway', 'paymentGateway']);
         
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->query('name') . '%');
@@ -118,25 +126,26 @@ class CountryController extends Controller
      */
     public function show($id)
     {
-        return Country::with('dister')->findOrFail($id);
+        return Country::with(['dister', 'smsGateway', 'paymentGateway'])->findOrFail($id);
     }
-
     /**
      * @OA\Post(
      *     path="/api/countries",
-     *     operationId="createCountry",
+     *     operationId="storeCountry",
      *     tags={"Countries"},
      *     summary="Create a new country",
-     *     description="Create a new country with name and tariff",
+     *     description="Create a new country with the provided information",
      *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"name", "tariff", "price"},
+     *             required={"name","tariff","price"},
      *             @OA\Property(property="name", type="string", maxLength=255, example="საქართველო", description="Country name"),
      *             @OA\Property(property="tariff", type="number", format="float", example=0.00, description="Tariff amount (0 for free)"),
      *             @OA\Property(property="price", type="number", format="float", example=10.00, description="Price amount"),
-     *             @OA\Property(property="dister", type="integer", example=1, nullable=true, description="Optional dister ID")
+     *             @OA\Property(property="dister", type="integer", example=1, nullable=true, description="Optional dister ID"),
+     *             @OA\Property(property="sms_gateway_id", type="integer", example=1, nullable=true, description="Optional SMS gateway ID"),
+     *             @OA\Property(property="payment_gateway_id", type="integer", example=1, nullable=true, description="Optional payment gateway ID")
      *         )
      *     ),
      *     @OA\Response(
@@ -150,10 +159,18 @@ class CountryController extends Controller
      *             @OA\Property(property="formatted_tariff", type="string", example="უფასო"),
      *             @OA\Property(property="price", type="number", format="float", example=10.00),
      *             @OA\Property(property="formatted_price", type="string", example="10.00 ₾"),
-     *             @OA\Property(property="dister", type="object", nullable=true, description="Dister information",
+     *             @OA\Property(property="dister", type="object", nullable=true,
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="Dister Name"),
      *                 @OA\Property(property="email", type="string", example="dister@example.com")
+     *             ),
+     *             @OA\Property(property="sms_gateway", type="object", nullable=true,
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="SMS Gateway Name")
+     *             ),
+     *             @OA\Property(property="payment_gateway", type="object", nullable=true,
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Payment Gateway Name")
      *             ),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
@@ -167,15 +184,17 @@ class CountryController extends Controller
      *             @OA\Property(
      *                 property="errors",
      *                 type="object",
-     *                 @OA\Property(property="name", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="tariff", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="price", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="dister", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(
+     *                     property="name",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="The name field is required.")
+     *                 )
      *             )
      *         )
      *     )
      * )
      */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -183,10 +202,12 @@ class CountryController extends Controller
             'tariff' => 'required|numeric|min:0|max:999999.99',
             'price' => 'required|numeric|min:0|max:999999.99',
             'dister' => 'nullable|exists:disters,id',
+            'sms_gateway_id' => 'nullable|exists:sms_gateways,id',
+            'payment_gateway_id' => 'nullable|exists:payment_gateways,id',
         ]);
 
         $country = Country::create($validated);
-        $country->load('dister');
+        $country->load(['dister', 'smsGateway', 'paymentGateway']);
 
         return response()->json($country, 201);
     }
@@ -197,7 +218,7 @@ class CountryController extends Controller
      *     operationId="updateCountry",
      *     tags={"Countries"},
      *     summary="Update a country",
-     *     description="Update an existing country with new information",
+     *     description="Update an existing country by ID",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
@@ -209,27 +230,34 @@ class CountryController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             @OA\Property(property="name", type="string", maxLength=255, example="Updated საქართველო", description="Country name"),
-     *             @OA\Property(property="tariff", type="number", format="float", example=10.50, description="Tariff amount (0 for free)"),
-     *             @OA\Property(property="price", type="number", format="float", example=15.00, description="Price amount"),
-     *             @OA\Property(property="dister", type="integer", example=1, nullable=true, description="Optional dister ID")
+     *             @OA\Property(property="name", type="string", example="Georgia"),
+     *             @OA\Property(property="tariff", type="number", format="float", example=10.5),
+     *             @OA\Property(property="price", type="number", format="float", example=100.0),
+     *             @OA\Property(property="dister", type="integer", nullable=true, example=1),
+     *             @OA\Property(property="sms_gateway_id", type="integer", nullable=true, example=1),
+     *             @OA\Property(property="payment_gateway_id", type="integer", nullable=true, example=1)
      *         )
      *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Country updated successfully",
      *         @OA\JsonContent(
-     *             type="object",
      *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="name", type="string", example="Updated საქართველო"),
-     *             @OA\Property(property="tariff", type="number", format="float", example=10.50),
-     *             @OA\Property(property="formatted_tariff", type="string", example="10.50 ₾"),
-     *             @OA\Property(property="price", type="number", format="float", example=15.00),
-     *             @OA\Property(property="formatted_price", type="string", example="15.00 ₾"),
-     *             @OA\Property(property="dister", type="object", nullable=true, description="Dister information",
+     *             @OA\Property(property="name", type="string", example="Georgia"),
+     *             @OA\Property(property="tariff", type="number", format="float", example=10.5),
+     *             @OA\Property(property="price", type="number", format="float", example=100.0),
+     *             @OA\Property(property="dister", type="object", nullable=true,
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="Dister Name"),
      *                 @OA\Property(property="email", type="string", example="dister@example.com")
+     *             ),
+     *             @OA\Property(property="sms_gateway", type="object", nullable=true,
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="SMS Gateway Name")
+     *             ),
+     *             @OA\Property(property="payment_gateway", type="object", nullable=true,
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Payment Gateway Name")
      *             ),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
@@ -250,15 +278,17 @@ class CountryController extends Controller
      *             @OA\Property(
      *                 property="errors",
      *                 type="object",
-     *                 @OA\Property(property="name", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="tariff", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="price", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="dister", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(
+     *                     property="name",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="The name field is required.")
+     *                 )
      *             )
      *         )
      *     )
      * )
      */
+
     public function update(Request $request, $id)
     {
         $country = Country::findOrFail($id);
@@ -268,10 +298,12 @@ class CountryController extends Controller
             'tariff' => 'sometimes|required|numeric|min:0|max:999999.99',
             'price' => 'sometimes|required|numeric|min:0|max:999999.99',
             'dister' => 'nullable|exists:disters,id',
+            'sms_gateway_id' => 'nullable|exists:sms_gateways,id',
+            'payment_gateway_id' => 'nullable|exists:payment_gateways,id',
         ]);
 
         $country->update($validated);
-        $country->load('dister');
+        $country->load(['dister', 'smsGateway', 'paymentGateway']);
 
         return response()->json($country);
     }

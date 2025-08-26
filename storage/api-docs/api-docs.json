@@ -4094,6 +4094,36 @@
                                                         "type": "object",
                                                         "nullable": true
                                                     },
+                                                    "sms_gateway": {
+                                                        "description": "SMS Gateway information",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Geo Sms - ubill"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "payment_gateway": {
+                                                        "description": "Payment Gateway information",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "BOG"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
                                                     "created_at": {
                                                         "type": "string",
                                                         "format": "date-time"
@@ -4136,8 +4166,8 @@
                     "Countries"
                 ],
                 "summary": "Create a new country",
-                "description": "Create a new country with name and tariff",
-                "operationId": "createCountry",
+                "description": "Create a new country with the provided information",
+                "operationId": "storeCountry",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -4169,6 +4199,18 @@
                                     },
                                     "dister": {
                                         "description": "Optional dister ID",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "sms_gateway_id": {
+                                        "description": "Optional SMS gateway ID",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "payment_gateway_id": {
+                                        "description": "Optional payment gateway ID",
                                         "type": "integer",
                                         "example": 1,
                                         "nullable": true
@@ -4213,7 +4255,6 @@
                                             "example": "10.00 ₾"
                                         },
                                         "dister": {
-                                            "description": "Dister information",
                                             "properties": {
                                                 "id": {
                                                     "type": "integer",
@@ -4226,6 +4267,34 @@
                                                 "email": {
                                                     "type": "string",
                                                     "example": "dister@example.com"
+                                                }
+                                            },
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "sms_gateway": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "SMS Gateway Name"
+                                                }
+                                            },
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "payment_gateway": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Payment Gateway Name"
                                                 }
                                             },
                                             "type": "object",
@@ -4260,25 +4329,8 @@
                                                 "name": {
                                                     "type": "array",
                                                     "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "tariff": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "price": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "dister": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "example": "The name field is required."
                                                     }
                                                 }
                                             },
@@ -4412,7 +4464,7 @@
                     "Countries"
                 ],
                 "summary": "Update a country",
-                "description": "Update an existing country with new information",
+                "description": "Update an existing country by ID",
                 "operationId": "updateCountry",
                 "parameters": [
                     {
@@ -4433,25 +4485,30 @@
                             "schema": {
                                 "properties": {
                                     "name": {
-                                        "description": "Country name",
                                         "type": "string",
-                                        "maxLength": 255,
-                                        "example": "Updated საქართველო"
+                                        "example": "Georgia"
                                     },
                                     "tariff": {
-                                        "description": "Tariff amount (0 for free)",
                                         "type": "number",
                                         "format": "float",
                                         "example": 10.5
                                     },
                                     "price": {
-                                        "description": "Price amount",
                                         "type": "number",
                                         "format": "float",
-                                        "example": 15
+                                        "example": 100
                                     },
                                     "dister": {
-                                        "description": "Optional dister ID",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "sms_gateway_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "payment_gateway_id": {
                                         "type": "integer",
                                         "example": 1,
                                         "nullable": true
@@ -4475,28 +4532,19 @@
                                         },
                                         "name": {
                                             "type": "string",
-                                            "example": "Updated საქართველო"
+                                            "example": "Georgia"
                                         },
                                         "tariff": {
                                             "type": "number",
                                             "format": "float",
                                             "example": 10.5
                                         },
-                                        "formatted_tariff": {
-                                            "type": "string",
-                                            "example": "10.50 ₾"
-                                        },
                                         "price": {
                                             "type": "number",
                                             "format": "float",
-                                            "example": 15
-                                        },
-                                        "formatted_price": {
-                                            "type": "string",
-                                            "example": "15.00 ₾"
+                                            "example": 100
                                         },
                                         "dister": {
-                                            "description": "Dister information",
                                             "properties": {
                                                 "id": {
                                                     "type": "integer",
@@ -4509,6 +4557,34 @@
                                                 "email": {
                                                     "type": "string",
                                                     "example": "dister@example.com"
+                                                }
+                                            },
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "sms_gateway": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "SMS Gateway Name"
+                                                }
+                                            },
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "payment_gateway": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Payment Gateway Name"
                                                 }
                                             },
                                             "type": "object",
@@ -4559,25 +4635,8 @@
                                                 "name": {
                                                     "type": "array",
                                                     "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "tariff": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "price": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "dister": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
+                                                        "type": "string",
+                                                        "example": "The name field is required."
                                                     }
                                                 }
                                             },
@@ -10426,6 +10485,50 @@
                 ]
             }
         },
+        "/api/payment-gateways": {
+            "get": {
+                "tags": [
+                    "Payment Gateways"
+                ],
+                "summary": "Get available payment gateways",
+                "description": "Retrieve a list of all available payment gateways",
+                "operationId": "getPaymentGateways",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "BOG"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/people": {
             "get": {
                 "tags": [
@@ -11309,6 +11412,10 @@
         {
             "name": "Parents",
             "description": "API Endpoints for managing parent models"
+        },
+        {
+            "name": "Payment Gateways",
+            "description": "API Endpoints for payment gateway management"
         },
         {
             "name": "People",
