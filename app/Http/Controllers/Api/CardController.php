@@ -1887,15 +1887,7 @@ class CardController extends Controller
      *     operationId="getSpamCards",
      *     tags={"Cards"},
      *     summary="Get all spam cards",
-     *     description="Retrieve a paginated list of all cards marked as spam.",
-     *     security={{"sanctum":{}}},
-     *     @OA\Parameter(
-     *         name="per_page",
-     *         in="query",
-     *         required=false,
-     *         description="Number of results per page",
-     *         @OA\Schema(type="integer", example=15)
-     *     ),
+     *     description="Retrieve a list of all cards marked as spam.",
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -1916,19 +1908,15 @@ class CardController extends Controller
      *                     @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
      *                     @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
      *                     @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
-     *                     @OA\Property(property="license", type="object", nullable=true,
+     *                     @OA\Property(
+     *                         property="license",
+     *                         type="object",
+     *                         nullable=true,
      *                         @OA\Property(property="type", type="string", example="boolean"),
      *                         @OA\Property(property="value", example=true)
-     *                     ),
-     *                     @OA\Property(property="created_at", type="string", format="date-time"),
-     *                     @OA\Property(property="updated_at", type="string", format="date-time"),
-     *                     @OA\Property(property="spam", type="boolean", example=true)
+     *                     )
      *                 )
-     *             ),
-     *             @OA\Property(property="current_page", type="integer", example=1),
-     *             @OA\Property(property="last_page", type="integer", example=3),
-     *             @OA\Property(property="per_page", type="integer", example=15),
-     *             @OA\Property(property="total", type="integer", example=30)
+     *             )
      *         )
      *     )
      * )

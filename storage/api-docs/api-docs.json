@@ -3391,20 +3391,8 @@
                     "Cards"
                 ],
                 "summary": "Get all spam cards",
-                "description": "Retrieve a paginated list of all cards marked as spam.",
+                "description": "Retrieve a list of all cards marked as spam.",
                 "operationId": "getSpamCards",
-                "parameters": [
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "Number of results per page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 15
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -3471,38 +3459,10 @@
                                                         },
                                                         "type": "object",
                                                         "nullable": true
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "spam": {
-                                                        "type": "boolean",
-                                                        "example": true
                                                     }
                                                 },
                                                 "type": "object"
                                             }
-                                        },
-                                        "current_page": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "last_page": {
-                                            "type": "integer",
-                                            "example": 3
-                                        },
-                                        "per_page": {
-                                            "type": "integer",
-                                            "example": 15
-                                        },
-                                        "total": {
-                                            "type": "integer",
-                                            "example": 30
                                         }
                                     },
                                     "type": "object"
@@ -3510,12 +3470,7 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             }
         },
         "/api/cards/{id}/delete-as-spam": {
