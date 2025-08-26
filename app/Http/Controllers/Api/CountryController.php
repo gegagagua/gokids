@@ -145,7 +145,8 @@ class CountryController extends Controller
      *             @OA\Property(property="price", type="number", format="float", example=10.00, description="Price amount"),
      *             @OA\Property(property="dister", type="integer", example=1, nullable=true, description="Optional dister ID"),
      *             @OA\Property(property="sms_gateway_id", type="integer", example=1, nullable=true, description="Optional SMS gateway ID"),
-     *             @OA\Property(property="payment_gateway_id", type="integer", example=1, nullable=true, description="Optional payment gateway ID")
+     *             @OA\Property(property="payment_gateway_id", type="integer", example=1, nullable=true, description="Optional payment gateway ID"),
+             @OA\Property(property="language", type="string", maxLength=10, example="ka", nullable=true, description="Optional language code (e.g., ka, en, ru)")
      *         )
      *     ),
      *     @OA\Response(
@@ -204,6 +205,7 @@ class CountryController extends Controller
             'dister' => 'nullable|exists:disters,id',
             'sms_gateway_id' => 'nullable|exists:sms_gateways,id',
             'payment_gateway_id' => 'nullable|exists:payment_gateways,id',
+            'language' => 'nullable|string|max:10',
         ]);
 
         $country = Country::create($validated);
@@ -300,6 +302,7 @@ class CountryController extends Controller
             'dister' => 'nullable|exists:disters,id',
             'sms_gateway_id' => 'nullable|exists:sms_gateways,id',
             'payment_gateway_id' => 'nullable|exists:payment_gateways,id',
+            'language' => 'nullable|string|max:10',
         ]);
 
         $country->update($validated);

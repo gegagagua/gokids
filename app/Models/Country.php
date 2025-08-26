@@ -13,6 +13,7 @@ class Country extends Model
         'dister',
         'sms_gateway_id',
         'payment_gateway_id',
+        'language',
     ];
 
     protected $casts = [
