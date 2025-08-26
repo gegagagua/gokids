@@ -1887,17 +1887,23 @@ class CardController extends Controller
      *     operationId="getSpamCards",
      *     tags={"Cards"},
      *     summary="Get all spam cards",
-     *     description="Retrieve a paginated list of all cards marked as spam (spam = 1)",
+     *     description="Retrieve a paginated list of all cards marked as spam.",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="page", in="query", required=false, description="Page number", @OA\Schema(type="integer", default=1)),
-     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         required=false,
+     *         description="Number of results per page",
+     *         @OA\Schema(type="integer", example=15)
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="current_page", type="integer", example=1),
-     *             @OA\Property(property="data", type="array",
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
      *                 @OA\Items(
      *                     type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
@@ -1906,60 +1912,28 @@ class CardController extends Controller
      *                     @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
      *                     @OA\Property(property="phone", type="string", example="+995599123456"),
      *                     @OA\Property(property="status", type="string", example="active"),
-     *                     @OA\Property(property="spam", type="boolean", example=true),
      *                     @OA\Property(property="group_id", type="integer", example=1),
      *                     @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
      *                     @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
      *                     @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
      *                     @OA\Property(property="license", type="object", nullable=true,
      *                         @OA\Property(property="type", type="string", example="boolean"),
-     *                         @OA\Property(property="value", example=true, description="Boolean value (true/false)")
+     *                         @OA\Property(property="value", example=true)
      *                     ),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
-     *                     @OA\Property(property="group", type="object",
-     *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="name", type="string", example="Group A")
-     *                     ),
-     *                     @OA\Property(property="personType", type="object",
-     *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="name", type="string", example="ბავშვი")
-     *                     ),
-     *                     @OA\Property(property="parents", type="array",
-     *                         @OA\Items(
-     *                             type="object",
-     *                             @OA\Property(property="id", type="integer", example=1),
-     *                             @OA\Property(property="name", type="string", example="ნინო დავითაშვილი"),
-     *                             @OA\Property(property="phone", type="string", example="+995599123456"),
-     *                             @OA\Property(property="email", type="string", example="nino@example.com"),
-     *                             @OA\Property(property="name", type="string", example="ნინო დავითაშვილი"),
-     *                             @OA\Property(property="phone", type="string", example="+995599123456"),
-     *                             @OA\Property(property="email", type="string", example="nino@example.com"),
-     *                             @OA\Property(property="created_at", type="string", format="date-time"),
-     *                             @OA\Property(property="updated_at", type="string", format="date-time")
-     *                         )
-     *                     ),
-     *                     @OA\Property(property="people", type="array",
-     *                         @OA\Items(
-     *                             type="object",
-     *                             @OA\Property(property="id", type="integer", example=1),
-     *                             @OA\Property(property="name", type="string", example="გიორგი დავითაშვილი"),
-     *                             @OA\Property(property="phone", type="string", example="+995599123456"),
-     *                             @OA\Property(property="email", type="string", example="giorgi@example.com"),
-     *                             @OA\Property(property="relationship", type="string", example="მამა"),
-     *                             @OA\Property(property="created_at", type="string", format="date-time"),
-     *                             @OA\Property(property="updated_at", type="string", format="date-time")
-     *                         )
-     *                     )
+     *                     @OA\Property(property="spam", type="boolean", example=true)
      *                 )
      *             ),
-     *             @OA\Property(property="last_page", type="integer", example=5),
+     *             @OA\Property(property="current_page", type="integer", example=1),
+     *             @OA\Property(property="last_page", type="integer", example=3),
      *             @OA\Property(property="per_page", type="integer", example=15),
-     *             @OA\Property(property="total", type="integer", example=50)
+     *             @OA\Property(property="total", type="integer", example=30)
      *         )
      *     )
      * )
      */
+
     public function getSpamCards(Request $request)
     {
         $query = Card::with(['group.garden', 'personType', 'parents', 'people'])

@@ -3385,6 +3385,139 @@
                 ]
             }
         },
+        "/api/cards/spam": {
+            "get": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Get all spam cards",
+                "description": "Retrieve a paginated list of all cards marked as spam.",
+                "operationId": "getSpamCards",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of results per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "child_first_name": {
+                                                        "type": "string",
+                                                        "example": "Giorgi"
+                                                    },
+                                                    "child_last_name": {
+                                                        "type": "string",
+                                                        "example": "Davitashvili"
+                                                    },
+                                                    "parent_name": {
+                                                        "type": "string",
+                                                        "example": "Nino Davitashvili"
+                                                    },
+                                                    "phone": {
+                                                        "type": "string",
+                                                        "example": "+995599123456"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "active"
+                                                    },
+                                                    "group_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "person_type_id": {
+                                                        "type": "integer",
+                                                        "example": 1,
+                                                        "nullable": true
+                                                    },
+                                                    "parent_code": {
+                                                        "type": "string",
+                                                        "example": "K9#mP2",
+                                                        "nullable": true
+                                                    },
+                                                    "parent_verification": {
+                                                        "type": "boolean",
+                                                        "example": false,
+                                                        "nullable": true
+                                                    },
+                                                    "license": {
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string",
+                                                                "example": "boolean"
+                                                            },
+                                                            "value": {
+                                                                "example": true
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "spam": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 15
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 30
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/cards/{id}/delete-as-spam": {
             "patch": {
                 "tags": [
