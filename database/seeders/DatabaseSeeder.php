@@ -15,9 +15,9 @@ class DatabaseSeeder extends Seeder
             // GardenGroupSeeder::class,
             // CardSeeder::class,
             // ParentModelSeeder::class,
-            PersonTypeSeeder::class,
-            CountrySeeder::class,
-            DisterSeeder::class,
+            // PersonTypeSeeder::class,
+            // CountrySeeder::class,
+            // DisterSeeder::class,
             SmsGatewaySeeder::class,
             PaymentGatewaySeeder::class
         ]);
