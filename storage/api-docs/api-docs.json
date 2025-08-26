@@ -11217,6 +11217,50 @@
                 }
             }
         },
+        "/api/sms-gateways": {
+            "get": {
+                "tags": [
+                    "SMS Gateways"
+                ],
+                "summary": "Get available SMS gateways",
+                "description": "Retrieve a list of all available SMS gateways",
+                "operationId": "getSmsGateways",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Geo Sms - ubill"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/users": {
             "get": {
                 "summary": "Get all users",
@@ -11273,6 +11317,10 @@
         {
             "name": "Person Types",
             "description": "API Endpoints for managing person types"
+        },
+        {
+            "name": "SMS Gateways",
+            "description": "API Endpoints for SMS gateway management"
         },
         {
             "name": "Auth",

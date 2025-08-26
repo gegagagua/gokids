@@ -15,11 +15,15 @@ use App\Http\Controllers\Api\GardenImageController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\DisterController;
+use App\Http\Controllers\Api\SmsGatewayController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/person-types', [PersonTypeController::class, 'index']);
     Route::post('/person-types', [PersonTypeController::class, 'store']);
     Route::delete('/person-types/{id}', [PersonTypeController::class, 'destroy']);
+    
+    // SMS Gateway routes (public)
+    Route::get('/sms-gateways', [SmsGatewayController::class, 'index']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/request-password-reset', [AuthController::class, 'requestPasswordReset']);
