@@ -10580,6 +10580,612 @@
                 ]
             }
         },
+        "/api/payments": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get all payments",
+                "description": "Retrieve a paginated list of all payments",
+                "operationId": "getPayments",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "transaction_number": {
+                                                        "type": "string",
+                                                        "example": "TXN123456789"
+                                                    },
+                                                    "transaction_number_bank": {
+                                                        "type": "string",
+                                                        "example": "BANK123456",
+                                                        "nullable": true
+                                                    },
+                                                    "card_number": {
+                                                        "type": "string",
+                                                        "example": "1234567890123456"
+                                                    },
+                                                    "card_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "card": {
+                                                        "description": "Card information",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "phone": {
+                                                                "type": "string",
+                                                                "example": "+995555123456"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "active"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 15
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 50
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Create a new payment",
+                "description": "Create a new payment with the provided information",
+                "operationId": "storePayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "transaction_number",
+                                    "card_number",
+                                    "card_id"
+                                ],
+                                "properties": {
+                                    "transaction_number": {
+                                        "description": "Unique transaction number",
+                                        "type": "string",
+                                        "example": "TXN123456789"
+                                    },
+                                    "transaction_number_bank": {
+                                        "description": "Bank transaction number (optional)",
+                                        "type": "string",
+                                        "example": "BANK123456",
+                                        "nullable": true
+                                    },
+                                    "card_number": {
+                                        "description": "Card number",
+                                        "type": "string",
+                                        "example": "1234567890123456"
+                                    },
+                                    "card_id": {
+                                        "description": "Card ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "transaction_number": {
+                                            "type": "string",
+                                            "example": "TXN123456789"
+                                        },
+                                        "transaction_number_bank": {
+                                            "type": "string",
+                                            "example": "BANK123456"
+                                        },
+                                        "card_number": {
+                                            "type": "string",
+                                            "example": "1234567890123456"
+                                        },
+                                        "card_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "transaction_number": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The transaction number field is required."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/payments/{id}": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Get a specific payment",
+                "description": "Retrieve detailed information about a specific payment",
+                "operationId": "getPayment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "transaction_number": {
+                                            "type": "string",
+                                            "example": "TXN123456789"
+                                        },
+                                        "transaction_number_bank": {
+                                            "type": "string",
+                                            "example": "BANK123456",
+                                            "nullable": true
+                                        },
+                                        "card_number": {
+                                            "type": "string",
+                                            "example": "1234567890123456"
+                                        },
+                                        "card_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "card": {
+                                            "description": "Card information",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995555123456"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "active"
+                                                },
+                                                "group": {
+                                                    "description": "Garden group information",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Group A"
+                                                        },
+                                                        "garden": {
+                                                            "description": "Garden information",
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "Garden Name"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Payment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\Payment]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Update a payment",
+                "description": "Update an existing payment by ID",
+                "operationId": "updatePayment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "transaction_number": {
+                                        "type": "string",
+                                        "example": "TXN123456789"
+                                    },
+                                    "transaction_number_bank": {
+                                        "type": "string",
+                                        "example": "BANK123456",
+                                        "nullable": true
+                                    },
+                                    "card_number": {
+                                        "type": "string",
+                                        "example": "1234567890123456"
+                                    },
+                                    "card_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "transaction_number": {
+                                            "type": "string",
+                                            "example": "TXN123456789"
+                                        },
+                                        "transaction_number_bank": {
+                                            "type": "string",
+                                            "example": "BANK123456"
+                                        },
+                                        "card_number": {
+                                            "type": "string",
+                                            "example": "1234567890123456"
+                                        },
+                                        "card_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Payment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\Payment]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "transaction_number": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The transaction number field is required."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Delete a payment",
+                "description": "Permanently delete a payment",
+                "operationId": "deletePayment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Payment deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Payment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\\\Models\\\\Payment]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/payments/export": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Export all payments",
+                "description": "Export all payments data to Excel file",
+                "operationId": "exportPayments",
+                "responses": {
+                    "200": {
+                        "description": "Excel file download",
+                        "headers": {
+                            "Content-Disposition": {
+                                "description": "Attachment filename",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "attachment; filename=payments.xlsx"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "File content type",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/payment-gateways": {
             "get": {
                 "tags": [
@@ -11527,6 +12133,10 @@
         {
             "name": "Auth",
             "description": "Auth"
+        },
+        {
+            "name": "Payments",
+            "description": "Payments"
         }
     ],
     "components": {

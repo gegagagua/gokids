@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\DisterController;
 use App\Http\Controllers\Api\SmsGatewayController;
 use App\Http\Controllers\Api\PaymentGatewayController;
+use App\Http\Controllers\Api\PaymentController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/person-types', [PersonTypeController::class, 'index']);
@@ -42,6 +43,9 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::apiResource('countries', CountryController::class);
     Route::apiResource('cities', CityController::class);
     Route::apiResource('people', PeopleController::class);
+    Route::apiResource('gardens', GardenController::class);
+    Route::apiResource('disters', DisterController::class);
+    Route::apiResource('payments', PaymentController::class);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
@@ -49,13 +53,13 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         // Place specific routes before resource to avoid {garden} binding capturing 'export'
         Route::get('/gardens/export', [GardenController::class, 'export']);
+        Route::get('/payments/export', [PaymentController::class, 'export']);
         Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
         Route::patch('/gardens/{id}/status', [GardenController::class, 'updateStatus']);
         Route::patch('/gardens/{id}/dister', [GardenController::class, 'updateDister']);
-        Route::apiResource('gardens', GardenController::class);
         
         // Dister routes (authenticated)
-        Route::apiResource('disters', DisterController::class);
+        
         Route::patch('/disters/{id}/change-password', [DisterController::class, 'changePassword']);
         Route::post('/disters/logout', [DisterController::class, 'logout']);
         Route::get('/disters/profile', [DisterController::class, 'profile']);
@@ -91,7 +95,6 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         
         // Public card delete route (no authentication required)
         Route::delete('/cards/{id}', [CardController::class, 'destroy']);
-        
         Route::apiResource('parents', ParentModelController::class);
        
     });
