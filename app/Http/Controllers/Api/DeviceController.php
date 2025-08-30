@@ -970,6 +970,79 @@ class DeviceController extends Controller
             'device' => $device
         ]);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/devices/update-expo-token",
+     *     operationId="updateDeviceExpoToken",
+     *     tags={"Devices"},
+     *     summary="Update device Expo push token",
+     *     description="Update the Expo push notification token for a specific device",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"device_id","expo_token"},
+     *             @OA\Property(property="device_id", type="integer", example=1, description="Device ID"),
+     *             @OA\Property(property="expo_token", type="string", example="ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]", description="Expo push notification token")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Expo token updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Expo token updated successfully"),
+     *             @OA\Property(property="device", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Device 1"),
+     *                 @OA\Property(property="expo_token", type="string", example="ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Device not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Device not found")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="device_id", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="expo_token", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function updateExpoToken(Request $request)
+    {
+        $validated = $request->validate([
+            'device_id' => 'required|integer|exists:devices,id',
+            'expo_token' => 'required|string|max:255',
+        ]);
+
+        $device = Device::findOrFail($validated['device_id']);
+        $device->update(['expo_token' => $validated['expo_token']]);
+
+        return response()->json([
+            'message' => 'Expo token updated successfully',
+            'device' => [
+                'id' => $device->id,
+                'name' => $device->name,
+                'expo_token' => $device->expo_token,
+                'updated_at' => $device->updated_at,
+            ]
+        ]);
+    }
 }
 
 /**

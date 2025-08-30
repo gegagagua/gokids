@@ -117,6 +117,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     
     // Device login route (no authentication required)
     Route::post('/devices/login', [DeviceController::class, 'deviceLogin']);
+    Route::post('/devices/update-expo-token', [DeviceController::class, 'updateExpoToken']);
 
     Route::get('/get-spam-cards', [CardController::class, 'getAllSpamCards']);
     

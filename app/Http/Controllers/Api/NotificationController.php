@@ -8,6 +8,8 @@ use App\Models\Notification;
 use App\Models\Device;
 use App\Models\Card;
 use App\Services\ExpoNotificationService;
+use App\Exports\NotificationExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class NotificationController extends Controller
 {
@@ -395,5 +397,34 @@ class NotificationController extends Controller
         $stats = $expoService->getNotificationStats();
         
         return response()->json($stats);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/notifications/export",
+     *     operationId="exportNotifications",
+     *     tags={"Notifications"},
+     *     summary="Export all notifications",
+     *     description="Export all notifications data to Excel file",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Excel file download",
+     *         @OA\Header(
+     *             header="Content-Disposition",
+     *             description="Attachment filename",
+     *             @OA\Schema(type="string", example="attachment; filename=notifications.xlsx")
+     *         ),
+     *         @OA\Header(
+     *             header="Content-Type",
+     *             description="File content type",
+     *             @OA\Schema(type="string", example="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+     *         )
+     *     )
+     * )
+     */
+    public function export()
+    {
+        return Excel::download(new NotificationExport, 'notifications.xlsx');
     }
 }

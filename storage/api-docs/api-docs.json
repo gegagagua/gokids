@@ -6376,6 +6376,135 @@
                 }
             }
         },
+        "/api/devices/update-expo-token": {
+            "post": {
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Update device Expo push token",
+                "description": "Update the Expo push notification token for a specific device",
+                "operationId": "updateDeviceExpoToken",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "device_id",
+                                    "expo_token"
+                                ],
+                                "properties": {
+                                    "device_id": {
+                                        "description": "Device ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "expo_token": {
+                                        "description": "Expo push notification token",
+                                        "type": "string",
+                                        "example": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Expo token updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Expo token updated successfully"
+                                        },
+                                        "device": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Device 1"
+                                                },
+                                                "expo_token": {
+                                                    "type": "string",
+                                                    "example": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Device not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Device not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "device_id": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "expo_token": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/disters": {
             "get": {
                 "tags": [
@@ -10451,6 +10580,42 @@
                                         }
                                     },
                                     "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/notifications/export": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Export all notifications",
+                "description": "Export all notifications data to Excel file",
+                "operationId": "exportNotifications",
+                "responses": {
+                    "200": {
+                        "description": "Excel file download",
+                        "headers": {
+                            "Content-Disposition": {
+                                "description": "Attachment filename",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "attachment; filename=notifications.xlsx"
+                                }
+                            },
+                            "Content-Type": {
+                                "description": "File content type",
+                                "schema": {
+                                    "type": "string",
+                                    "example": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                                 }
                             }
                         }
