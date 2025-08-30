@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\SmsGatewayController;
 use App\Http\Controllers\Api\PaymentGatewayController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\BogPaymentController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/person-types', [PersonTypeController::class, 'index']);
@@ -48,6 +49,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::apiResource('disters', DisterController::class);
     Route::apiResource('payments', PaymentController::class);
     Route::apiResource('notifications', NotificationController::class);
+    Route::apiResource('bog-payments', BogPaymentController::class);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
@@ -125,5 +127,10 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/notifications/send-card-info', [NotificationController::class, 'sendCardInfo']);
     Route::get('/notifications/device/{deviceId}', [NotificationController::class, 'getDeviceNotifications']);
     Route::get('/notifications/stats', [NotificationController::class, 'getStats']);
+    
+    // BOG Payment additional routes
+    Route::post('/bog-payments/saved-card', [BogPaymentController::class, 'payWithSavedCard']);
+    Route::post('/bog-payments/subscription', [BogPaymentController::class, 'createSubscription']);
+    Route::get('/bog-payments/status/{orderId}', [BogPaymentController::class, 'getPaymentStatus']);
+    Route::post('/bog-payments/callback', [BogPaymentController::class, 'handleCallback']);
 });
-

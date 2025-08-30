@@ -541,6 +541,427 @@
                 ]
             }
         },
+        "/api/bog-payments": {
+            "get": {
+                "tags": [
+                    "BOG Payments"
+                ],
+                "summary": "Get all BOG payments",
+                "description": "Retrieve a paginated list of all BOG payments",
+                "operationId": "getBogPayments",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "processing",
+                                "completed",
+                                "failed",
+                                "cancelled"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "order_id": {
+                                                        "type": "string",
+                                                        "example": "BOG_ABC123_1234567890"
+                                                    },
+                                                    "amount": {
+                                                        "type": "number",
+                                                        "example": 100
+                                                    },
+                                                    "currency": {
+                                                        "type": "string",
+                                                        "example": "GEL"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "completed"
+                                                    },
+                                                    "payment_method": {
+                                                        "type": "string",
+                                                        "example": "card"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "paid_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "BOG Payments"
+                ],
+                "summary": "Create a new BOG payment",
+                "description": "Initiate a new payment through Bank of Georgia payment gateway",
+                "operationId": "createBogPayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "description": "Payment amount",
+                                        "type": "number",
+                                        "example": 100
+                                    },
+                                    "currency": {
+                                        "description": "Payment currency",
+                                        "type": "string",
+                                        "example": "GEL"
+                                    },
+                                    "card_id": {
+                                        "description": "Card ID",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "garden_id": {
+                                        "description": "Garden ID",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "payment_method": {
+                                        "description": "Payment method",
+                                        "type": "string",
+                                        "example": "card"
+                                    },
+                                    "save_card": {
+                                        "description": "Save card for future use",
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "payment_details": {
+                                        "description": "Additional payment details",
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment initiated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "payment": {
+                                            "type": "object"
+                                        },
+                                        "redirect_url": {
+                                            "type": "string",
+                                            "example": "https://payment.bog.ge/..."
+                                        },
+                                        "bog_transaction_id": {
+                                            "type": "string",
+                                            "example": "bog_123456"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bog-payments/saved-card": {
+            "post": {
+                "tags": [
+                    "BOG Payments"
+                ],
+                "summary": "Pay with saved card",
+                "description": "Make a payment using a previously saved card",
+                "operationId": "payWithSavedCard",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount",
+                                    "saved_card_id"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "description": "Payment amount",
+                                        "type": "number",
+                                        "example": 100
+                                    },
+                                    "currency": {
+                                        "description": "Payment currency",
+                                        "type": "string",
+                                        "example": "GEL"
+                                    },
+                                    "saved_card_id": {
+                                        "description": "BOG saved card ID",
+                                        "type": "string",
+                                        "example": "bog_saved_123"
+                                    },
+                                    "card_id": {
+                                        "description": "Card ID",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "garden_id": {
+                                        "description": "Garden ID",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment processed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "payment": {
+                                            "type": "object"
+                                        },
+                                        "bog_transaction_id": {
+                                            "type": "string",
+                                            "example": "bog_123456"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bog-payments/subscription": {
+            "post": {
+                "tags": [
+                    "BOG Payments"
+                ],
+                "summary": "Create subscription",
+                "description": "Create a subscription payment through BOG",
+                "operationId": "createSubscription",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "description": "Subscription amount",
+                                        "type": "number",
+                                        "example": 100
+                                    },
+                                    "currency": {
+                                        "description": "Currency",
+                                        "type": "string",
+                                        "example": "GEL"
+                                    },
+                                    "subscription_type": {
+                                        "description": "Subscription type",
+                                        "type": "string",
+                                        "example": "monthly"
+                                    },
+                                    "subscription_duration": {
+                                        "description": "Duration in days",
+                                        "type": "integer",
+                                        "example": 30
+                                    },
+                                    "card_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "garden_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Subscription created successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bog-payments/status/{orderId}": {
+            "get": {
+                "tags": [
+                    "BOG Payments"
+                ],
+                "summary": "Get payment status",
+                "description": "Get the status of a specific payment",
+                "operationId": "getPaymentStatus",
+                "parameters": [
+                    {
+                        "name": "orderId",
+                        "in": "path",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment status retrieved successfully"
+                    }
+                }
+            }
+        },
+        "/api/bog-payments/callback": {
+            "post": {
+                "tags": [
+                    "BOG Payments"
+                ],
+                "summary": "Handle BOG callback",
+                "description": "Handle payment callback from BOG payment gateway",
+                "operationId": "handleCallback",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "order_id": {
+                                        "type": "string",
+                                        "example": "BOG_ABC123_1234567890"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "success"
+                                    },
+                                    "transaction_id": {
+                                        "type": "string",
+                                        "example": "bog_123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Callback handled successfully"
+                    }
+                }
+            }
+        },
         "/api/cards": {
             "get": {
                 "tags": [
@@ -12881,6 +13302,10 @@
         {
             "name": "Auth",
             "description": "Auth"
+        },
+        {
+            "name": "BOG Payments",
+            "description": "BOG Payments"
         },
         {
             "name": "Notifications",
