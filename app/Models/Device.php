@@ -9,6 +9,7 @@ class Device extends Model
     protected $fillable = [
         'name',
         'code',
+        'expo_token',
         'status',
         'garden_id',
         'garden_groups',

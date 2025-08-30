@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\DisterController;
 use App\Http\Controllers\Api\SmsGatewayController;
 use App\Http\Controllers\Api\PaymentGatewayController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\NotificationController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/person-types', [PersonTypeController::class, 'index']);
@@ -46,6 +47,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::apiResource('gardens', GardenController::class);
     Route::apiResource('disters', DisterController::class);
     Route::apiResource('payments', PaymentController::class);
+    Route::apiResource('notifications', NotificationController::class);
 
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
@@ -54,6 +56,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         // Place specific routes before resource to avoid {garden} binding capturing 'export'
         Route::get('/gardens/export', [GardenController::class, 'export']);
         Route::get('/payments/export', [PaymentController::class, 'export']);
+        Route::get('/notifications/export', [NotificationController::class, 'export']);
         Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
         Route::patch('/gardens/{id}/status', [GardenController::class, 'updateStatus']);
         Route::patch('/gardens/{id}/dister', [GardenController::class, 'updateDister']);
@@ -116,5 +119,10 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/devices/login', [DeviceController::class, 'deviceLogin']);
 
     Route::get('/get-spam-cards', [CardController::class, 'getAllSpamCards']);
+    
+    // Additional notification routes
+    Route::post('/notifications/send-card-info', [NotificationController::class, 'sendCardInfo']);
+    Route::get('/notifications/device/{deviceId}', [NotificationController::class, 'getDeviceNotifications']);
+    Route::get('/notifications/stats', [NotificationController::class, 'getStats']);
 });
 
