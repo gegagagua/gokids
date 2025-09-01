@@ -21,7 +21,6 @@ class DisterSeeder extends Seeder
             'phone' => '+995599123456',
             'password' => Hash::make('password123'),
             'country_id' => 1, // Georgia
-            'city_id' => 1, // Tbilisi
             'gardens' => [1, 2, 3], // Sample garden IDs
         ]);
 
@@ -32,7 +31,6 @@ class DisterSeeder extends Seeder
             'phone' => '+995599654321',
             'password' => Hash::make('password123'),
             'country_id' => 1, // Georgia
-            'city_id' => 2, // Batumi
             'gardens' => [4, 5], // Sample garden IDs
         ]);
 
@@ -43,7 +41,6 @@ class DisterSeeder extends Seeder
             'phone' => '+995599789012',
             'password' => Hash::make('password123'),
             'country_id' => 1, // Georgia
-            'city_id' => 1, // Tbilisi
             'gardens' => [1, 6, 7], // Sample garden IDs
         ]);
     }

@@ -4561,6 +4561,12 @@
                                                         "type": "string",
                                                         "example": "GEL"
                                                     },
+                                                    "garden_percent": {
+                                                        "description": "Garden percentage for this country",
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 15
+                                                    },
                                                     "tariff": {
                                                         "type": "number",
                                                         "format": "float",
@@ -4578,6 +4584,10 @@
                                                     "formatted_price": {
                                                         "type": "string",
                                                         "example": "10.00 ₾"
+                                                    },
+                                                    "formatted_garden_percent": {
+                                                        "type": "string",
+                                                        "example": "15.00%"
                                                     },
                                                     "dister": {
                                                         "description": "Dister information",
@@ -4695,6 +4705,12 @@
                                         "maxLength": 10,
                                         "example": "GEL"
                                     },
+                                    "garden_percent": {
+                                        "description": "Garden percentage for this country (0-100)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15
+                                    },
                                     "tariff": {
                                         "description": "Tariff amount (0 for free)",
                                         "type": "number",
@@ -4757,6 +4773,11 @@
                                             "type": "string",
                                             "example": "GEL"
                                         },
+                                        "garden_percent": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 15
+                                        },
                                         "tariff": {
                                             "type": "number",
                                             "format": "float",
@@ -4774,6 +4795,10 @@
                                         "formatted_price": {
                                             "type": "string",
                                             "example": "10.00 ₾"
+                                        },
+                                        "formatted_garden_percent": {
+                                            "type": "string",
+                                            "example": "15.00%"
                                         },
                                         "dister": {
                                             "properties": {
@@ -4911,6 +4936,12 @@
                                             "type": "string",
                                             "example": "GEL"
                                         },
+                                        "garden_percent": {
+                                            "description": "Garden percentage for this country",
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 15
+                                        },
                                         "tariff": {
                                             "type": "number",
                                             "format": "float",
@@ -4928,6 +4959,10 @@
                                         "formatted_price": {
                                             "type": "string",
                                             "example": "10.00 ₾"
+                                        },
+                                        "formatted_garden_percent": {
+                                            "type": "string",
+                                            "example": "15.00%"
                                         },
                                         "dister": {
                                             "description": "Dister information",
@@ -5019,6 +5054,12 @@
                                         "type": "string",
                                         "example": "GEL"
                                     },
+                                    "garden_percent": {
+                                        "description": "Garden percentage for this country (0-100)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15
+                                    },
                                     "tariff": {
                                         "type": "number",
                                         "format": "float",
@@ -5068,6 +5109,11 @@
                                         "currency": {
                                             "type": "string",
                                             "example": "GEL"
+                                        },
+                                        "garden_percent": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 15
                                         },
                                         "tariff": {
                                             "type": "number",
@@ -6961,7 +7007,7 @@
                     "Disters"
                 ],
                 "summary": "Get all disters",
-                "description": "Retrieve a paginated list of all distributors with their associated country and city information.",
+                "description": "Retrieve a paginated list of all distributors with their associated country information.",
                 "operationId": "getDisters",
                 "parameters": [
                     {
@@ -6977,15 +7023,6 @@
                         "name": "country_id",
                         "in": "query",
                         "description": "Filter by country ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "city_id",
-                        "in": "query",
-                        "description": "Filter by city ID",
                         "required": false,
                         "schema": {
                             "type": "integer"
@@ -7083,10 +7120,6 @@
                                                         "type": "integer",
                                                         "example": 1
                                                     },
-                                                    "city_id": {
-                                                        "type": "integer",
-                                                        "example": 1
-                                                    },
                                                     "gardens": {
                                                         "type": "array",
                                                         "items": {
@@ -7142,19 +7175,6 @@
                                                             "name": {
                                                                 "type": "string",
                                                                 "example": "Georgia"
-                                                            }
-                                                        },
-                                                        "type": "object"
-                                                    },
-                                                    "city": {
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "integer",
-                                                                "example": 1
-                                                            },
-                                                            "name": {
-                                                                "type": "string",
-                                                                "example": "Tbilisi"
                                                             }
                                                         },
                                                         "type": "object"
@@ -7240,8 +7260,7 @@
                                     "last_name",
                                     "email",
                                     "password",
-                                    "country_id",
-                                    "city_id"
+                                    "country_id"
                                 ],
                                 "properties": {
                                     "first_name": {
@@ -7276,11 +7295,6 @@
                                     },
                                     "country_id": {
                                         "description": "Country ID",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "city_id": {
-                                        "description": "City ID",
                                         "type": "integer",
                                         "example": 1
                                     },
@@ -7481,10 +7495,6 @@
                                             "type": "integer",
                                             "example": 1
                                         },
-                                        "city_id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
                                         "gardens": {
                                             "type": "array",
                                             "items": {
@@ -7624,11 +7634,6 @@
                                     },
                                     "country_id": {
                                         "description": "Country ID",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "city_id": {
-                                        "description": "City ID",
                                         "type": "integer",
                                         "example": 1
                                     },
@@ -8121,10 +8126,6 @@
                                             "type": "integer",
                                             "example": 1
                                         },
-                                        "city_id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
                                         "gardens": {
                                             "type": "array",
                                             "items": {
@@ -8153,19 +8154,6 @@
                                                 "name": {
                                                     "type": "string",
                                                     "example": "Georgia"
-                                                }
-                                            },
-                                            "type": "object"
-                                        },
-                                        "city": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "name": {
-                                                    "type": "string",
-                                                    "example": "Tbilisi"
                                                 }
                                             },
                                             "type": "object"

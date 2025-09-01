@@ -89,4 +89,12 @@ class Country extends Model
     {
         return number_format($this->price, 2) . ' ₾';
     }
+
+    /**
+     * Get formatted garden percent display
+     */
+    public function getFormattedGardenPercentAttribute()
+    {
+        return number_format($this->garden_percent ?? 0, 2) . '%';
+    }
 }

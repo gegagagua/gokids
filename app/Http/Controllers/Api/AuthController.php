@@ -150,12 +150,12 @@ class AuthController extends Controller
                 }
                 
                 if ($dister) {
-                    $dister->load(['country', 'city']);
+                    $dister->load(['country']);
                     $response['dister'] = $dister;
                 }
             }
         } elseif ($user->type === 'dister') {
-            $dister = \App\Models\Dister::with(['country', 'city'])->where('email', $user->email)->first();
+            $dister = \App\Models\Dister::with(['country'])->where('email', $user->email)->first();
             if ($dister) {
                 $response['dister'] = $dister;
             }
@@ -438,12 +438,12 @@ class AuthController extends Controller
                 }
                 
                 if ($dister) {
-                    $dister->load(['country', 'city']);
+                    $dister->load(['country']);
                     $response['dister'] = $dister;
                 }
             }
         } elseif ($user->type === 'dister') {
-            $dister = \App\Models\Dister::with(['country', 'city'])->where('email', $user->email)->first();
+            $dister = \App\Models\Dister::with(['country'])->where('email', $user->email)->first();
             if ($dister) {
                 $response['dister'] = $dister;
             }

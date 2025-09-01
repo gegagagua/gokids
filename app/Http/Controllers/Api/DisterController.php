@@ -576,7 +576,7 @@ class DisterController extends Controller
         }
 
         $token = $dister->createToken('dister-token')->plainTextToken;
-        $dister->load(['country', 'city']);
+        $dister->load(['country']);
 
         return response()->json([
             'message' => 'Login successful',
@@ -634,10 +634,6 @@ class DisterController extends Controller
      *             @OA\Property(property="country", type="object",
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="Georgia")
-     *             ),
-     *             @OA\Property(property="city", type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="name", type="string", example="Tbilisi")
      *             )
      *         )
      *     )
@@ -645,7 +641,7 @@ class DisterController extends Controller
      */
     public function profile(Request $request)
     {
-        $dister = $request->user()->load(['country', 'city']);
+        $dister = $request->user()->load(['country']);
         return response()->json($dister);
     }
 }
