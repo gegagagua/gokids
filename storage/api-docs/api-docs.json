@@ -4556,6 +4556,11 @@
                                                         "type": "string",
                                                         "example": "საქართველო"
                                                     },
+                                                    "currency": {
+                                                        "description": "Country currency code",
+                                                        "type": "string",
+                                                        "example": "GEL"
+                                                    },
                                                     "tariff": {
                                                         "type": "number",
                                                         "format": "float",
@@ -4684,6 +4689,12 @@
                                         "maxLength": 255,
                                         "example": "საქართველო"
                                     },
+                                    "currency": {
+                                        "description": "Country currency code (defaults to GEL)",
+                                        "type": "string",
+                                        "maxLength": 10,
+                                        "example": "GEL"
+                                    },
                                     "tariff": {
                                         "description": "Tariff amount (0 for free)",
                                         "type": "number",
@@ -4741,6 +4752,10 @@
                                         "name": {
                                             "type": "string",
                                             "example": "საქართველო"
+                                        },
+                                        "currency": {
+                                            "type": "string",
+                                            "example": "GEL"
                                         },
                                         "tariff": {
                                             "type": "number",
@@ -4891,6 +4906,11 @@
                                             "type": "string",
                                             "example": "საქართველო"
                                         },
+                                        "currency": {
+                                            "description": "Country currency code",
+                                            "type": "string",
+                                            "example": "GEL"
+                                        },
                                         "tariff": {
                                             "type": "number",
                                             "format": "float",
@@ -4994,6 +5014,11 @@
                                         "type": "string",
                                         "example": "Georgia"
                                     },
+                                    "currency": {
+                                        "description": "Country currency code",
+                                        "type": "string",
+                                        "example": "GEL"
+                                    },
                                     "tariff": {
                                         "type": "number",
                                         "format": "float",
@@ -5039,6 +5064,10 @@
                                         "name": {
                                             "type": "string",
                                             "example": "Georgia"
+                                        },
+                                        "currency": {
+                                            "type": "string",
+                                            "example": "GEL"
                                         },
                                         "tariff": {
                                             "type": "number",

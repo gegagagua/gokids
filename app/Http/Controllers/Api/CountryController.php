@@ -204,6 +204,7 @@ class CountryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:countries,name',
+            'currency' => 'nullable|string|max:10',
             'tariff' => 'required|numeric|min:0|max:999999.99',
             'price' => 'required|numeric|min:0|max:999999.99',
             'dister' => 'nullable|exists:disters,id',
@@ -237,6 +238,7 @@ class CountryController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             @OA\Property(property="name", type="string", example="Georgia"),
+     *             @OA\Property(property="currency", type="string", example="GEL", description="Country currency code"),
      *             @OA\Property(property="tariff", type="number", format="float", example=10.5),
      *             @OA\Property(property="price", type="number", format="float", example=100.0),
      *             @OA\Property(property="dister", type="integer", nullable=true, example=1),
@@ -248,9 +250,10 @@ class CountryController extends Controller
      *         response=200,
      *         description="Country updated successfully",
      *         @OA\JsonContent(
-     *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="name", type="string", example="Georgia"),
-     *             @OA\Property(property="tariff", type="number", format="float", example=10.5),
+      *             @OA\Property(property="id", type="integer", example=1),
+ *             @OA\Property(property="name", type="string", example="Georgia"),
+ *             @OA\Property(property="currency", type="string", example="GEL"),
+ *             @OA\Property(property="tariff", type="number", format="float", example=10.5),
      *             @OA\Property(property="price", type="number", format="float", example=100.0),
      *             @OA\Property(property="dister", type="object", nullable=true,
      *                 @OA\Property(property="id", type="integer", example=1),
@@ -301,6 +304,7 @@ class CountryController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255|unique:countries,name,' . $id,
+            'currency' => 'nullable|string|max:10',
             'tariff' => 'sometimes|required|numeric|min:0|max:999999.99',
             'price' => 'sometimes|required|numeric|min:0|max:999999.99',
             'exchange_rate' => 'nullable|numeric|min:0|max:999999.9999',

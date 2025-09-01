@@ -11,9 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('disters', function (Blueprint $table) {
-            $table->dropColumn('referal');
-        });
+        // drop მხოლოდ მაშინ, თუ სვეტი მართლაც არსებობს
+        if (Schema::hasColumn('disters', 'referal')) {
+            Schema::table('disters', function (Blueprint $table) {
+                $table->dropColumn('referal');
+            });
+        }
     }
 
     /**
@@ -21,8 +24,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('disters', function (Blueprint $table) {
-            $table->string('referal', 6)->nullable();
-        });
+        // აღადგინე მხოლოდ მაშინ, თუ სვეტი არ არსებობს
+        if (!Schema::hasColumn('disters', 'referal')) {
+            Schema::table('disters', function (Blueprint $table) {
+                $table->string('referal', 6)->nullable();
+            });
+        }
     }
 };
