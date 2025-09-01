@@ -12,6 +12,20 @@ class Dister extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * Boot method to set default values
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::creating(function ($dister) {
+            if (empty($dister->referral)) {
+                $dister->referral = self::generateUniqueReferralCode();
+            }
+        });
+    }
+
     protected $fillable = [
         'email',
         'phone',
@@ -25,6 +39,7 @@ class Dister extends Authenticatable
         'main_dister',
         'balance',
         'iban',
+        'referral',
     ];
 
     protected $hidden = [
@@ -150,5 +165,16 @@ class Dister extends Authenticatable
         }
         
         return true;
+    }
+
+    /**
+     * Generate unique referral code
+     */
+    public static function generateUniqueReferralCode()
+    {
+        do {
+            $code = strtoupper(substr(uniqid(), -6));
+        } while (self::where('referral', $code)->exists());
+        return $code;
     }
 }
