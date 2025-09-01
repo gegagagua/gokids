@@ -1136,6 +1136,12 @@
                                                         "example": false,
                                                         "nullable": true
                                                     },
+                                                    "comment": {
+                                                        "description": "Additional comments about the card",
+                                                        "type": "string",
+                                                        "example": "Special notes about this child",
+                                                        "nullable": true
+                                                    },
                                                     "license": {
                                                         "properties": {
                                                             "type": {
@@ -1359,6 +1365,13 @@
                                         "example": false,
                                         "nullable": true
                                     },
+                                    "comment": {
+                                        "description": "Additional comments about the card",
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Special notes about this child",
+                                        "nullable": true
+                                    },
                                     "license": {
                                         "description": "License information",
                                         "properties": {
@@ -1432,6 +1445,11 @@
                                         "parent_verification": {
                                             "type": "boolean",
                                             "example": false,
+                                            "nullable": true
+                                        },
+                                        "comment": {
+                                            "type": "string",
+                                            "example": "Special notes about this child",
                                             "nullable": true
                                         },
                                         "license": {
@@ -1600,6 +1618,12 @@
                                         "parent_verification": {
                                             "type": "boolean",
                                             "example": false,
+                                            "nullable": true
+                                        },
+                                        "comment": {
+                                            "description": "Additional comments about the card",
+                                            "type": "string",
+                                            "example": "Special notes about this child",
                                             "nullable": true
                                         },
                                         "license": {
@@ -1823,6 +1847,13 @@
                                         "example": true,
                                         "nullable": true
                                     },
+                                    "comment": {
+                                        "description": "Additional comments about the card",
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Updated notes about this child",
+                                        "nullable": true
+                                    },
                                     "license": {
                                         "description": "License information",
                                         "properties": {
@@ -1892,6 +1923,11 @@
                                         "parent_verification": {
                                             "type": "boolean",
                                             "example": true,
+                                            "nullable": true
+                                        },
+                                        "comment": {
+                                            "type": "string",
+                                            "example": "Updated notes about this child",
                                             "nullable": true
                                         },
                                         "license": {
@@ -3869,6 +3905,133 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Card not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/cards/{id}/comment": {
+            "patch": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Update card comment",
+                "description": "Update the comment field of a specific card",
+                "operationId": "updateCardComment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Card ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "comment"
+                                ],
+                                "properties": {
+                                    "comment": {
+                                        "description": "Comment text (use empty string to clear comment)",
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Updated comment about this child"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Card comment updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card comment updated successfully"
+                                        },
+                                        "card": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "comment": {
+                                                    "type": "string",
+                                                    "example": "Updated comment about this child",
+                                                    "nullable": true
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Card not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "comment": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"

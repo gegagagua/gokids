@@ -55,8 +55,9 @@ class CardController extends Controller
      *                     @OA\Property(property="group_id", type="integer", example=1),
      *                     @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
      *                     @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
-     *                     @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
-     *                     @OA\Property(property="license", type="object", nullable=true,
+      *                     @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
+ *                     @OA\Property(property="comment", type="string", example="Special notes about this child", nullable=true, description="Additional comments about the card"),
+ *                     @OA\Property(property="license", type="object", nullable=true,
      *                         @OA\Property(property="type", type="string", example="boolean"),
      *                         @OA\Property(property="value", example=true, description="Boolean value (true/false)")
      *                     ),
@@ -191,6 +192,7 @@ class CardController extends Controller
      *             @OA\Property(property="group_id", type="integer", example=1),
      *             @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
      *             @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
+     *             @OA\Property(property="comment", type="string", example="Special notes about this child", nullable=true, description="Additional comments about the card"),
      *             @OA\Property(property="license", type="object", nullable=true,
      *                 @OA\Property(property="type", type="string", example="boolean"),
      *                 @OA\Property(property="value", example=true)
@@ -308,8 +310,9 @@ class CardController extends Controller
      *             @OA\Property(property="group_id", type="integer", example=1, description="ID of the associated garden group"),
      *             @OA\Property(property="person_type_id", type="integer", example=1, nullable=true, description="Person type ID from person-types"),
      *             @OA\Property(property="parent_code", type="string", maxLength=255, example="K9M2P5", nullable=true, description="Optional parent access code (auto-generated if not provided)"),
-     *             @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true, description="Parent verification status"),
-     *             @OA\Property(property="license", type="object", nullable=true, description="License information",
+      *             @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true, description="Parent verification status"),
+ *             @OA\Property(property="comment", type="string", maxLength=1000, example="Special notes about this child", nullable=true, description="Additional comments about the card"),
+ *             @OA\Property(property="license", type="object", nullable=true, description="License information",
      *                 @OA\Property(property="type", type="string", example="boolean", enum={"boolean", "date"}, description="License type"),
      *                 @OA\Property(property="value", description="License value (boolean for boolean type, date string for date type)")
      *             )
@@ -329,8 +332,9 @@ class CardController extends Controller
      *             @OA\Property(property="group_id", type="integer", example=1),
      *             @OA\Property(property="person_type_id", type="integer", example=1, nullable=true),
      *             @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
-     *             @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
-     *             @OA\Property(property="license", type="object", nullable=true,
+      *             @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
+ *             @OA\Property(property="comment", type="string", example="Special notes about this child", nullable=true),
+ *             @OA\Property(property="license", type="object", nullable=true,
      *                 @OA\Property(property="type", type="string", example="boolean"),
      *                 @OA\Property(property="value", example=true)
      *             ),
@@ -371,6 +375,7 @@ class CardController extends Controller
             'person_type_id' => 'nullable|exists:person_types,id',
             'parent_code' => 'nullable|string|max:255',
             'parent_verification' => 'nullable|boolean',
+            'comment' => 'nullable|string|max:1000',
             'license' => 'nullable|array',
             'license.type' => 'nullable|string|in:boolean,date',
             'license.value' => ['nullable', new LicenseValueRule],
@@ -446,8 +451,9 @@ class CardController extends Controller
      *             @OA\Property(property="status", type="string", example="inactive", enum={"pending", "active", "inactive"}, description="Card status"),
      *             @OA\Property(property="group_id", type="integer", example=2, description="ID of the associated garden group"),
      *             @OA\Property(property="parent_code", type="string", maxLength=255, example="K9#mP2", nullable=true, description="Optional parent access code (auto-generated if not provided)"),
-     *             @OA\Property(property="parent_verification", type="boolean", example=true, nullable=true, description="Parent verification status"),
-     *             @OA\Property(property="license", type="object", nullable=true, description="License information",
+      *             @OA\Property(property="parent_verification", type="boolean", example=true, nullable=true, description="Parent verification status"),
+ *             @OA\Property(property="comment", type="string", maxLength=1000, example="Updated notes about this child", nullable=true, description="Additional comments about the card"),
+ *             @OA\Property(property="license", type="object", nullable=true, description="License information",
      *                 @OA\Property(property="type", type="string", example="date", enum={"boolean", "date"}, description="License type"),
      *                 @OA\Property(property="value", example="2025-12-31", description="License value (boolean for boolean type, date string for date type)")
      *             )
@@ -466,8 +472,9 @@ class CardController extends Controller
      *             @OA\Property(property="status", type="string", example="inactive"),
      *             @OA\Property(property="group_id", type="integer", example=2),
      *             @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
-     *             @OA\Property(property="parent_verification", type="boolean", example=true, nullable=true),
-     *             @OA\Property(property="license", type="object", nullable=true,
+      *             @OA\Property(property="parent_verification", type="boolean", example=true, nullable=true),
+ *             @OA\Property(property="comment", type="string", example="Updated notes about this child", nullable=true),
+ *             @OA\Property(property="license", type="object", nullable=true,
      *                 @OA\Property(property="type", type="string", example="date"),
      *                 @OA\Property(property="value", example="2025-12-31")
      *             ),
@@ -530,6 +537,7 @@ class CardController extends Controller
             'group_id' => 'sometimes|required|exists:garden_groups,id',
             'parent_code' => 'nullable|string|max:255',
             'parent_verification' => 'nullable|boolean',
+            'comment' => 'nullable|string|max:1000',
             'license' => 'nullable|array',
             'license.type' => 'nullable|string|in:boolean,date',
             'license.value' => ['nullable', new LicenseValueRule],
@@ -1941,6 +1949,100 @@ class CardController extends Controller
             'card' => [
                 'id' => $card->id,
                 'spam' => $card->spam,
+                'updated_at' => $card->updated_at,
+            ]
+        ], 200);
+    }
+
+    /**
+     * Update card comment
+     *
+     * @OA\Patch(
+     *     path="/api/cards/{id}/comment",
+     *     operationId="updateCardComment",
+     *     tags={"Cards"},
+     *     summary="Update card comment",
+     *     description="Update the comment field of a specific card",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Card ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"comment"},
+     *             @OA\Property(property="comment", type="string", maxLength=1000, example="Updated comment about this child", description="Comment text (use empty string to clear comment)")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Card comment updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Card comment updated successfully"),
+     *             @OA\Property(property="card", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="comment", type="string", example="Updated comment about this child", nullable=true),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Card not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Card not found")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="comment", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function updateComment(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'comment' => 'required|string|max:1000',
+        ]);
+
+        $card = Card::findOrFail($id);
+
+        // Check if user has access to this card
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
+            if (!$card->group || $card->group->garden_id !== $gardenId) {
+                return response()->json(['message' => 'Card not found or access denied'], 404);
+            }
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            if (!$card->group || !in_array($card->group->garden_id, $allowedGardenIds)) {
+                return response()->json(['message' => 'Card not found or access denied'], 404);
+            }
+        }
+
+        // Update the comment field
+        $card->update([
+            'comment' => $validated['comment'] === '' ? null : $validated['comment']
+        ]);
+
+        return response()->json([
+            'message' => 'Card comment updated successfully',
+            'card' => [
+                'id' => $card->id,
+                'comment' => $card->comment,
                 'updated_at' => $card->updated_at,
             ]
         ], 200);
