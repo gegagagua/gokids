@@ -8,6 +8,7 @@ class PaymentGateway extends Model
 {
     protected $fillable = [
         'name',
+        'currency',
         'base_url',
         'config',
         'is_active',

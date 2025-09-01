@@ -29,8 +29,9 @@ class PaymentGatewayController extends Controller
      *             @OA\Property(property="data", type="array",
      *                 @OA\Items(
      *                     type="object",
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="name", type="string", example="BOG")
+      *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="name", type="string", example="BOG"),
+ *                     @OA\Property(property="currency", type="string", example="GEL", description="Default currency for this payment gateway")
      *                 )
      *             )
      *         )
@@ -42,7 +43,8 @@ class PaymentGatewayController extends Controller
         $gateways = collect(PaymentGateway::cases())->map(function ($gateway) {
             return [
                 'id' => $gateway->value,
-                'name' => $gateway->name()
+                'name' => $gateway->name(),
+                'currency' => $gateway->currency()
             ];
         });
 

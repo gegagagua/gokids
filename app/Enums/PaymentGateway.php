@@ -34,4 +34,11 @@ enum PaymentGateway: int
             self::BOG->value => self::BOG->name(),
         ];
     }
+
+    public function currency(): string
+    {
+        return match($this) {
+            self::BOG => 'GEL',
+        };
+    }
 }
