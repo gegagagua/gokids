@@ -44,8 +44,9 @@ class PaymentController extends Controller
      *                     @OA\Property(property="id", type="integer", example=1),
      *                     @OA\Property(property="transaction_number", type="string", example="TXN123456789"),
      *                     @OA\Property(property="transaction_number_bank", type="string", nullable=true, example="BANK123456"),
-     *                     @OA\Property(property="card_number", type="string", example="1234567890123456"),
-     *                     @OA\Property(property="card_id", type="integer", example=1),
+      *                     @OA\Property(property="card_number", type="string", example="1234567890123456"),
+ *                     @OA\Property(property="card_id", type="integer", example=1),
+ *                     @OA\Property(property="currency", type="string", example="GEL", description="Payment currency"),
      *                     @OA\Property(property="card", type="object", description="Card information",
      *                         @OA\Property(property="id", type="integer", example=1),
      *                         @OA\Property(property="phone", type="string", example="+995555123456"),
@@ -84,10 +85,11 @@ class PaymentController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             required={"transaction_number","card_number","card_id"},
-     *             @OA\Property(property="transaction_number", type="string", example="TXN123456789", description="Unique transaction number"),
-     *             @OA\Property(property="transaction_number_bank", type="string", example="BANK123456", nullable=true, description="Bank transaction number (optional)"),
-     *             @OA\Property(property="card_number", type="string", example="1234567890123456", description="Card number"),
-     *             @OA\Property(property="card_id", type="integer", example=1, description="Card ID")
+      *             @OA\Property(property="transaction_number", type="string", example="TXN123456789", description="Unique transaction number"),
+ *             @OA\Property(property="transaction_number_bank", type="string", example="BANK123456", nullable=true, description="Bank transaction number (optional)"),
+ *             @OA\Property(property="card_number", type="string", example="1234567890123456", description="Card number"),
+ *             @OA\Property(property="card_id", type="integer", example=1, description="Card ID"),
+ *             @OA\Property(property="currency", type="string", example="GEL", description="Payment currency (defaults to GEL)")
      *         )
      *     ),
      *     @OA\Response(
@@ -98,9 +100,10 @@ class PaymentController extends Controller
      *             @OA\Property(property="id", type="integer", example=1),
      *             @OA\Property(property="transaction_number", type="string", example="TXN123456789"),
      *             @OA\Property(property="transaction_number_bank", type="string", example="BANK123456"),
-     *             @OA\Property(property="card_number", type="string", example="1234567890123456"),
-     *             @OA\Property(property="card_id", type="integer", example=1),
-     *             @OA\Property(property="created_at", type="string", format="date-time"),
+      *             @OA\Property(property="card_number", type="string", example="1234567890123456"),
+ *             @OA\Property(property="card_id", type="integer", example=1),
+ *             @OA\Property(property="currency", type="string", example="GEL"),
+ *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
      *     ),
@@ -129,6 +132,7 @@ class PaymentController extends Controller
             'transaction_number_bank' => 'nullable|string|max:255',
             'card_number' => 'required|string|max:255',
             'card_id' => 'required|exists:cards,id',
+            'currency' => 'nullable|string|max:10',
         ]);
 
         $payment = Payment::create($validated);
@@ -160,9 +164,10 @@ class PaymentController extends Controller
      *             @OA\Property(property="id", type="integer", example=1),
      *             @OA\Property(property="transaction_number", type="string", example="TXN123456789"),
      *             @OA\Property(property="transaction_number_bank", type="string", nullable=true, example="BANK123456"),
-     *             @OA\Property(property="card_number", type="string", example="1234567890123456"),
-     *             @OA\Property(property="card_id", type="integer", example=1),
-     *             @OA\Property(property="card", type="object", description="Card information",
+      *             @OA\Property(property="card_number", type="string", example="1234567890123456"),
+ *             @OA\Property(property="card_id", type="integer", example=1),
+ *             @OA\Property(property="currency", type="string", example="GEL", description="Payment currency"),
+ *             @OA\Property(property="card", type="object", description="Card information",
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="phone", type="string", example="+995555123456"),
      *                 @OA\Property(property="status", type="string", example="active"),
@@ -211,10 +216,11 @@ class PaymentController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             @OA\Property(property="transaction_number", type="string", example="TXN123456789"),
-     *             @OA\Property(property="transaction_number_bank", type="string", example="BANK123456", nullable=true),
-     *             @OA\Property(property="card_number", type="string", example="1234567890123456"),
-     *             @OA\Property(property="card_id", type="integer", example=1)
+      *             @OA\Property(property="transaction_number", type="string", example="TXN123456789"),
+ *             @OA\Property(property="transaction_number_bank", type="string", example="BANK123456", nullable=true),
+ *             @OA\Property(property="card_number", type="string", example="1234567890123456"),
+ *             @OA\Property(property="card_id", type="integer", example=1),
+ *             @OA\Property(property="currency", type="string", example="GEL", description="Payment currency")
      *         )
      *     ),
      *     @OA\Response(
@@ -225,9 +231,10 @@ class PaymentController extends Controller
      *             @OA\Property(property="id", type="integer", example=1),
      *             @OA\Property(property="transaction_number", type="string", example="TXN123456789"),
      *             @OA\Property(property="transaction_number_bank", type="string", example="BANK123456"),
-     *             @OA\Property(property="card_number", type="string", example="1234567890123456"),
-     *             @OA\Property(property="card_id", type="integer", example=1),
-     *             @OA\Property(property="updated_at", type="string", format="date-time")
+      *             @OA\Property(property="card_number", type="string", example="1234567890123456"),
+ *             @OA\Property(property="card_id", type="integer", example=1),
+ *             @OA\Property(property="currency", type="string", example="GEL"),
+ *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
      *     ),
      *     @OA\Response(
@@ -264,6 +271,7 @@ class PaymentController extends Controller
             'transaction_number_bank' => 'nullable|string|max:255',
             'card_number' => 'sometimes|required|string|max:255',
             'card_id' => 'sometimes|required|exists:cards,id',
+            'currency' => 'nullable|string|max:10',
         ]);
 
         $payment->update($validated);

@@ -11815,6 +11815,11 @@
                                                         "type": "integer",
                                                         "example": 1
                                                     },
+                                                    "currency": {
+                                                        "description": "Payment currency",
+                                                        "type": "string",
+                                                        "example": "GEL"
+                                                    },
                                                     "card": {
                                                         "description": "Card information",
                                                         "properties": {
@@ -11908,6 +11913,11 @@
                                         "description": "Card ID",
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "currency": {
+                                        "description": "Payment currency (defaults to GEL)",
+                                        "type": "string",
+                                        "example": "GEL"
                                     }
                                 },
                                 "type": "object"
@@ -11941,6 +11951,10 @@
                                         "card_id": {
                                             "type": "integer",
                                             "example": 1
+                                        },
+                                        "currency": {
+                                            "type": "string",
+                                            "example": "GEL"
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -12039,6 +12053,11 @@
                                         "card_id": {
                                             "type": "integer",
                                             "example": 1
+                                        },
+                                        "currency": {
+                                            "description": "Payment currency",
+                                            "type": "string",
+                                            "example": "GEL"
                                         },
                                         "card": {
                                             "description": "Card information",
@@ -12164,6 +12183,11 @@
                                     "card_id": {
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "currency": {
+                                        "description": "Payment currency",
+                                        "type": "string",
+                                        "example": "GEL"
                                     }
                                 },
                                 "type": "object"
@@ -12197,6 +12221,10 @@
                                         "card_id": {
                                             "type": "integer",
                                             "example": 1
+                                        },
+                                        "currency": {
+                                            "type": "string",
+                                            "example": "GEL"
                                         },
                                         "updated_at": {
                                             "type": "string",
