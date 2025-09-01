@@ -33,7 +33,6 @@ class Dister extends Authenticatable
         'first_name',
         'last_name',
         'country_id',
-        'city_id',
         'gardens',
         'percent',
         'main_dister',
@@ -65,13 +64,7 @@ class Dister extends Authenticatable
         return $this->belongsTo(Country::class);
     }
 
-    /**
-     * Get the city that owns the dister.
-     */
-    public function city()
-    {
-        return $this->belongsTo(City::class);
-    }
+
 
     /**
      * Get the gardens associated with the dister.

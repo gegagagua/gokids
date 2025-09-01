@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Dister;
 use App\Models\Country;
-use App\Models\City;
+
 use App\Models\Garden;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -27,11 +27,11 @@ class DisterController extends Controller
      *     operationId="getDisters",
      *     tags={"Disters"},
      *     summary="Get all disters",
-     *     description="Retrieve a paginated list of all distributors with their associated country and city information.",
+     *     description="Retrieve a paginated list of all distributors with their associated country information.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="search", in="query", required=false, description="Search in first_name, last_name, email fields", @OA\Schema(type="string")),
      *     @OA\Parameter(name="country_id", in="query", required=false, description="Filter by country ID", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="city_id", in="query", required=false, description="Filter by city ID", @OA\Schema(type="integer")),
+    
      *     @OA\Parameter(name="balance_min", in="query", required=false, description="Filter by minimum balance", @OA\Schema(type="number", format="float")),
      *     @OA\Parameter(name="balance_max", in="query", required=false, description="Filter by maximum balance", @OA\Schema(type="number", format="float")),
      *     @OA\Parameter(name="iban", in="query", required=false, description="Filter by IBAN (partial match)", @OA\Schema(type="string")),
@@ -51,9 +51,8 @@ class DisterController extends Controller
      *                     @OA\Property(property="last_name", type="string", example="Doe"),
      *                     @OA\Property(property="email", type="string", example="john@example.com"),
      *                     @OA\Property(property="phone", type="string", example="+995599123456"),
-     *                     @OA\Property(property="country_id", type="integer", example=1),
-     *                     @OA\Property(property="city_id", type="integer", example=1),
-           *                     @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}),
+      *                     @OA\Property(property="country_id", type="integer", example=1),
+ *                     @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}),
      *                     @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true),
      *                     @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true),
      *                     @OA\Property(property="formatted_balance", type="string", example="500.00 ₾", nullable=true),
@@ -61,14 +60,10 @@ class DisterController extends Controller
      *                     @OA\Property(property="formatted_iban", type="string", example="GE29 NB00 0000 0101 9049 17", nullable=true),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
-      *                     @OA\Property(property="country", type="object",
-     *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="name", type="string", example="Georgia")
-     *                     ),
-      *                     @OA\Property(property="city", type="object",
-     *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="name", type="string", example="Tbilisi")
-     *                     )
+       *                     @OA\Property(property="country", type="object",
+ *                         @OA\Property(property="id", type="integer", example=1),
+ *                         @OA\Property(property="name", type="string", example="Georgia")
+ *                     )
      *                 )
      *             ),
      *             @OA\Property(property="first_page_url", type="string", example="http://localhost/api/disters?page=1"),
@@ -87,7 +82,7 @@ class DisterController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Dister::with(['country', 'city']);
+        $query = Dister::with(['country']);
         
         // If logged-in user is a dister, restrict to only their child disters
         if ($request->user() instanceof \App\Models\User && $request->user()->type === 'dister') {
@@ -114,9 +109,7 @@ class DisterController extends Controller
             $query->where('country_id', $request->query('country_id'));
         }
         
-        if ($request->filled('city_id')) {
-            $query->where('city_id', $request->query('city_id'));
-        }
+
         if ($request->filled('balance_min')) {
             $query->where('balance', '>=', $request->query('balance_min'));
         }
@@ -158,7 +151,6 @@ class DisterController extends Controller
      *             @OA\Property(property="email", type="string", example="john@example.com"),
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
      *             @OA\Property(property="country_id", type="integer", example=1),
-     *             @OA\Property(property="city_id", type="integer", example=1),
      *             @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}),
      *             @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true),
      *             @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true),
@@ -185,7 +177,7 @@ class DisterController extends Controller
      */
     public function show($id)
     {
-        $dister = Dister::with(['country', 'city'])->findOrFail($id);
+        $dister = Dister::with(['country'])->findOrFail($id);
         return response()->json($dister);
     }
 
@@ -200,14 +192,13 @@ class DisterController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"first_name", "last_name", "email", "password", "country_id", "city_id"},
+     *             required={"first_name", "last_name", "email", "password", "country_id"},
      *             @OA\Property(property="first_name", type="string", maxLength=255, example="John", description="First name"),
      *             @OA\Property(property="last_name", type="string", maxLength=255, example="Doe", description="Last name"),
      *             @OA\Property(property="email", type="string", maxLength=255, example="john@example.com", description="Email address"),
      *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599123456", description="Phone number"),
-     *             @OA\Property(property="password", type="string", minLength=6, example="password123", description="Password"),
-      *             @OA\Property(property="country_id", type="integer", example=1, description="Country ID"),
-      *             @OA\Property(property="city_id", type="integer", example=1, description="City ID"),
+      *             @OA\Property(property="password", type="string", minLength=6, example="password123", description="Password"),
+ *             @OA\Property(property="country_id", type="integer", example=1, description="Country ID"),
            *             @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}, description="Array of garden IDs (optional)"),
      *             @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true, description="Optional percent value (0-100)"),
      *             @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true, description="Optional dister balance"),
@@ -256,8 +247,7 @@ class DisterController extends Controller
                 'email' => 'required|string|email|max:255|unique:disters|unique:users',
                 'phone' => 'nullable|string|max:20',
                 'password' => 'required|string|min:6',
-                'country_id' => 'required|exists:countries,id',
-                'city_id' => 'required|exists:cities,id',
+                            'country_id' => 'required|exists:countries,id',
                 'gardens' => 'nullable|array',
                 'gardens.*' => 'integer|exists:gardens,id',
                 'percent' => 'nullable|numeric|min:0|max:100',
@@ -307,7 +297,7 @@ class DisterController extends Controller
             }
             
             $dister = Dister::create($disterData);
-            $dister->load(['country', 'city']);
+            $dister->load(['country']);
 
             return response()->json([
                 'message' => 'Dister created successfully',
@@ -347,8 +337,7 @@ class DisterController extends Controller
      *             @OA\Property(property="last_name", type="string", maxLength=255, example="Doe", description="Last name"),
      *             @OA\Property(property="email", type="string", maxLength=255, example="john@example.com", description="Email address"),
      *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599123456", description="Phone number"),
-      *             @OA\Property(property="country_id", type="integer", example=1, description="Country ID"),
-      *             @OA\Property(property="city_id", type="integer", example=1, description="City ID"),
+       *             @OA\Property(property="country_id", type="integer", example=1, description="Country ID"),
            *             @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}, description="Array of garden IDs"),
      *             @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true, description="Optional percent value (0-100)"),
      *             @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true, description="Optional dister balance"),
@@ -397,7 +386,6 @@ class DisterController extends Controller
             'email' => 'sometimes|required|string|email|max:255|unique:disters,email,' . $id,
             'phone' => 'nullable|string|max:20',
             'country_id' => 'sometimes|required|exists:countries,id',
-            'city_id' => 'sometimes|required|exists:cities,id',
             'gardens' => 'nullable|array',
             'gardens.*' => 'integer|exists:gardens,id',
             'percent' => 'nullable|numeric|min:0|max:100',
@@ -406,7 +394,7 @@ class DisterController extends Controller
         ]);
 
         $dister->update($validated);
-        $dister->load(['country', 'city']);
+        $dister->load(['country']);
 
         return response()->json($dister);
     }
@@ -640,7 +628,6 @@ class DisterController extends Controller
      *             @OA\Property(property="email", type="string", example="john@example.com"),
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
      *             @OA\Property(property="country_id", type="integer", example=1),
-     *             @OA\Property(property="city_id", type="integer", example=1),
      *             @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time"),
