@@ -11,6 +11,7 @@ class Payment extends Model
         'transaction_number_bank',
         'card_number',
         'card_id',
+        'currency',
     ];
 
     /**
