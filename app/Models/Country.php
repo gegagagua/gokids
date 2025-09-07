@@ -9,6 +9,7 @@ class Country extends Model
     protected $fillable = [
         'name',
         'currency',
+        'garden_percent',
         'tariff',
         'price',
         'exchange_rate',
@@ -19,6 +20,7 @@ class Country extends Model
     ];
 
     protected $casts = [
+        'garden_percent' => 'decimal:2',
         'tariff' => 'decimal:2',
         'price' => 'decimal:2',
         'exchange_rate' => 'decimal:4',
@@ -27,6 +29,7 @@ class Country extends Model
     protected $appends = [
         'formatted_tariff',
         'formatted_price',
+        'formatted_garden_percent',
     ];
 
     public function cities()
