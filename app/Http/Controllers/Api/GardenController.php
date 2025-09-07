@@ -797,4 +797,103 @@ class GardenController extends Controller
             'deleted_count' => $deleted,
         ]);
     }
+
+    /**
+     * Update garden balance and balance comment
+     *
+     * @OA\Patch(
+     *     path="/api/gardens/{id}/balance",
+     *     operationId="updateGardenBalance",
+     *     tags={"Gardens"},
+     *     summary="Update garden balance and balance comment",
+     *     description="Update the balance and balance_comment fields of a specific garden",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Garden ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"balance"},
+     *             @OA\Property(property="balance", type="number", format="float", example=250.50, description="New garden balance"),
+     *             @OA\Property(property="balance_comment", type="string", maxLength=1000, example="Balance adjustment due to payment", nullable=true, description="Comment explaining balance changes (use empty string to clear comment)")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Garden balance updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Garden balance updated successfully"),
+     *             @OA\Property(property="garden", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Sunshine Garden"),
+     *                 @OA\Property(property="balance", type="number", format="float", example=250.50),
+     *                 @OA\Property(property="formatted_balance", type="string", example="250.50 ₾"),
+     *                 @OA\Property(property="balance_comment", type="string", example="Balance adjustment due to payment", nullable=true),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Garden not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Garden not found")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="balance", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="balance_comment", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function updateBalance(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'balance' => 'required|numeric|min:0|max:9999999.99',
+            'balance_comment' => 'nullable|string|max:1000',
+        ]);
+
+        $garden = Garden::findOrFail($id);
+
+        // Check if user has access to this garden
+        if ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            if (!in_array((int)$id, $allowedGardenIds, true)) {
+                return response()->json(['message' => 'Garden not found or access denied'], 404);
+            }
+        }
+
+        // Update the balance and balance_comment fields
+        $garden->update([
+            'balance' => $validated['balance'],
+            'balance_comment' => $validated['balance_comment'] === '' ? null : $validated['balance_comment']
+        ]);
+
+        return response()->json([
+            'message' => 'Garden balance updated successfully',
+            'garden' => [
+                'id' => $garden->id,
+                'name' => $garden->name,
+                'balance' => $garden->balance,
+                'formatted_balance' => $garden->formatted_balance,
+                'balance_comment' => $garden->balance_comment,
+                'updated_at' => $garden->updated_at,
+            ]
+        ], 200);
+    }
 }

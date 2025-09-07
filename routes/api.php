@@ -62,6 +62,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
         Route::patch('/gardens/{id}/status', [GardenController::class, 'updateStatus']);
         Route::patch('/gardens/{id}/dister', [GardenController::class, 'updateDister']);
+        Route::patch('/gardens/{id}/balance', [GardenController::class, 'updateBalance']);
         
         // Dister routes (authenticated)
         
