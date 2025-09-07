@@ -90,7 +90,7 @@ class GardenController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Garden::with(['city', 'countryRelation', 'images']);
+        $query = Garden::with(['city', 'countryData', 'images']);
 
         // If logged-in user is a dister, restrict to their assigned gardens
         if ($request->user() instanceof \App\Models\User && $request->user()->type === 'dister') {
@@ -215,7 +215,7 @@ class GardenController extends Controller
             }
         }
 
-        $garden = Garden::with(['city', 'countryRelation', 'images'])->findOrFail($garden);
+        $garden = Garden::with(['city', 'countryData', 'images'])->findOrFail($garden);
         $garden->makeVisible('referral_code');
         return $garden;
     }
@@ -373,12 +373,17 @@ class GardenController extends Controller
      */
     public function store(Request $request)
     {
+        // Handle both 'country' and 'country_id' field names for backward compatibility
+        if ($request->has('country') && !$request->has('country_id')) {
+            $request->merge(['country_id' => $request->input('country')]);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
             'tax_id' => 'required|string|max:255',
             'city_id' => 'required|exists:cities,id',
-            'country' => 'nullable|exists:countries,id',
+            'country_id' => 'nullable|exists:countries,id',
             'phone' => 'required|string|max:255',
             'email' => 'required|email|unique:gardens,email|unique:users,email',
             'password' => 'required|string|min:6',

@@ -16,7 +16,7 @@ class Garden extends Model
         'address',
         'tax_id',
         'city_id',
-        'country_id',
+        'country',
         'phone',
         'email',
         'password',
@@ -35,7 +35,7 @@ class Garden extends Model
         'percents' => 'decimal:2',
     ];
 
-    protected $appends = ['dister', 'country'];
+    protected $appends = ['dister', 'country_info'];
 
     public static function generateUniqueReferralCode()
     {
@@ -50,9 +50,9 @@ class Garden extends Model
         return $this->belongsTo(City::class);
     }
 
-    public function countryRelation()
+    public function countryData()
     {
-        return $this->belongsTo(Country::class, 'country_id', 'id');
+        return $this->belongsTo(Country::class, 'country', 'id');
     }
 
     public function groups()
@@ -85,9 +85,9 @@ class Garden extends Model
     /**
      * Get the country associated with this garden (accessor)
      */
-    public function getCountryAttribute()
+    public function getCountryInfoAttribute()
     {
-        return $this->countryRelation;
+        return $this->countryData;
     }
 
     /**
