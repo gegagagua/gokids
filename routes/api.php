@@ -94,6 +94,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
             Route::patch('/cards/{id}/status', [CardController::class, 'updateStatus']);
             Route::patch('/cards/{id}/change-main-garden-image', [CardController::class, 'changeMainGardenImage']);
             Route::patch('/cards/{id}/comment', [CardController::class, 'updateComment']);
+            Route::patch('/cards/{id}/spam-comment', [CardController::class, 'updateSpamComment']);
             
             Route::post('/cards/{id}/regenerate-code', [CardController::class, 'regenerateCode']);
             Route::post('/cards/{id}/restore', [CardController::class, 'restore']);

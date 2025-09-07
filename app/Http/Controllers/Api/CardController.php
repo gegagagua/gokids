@@ -57,6 +57,7 @@ class CardController extends Controller
      *                     @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
       *                     @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
  *                     @OA\Property(property="comment", type="string", example="Special notes about this child", nullable=true, description="Additional comments about the card"),
+ *                     @OA\Property(property="spam_comment", type="string", example="Spam reason comment", nullable=true, description="Comment explaining why the card was marked as spam"),
  *                     @OA\Property(property="license", type="object", nullable=true,
      *                         @OA\Property(property="type", type="string", example="boolean"),
      *                         @OA\Property(property="value", example=true, description="Boolean value (true/false)")
@@ -192,8 +193,9 @@ class CardController extends Controller
      *             @OA\Property(property="group_id", type="integer", example=1),
      *             @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
      *             @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
-     *             @OA\Property(property="comment", type="string", example="Special notes about this child", nullable=true, description="Additional comments about the card"),
-     *             @OA\Property(property="license", type="object", nullable=true,
+ *             @OA\Property(property="comment", type="string", example="Special notes about this child", nullable=true, description="Additional comments about the card"),
+ *             @OA\Property(property="spam_comment", type="string", example="Spam reason comment", nullable=true, description="Comment explaining why the card was marked as spam"),
+ *             @OA\Property(property="license", type="object", nullable=true,
      *                 @OA\Property(property="type", type="string", example="boolean"),
      *                 @OA\Property(property="value", example=true)
      *             ),
@@ -312,6 +314,7 @@ class CardController extends Controller
      *             @OA\Property(property="parent_code", type="string", maxLength=255, example="K9M2P5", nullable=true, description="Optional parent access code (auto-generated if not provided)"),
       *             @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true, description="Parent verification status"),
  *             @OA\Property(property="comment", type="string", maxLength=1000, example="Special notes about this child", nullable=true, description="Additional comments about the card"),
+ *             @OA\Property(property="spam_comment", type="string", maxLength=1000, example="Spam reason comment", nullable=true, description="Comment explaining why the card was marked as spam"),
  *             @OA\Property(property="license", type="object", nullable=true, description="License information",
      *                 @OA\Property(property="type", type="string", example="boolean", enum={"boolean", "date"}, description="License type"),
      *                 @OA\Property(property="value", description="License value (boolean for boolean type, date string for date type)")
@@ -334,6 +337,7 @@ class CardController extends Controller
      *             @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
       *             @OA\Property(property="parent_verification", type="boolean", example=false, nullable=true),
  *             @OA\Property(property="comment", type="string", example="Special notes about this child", nullable=true),
+ *             @OA\Property(property="spam_comment", type="string", example="Spam reason comment", nullable=true),
  *             @OA\Property(property="license", type="object", nullable=true,
      *                 @OA\Property(property="type", type="string", example="boolean"),
      *                 @OA\Property(property="value", example=true)
@@ -376,6 +380,7 @@ class CardController extends Controller
             'parent_code' => 'nullable|string|max:255',
             'parent_verification' => 'nullable|boolean',
             'comment' => 'nullable|string|max:1000',
+            'spam_comment' => 'nullable|string|max:1000',
             'license' => 'nullable|array',
             'license.type' => 'nullable|string|in:boolean,date',
             'license.value' => ['nullable', new LicenseValueRule],
@@ -453,6 +458,7 @@ class CardController extends Controller
      *             @OA\Property(property="parent_code", type="string", maxLength=255, example="K9#mP2", nullable=true, description="Optional parent access code (auto-generated if not provided)"),
       *             @OA\Property(property="parent_verification", type="boolean", example=true, nullable=true, description="Parent verification status"),
  *             @OA\Property(property="comment", type="string", maxLength=1000, example="Updated notes about this child", nullable=true, description="Additional comments about the card"),
+ *             @OA\Property(property="spam_comment", type="string", maxLength=1000, example="Updated spam reason comment", nullable=true, description="Comment explaining why the card was marked as spam"),
  *             @OA\Property(property="license", type="object", nullable=true, description="License information",
      *                 @OA\Property(property="type", type="string", example="date", enum={"boolean", "date"}, description="License type"),
      *                 @OA\Property(property="value", example="2025-12-31", description="License value (boolean for boolean type, date string for date type)")
@@ -474,6 +480,7 @@ class CardController extends Controller
      *             @OA\Property(property="parent_code", type="string", example="K9#mP2", nullable=true),
       *             @OA\Property(property="parent_verification", type="boolean", example=true, nullable=true),
  *             @OA\Property(property="comment", type="string", example="Updated notes about this child", nullable=true),
+ *             @OA\Property(property="spam_comment", type="string", example="Updated spam reason comment", nullable=true),
  *             @OA\Property(property="license", type="object", nullable=true,
      *                 @OA\Property(property="type", type="string", example="date"),
      *                 @OA\Property(property="value", example="2025-12-31")
@@ -538,6 +545,7 @@ class CardController extends Controller
             'parent_code' => 'nullable|string|max:255',
             'parent_verification' => 'nullable|boolean',
             'comment' => 'nullable|string|max:1000',
+            'spam_comment' => 'nullable|string|max:1000',
             'license' => 'nullable|array',
             'license.type' => 'nullable|string|in:boolean,date',
             'license.value' => ['nullable', new LicenseValueRule],
@@ -2043,6 +2051,100 @@ class CardController extends Controller
             'card' => [
                 'id' => $card->id,
                 'comment' => $card->comment,
+                'updated_at' => $card->updated_at,
+            ]
+        ], 200);
+    }
+
+    /**
+     * Update card spam comment
+     *
+     * @OA\Patch(
+     *     path="/api/cards/{id}/spam-comment",
+     *     operationId="updateCardSpamComment",
+     *     tags={"Cards"},
+     *     summary="Update card spam comment",
+     *     description="Update the spam_comment field of a specific card",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Card ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"spam_comment"},
+     *             @OA\Property(property="spam_comment", type="string", maxLength=1000, example="Updated spam reason comment", description="Comment explaining why the card was marked as spam (use empty string to clear comment)")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Card spam comment updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Card spam comment updated successfully"),
+     *             @OA\Property(property="card", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="spam_comment", type="string", example="Updated spam reason comment", nullable=true),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Card not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Card not found")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="spam_comment", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function updateSpamComment(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'spam_comment' => 'required|string|max:1000',
+        ]);
+
+        $card = Card::findOrFail($id);
+
+        // Check if user has access to this card
+        if ($request->user() && $request->user()->garden_id) {
+            $gardenId = $request->user()->garden_id;
+            if (!$card->group || $card->group->garden_id !== $gardenId) {
+                return response()->json(['message' => 'Card not found or access denied'], 404);
+            }
+        } elseif ($request->user() instanceof \App\Models\Dister) {
+            $allowedGardenIds = $request->user()->gardens ?? [];
+            if (!$card->group || !in_array($card->group->garden_id, $allowedGardenIds)) {
+                return response()->json(['message' => 'Card not found or access denied'], 404);
+            }
+        }
+
+        // Update the spam_comment field
+        $card->update([
+            'spam_comment' => $validated['spam_comment'] === '' ? null : $validated['spam_comment']
+        ]);
+
+        return response()->json([
+            'message' => 'Card spam comment updated successfully',
+            'card' => [
+                'id' => $card->id,
+                'spam_comment' => $card->spam_comment,
                 'updated_at' => $card->updated_at,
             ]
         ], 200);

@@ -1142,6 +1142,12 @@
                                                         "example": "Special notes about this child",
                                                         "nullable": true
                                                     },
+                                                    "spam_comment": {
+                                                        "description": "Comment explaining why the card was marked as spam",
+                                                        "type": "string",
+                                                        "example": "Spam reason comment",
+                                                        "nullable": true
+                                                    },
                                                     "license": {
                                                         "properties": {
                                                             "type": {
@@ -1372,6 +1378,13 @@
                                         "example": "Special notes about this child",
                                         "nullable": true
                                     },
+                                    "spam_comment": {
+                                        "description": "Comment explaining why the card was marked as spam",
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Spam reason comment",
+                                        "nullable": true
+                                    },
                                     "license": {
                                         "description": "License information",
                                         "properties": {
@@ -1450,6 +1463,11 @@
                                         "comment": {
                                             "type": "string",
                                             "example": "Special notes about this child",
+                                            "nullable": true
+                                        },
+                                        "spam_comment": {
+                                            "type": "string",
+                                            "example": "Spam reason comment",
                                             "nullable": true
                                         },
                                         "license": {
@@ -1624,6 +1642,12 @@
                                             "description": "Additional comments about the card",
                                             "type": "string",
                                             "example": "Special notes about this child",
+                                            "nullable": true
+                                        },
+                                        "spam_comment": {
+                                            "description": "Comment explaining why the card was marked as spam",
+                                            "type": "string",
+                                            "example": "Spam reason comment",
                                             "nullable": true
                                         },
                                         "license": {
@@ -1854,6 +1878,13 @@
                                         "example": "Updated notes about this child",
                                         "nullable": true
                                     },
+                                    "spam_comment": {
+                                        "description": "Comment explaining why the card was marked as spam",
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Updated spam reason comment",
+                                        "nullable": true
+                                    },
                                     "license": {
                                         "description": "License information",
                                         "properties": {
@@ -1928,6 +1959,11 @@
                                         "comment": {
                                             "type": "string",
                                             "example": "Updated notes about this child",
+                                            "nullable": true
+                                        },
+                                        "spam_comment": {
+                                            "type": "string",
+                                            "example": "Updated spam reason comment",
                                             "nullable": true
                                         },
                                         "license": {
@@ -4025,6 +4061,133 @@
                                         "errors": {
                                             "properties": {
                                                 "comment": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/cards/{id}/spam-comment": {
+            "patch": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Update card spam comment",
+                "description": "Update the spam_comment field of a specific card",
+                "operationId": "updateCardSpamComment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Card ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "spam_comment"
+                                ],
+                                "properties": {
+                                    "spam_comment": {
+                                        "description": "Comment explaining why the card was marked as spam (use empty string to clear comment)",
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Updated spam reason comment"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Card spam comment updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card spam comment updated successfully"
+                                        },
+                                        "card": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "spam_comment": {
+                                                    "type": "string",
+                                                    "example": "Updated spam reason comment",
+                                                    "nullable": true
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Card not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "spam_comment": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"

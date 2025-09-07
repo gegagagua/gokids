@@ -27,6 +27,7 @@ class Card extends Model
         'deleted',
         'spam',
         'comment',
+        'spam_comment',
     ];
 
     protected $casts = [
