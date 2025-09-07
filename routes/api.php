@@ -51,12 +51,12 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::apiResource('bog-payments', BogPaymentController::class);
 
     Route::middleware('auth:sanctum')->group(function () {
+        // Place specific routes before resource to avoid {garden} binding capturing 'export'
+        Route::get('/gardens/export', [GardenController::class, 'export']);
         Route::apiResource('gardens', GardenController::class);
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
-        // Place specific routes before resource to avoid {garden} binding capturing 'export'
-        Route::get('/gardens/export', [GardenController::class, 'export']);
         Route::get('/payments/export', [PaymentController::class, 'export']);
         Route::get('/notifications/export', [NotificationController::class, 'export']);
         Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
