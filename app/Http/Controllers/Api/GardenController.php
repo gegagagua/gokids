@@ -24,11 +24,11 @@ class GardenController extends Controller
      *     operationId="getGardens",
      *     tags={"Gardens"},
      *     summary="Get all gardens",
-     *     description="Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, city_id, tax_id, phone, email.",
+     *     description="Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, referral_code, tax_id, phone, email.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="name", in="query", required=false, description="Filter by garden name", @OA\Schema(type="string")),
      *     @OA\Parameter(name="address", in="query", required=false, description="Filter by address", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="city_id", in="query", required=false, description="Filter by city ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="referral_code", in="query", required=false, description="Filter by referral code", @OA\Schema(type="string")),
      *     @OA\Parameter(name="country_id", in="query", required=false, description="Filter by country ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="tax_id", in="query", required=false, description="Filter by tax ID", @OA\Schema(type="string")),
      *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
@@ -51,7 +51,7 @@ class GardenController extends Controller
      *                     @OA\Property(property="name", type="string", example="Sunshine Garden"),
      *                     @OA\Property(property="address", type="string", example="123 Main Street"),
      *                     @OA\Property(property="tax_id", type="string", example="123456789"),
-     *                     @OA\Property(property="city_id", type="integer", example=1),
+     *                     @OA\Property(property="referral_code", type="string", example="REF123456789", nullable=true),
      *                     @OA\Property(property="phone", type="string", example="+995599123456"),
      *                     @OA\Property(property="email", type="string", example="sunshine@garden.ge"),
      *                     @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}),
@@ -109,8 +109,8 @@ class GardenController extends Controller
         if ($request->filled('address')) {
             $query->where('address', 'like', '%' . $request->query('address') . '%');
         }
-        if ($request->filled('city_id')) {
-            $query->where('city_id', $request->query('city_id'));
+        if ($request->filled('referral_code')) {
+            $query->where('referral_code', 'like', '%' . $request->query('referral_code') . '%');
         }
         if ($request->filled('country_id')) {
             $query->where('country_id', $request->query('country_id'));
