@@ -373,6 +373,11 @@ class GardenController extends Controller
      */
     public function store(Request $request)
     {
+        // Handle both 'country' and 'country_id' field names for backward compatibility
+        if ($request->has('country') && !$request->has('country_id')) {
+            $request->merge(['country_id' => $request->input('country')]);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'address' => 'required|string|max:255',
@@ -506,6 +511,11 @@ class GardenController extends Controller
     public function update(Request $request, $garden)
     {
         $garden = Garden::findOrFail($garden);
+
+        // Handle both 'country' and 'country_id' field names for backward compatibility
+        if ($request->has('country') && !$request->has('country_id')) {
+            $request->merge(['country_id' => $request->input('country')]);
+        }
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
