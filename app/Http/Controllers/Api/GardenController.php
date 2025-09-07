@@ -205,17 +205,17 @@ class GardenController extends Controller
      *     )
      * )
      */
-    public function show($id)
+    public function show($garden)
     {
         // Restrict dister to only their gardens
         if (request()->user() instanceof \App\Models\Dister) {
             $allowedGardenIds = request()->user()->gardens ?? [];
-            if (!in_array((int)$id, $allowedGardenIds, true)) {
+            if (!in_array((int)$garden, $allowedGardenIds, true)) {
                 return response()->json(['message' => 'Forbidden'], 403);
             }
         }
 
-        $garden = Garden::with(['city', 'country', 'images'])->findOrFail($id);
+        $garden = Garden::with(['city', 'country', 'images'])->findOrFail($garden);
         $garden->makeVisible('referral_code');
         return $garden;
     }
@@ -229,7 +229,16 @@ class GardenController extends Controller
      *     description="Download an Excel report of gardens with full information. Optionally filter by garden IDs. If dister is logged in, export is automatically restricted to their assigned gardens.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="ids", in="query", required=false, description="Comma-separated garden IDs or multiple ids[] query params", @OA\Schema(type="string", example="37,42")),
-     *     @OA\Response(response=200, description="Excel file")
+     *     @OA\Response(response=200, description="Excel file"),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Garden IDs not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Some garden IDs do not exist: 8,9"),
+     *             @OA\Property(property="non_existent_ids", type="array", @OA\Items(type="integer"), example={8,9}),
+     *             @OA\Property(property="existing_ids", type="array", @OA\Items(type="integer"), example={4,5,6})
+     *         )
+     *     )
      * )
      */
     public function export(Request $request)
@@ -263,6 +272,20 @@ class GardenController extends Controller
             } else {
                 // For non-dister users, export all gardens (empty array means all)
                 $finalIds = [];
+            }
+        }
+
+        // Check if any of the requested IDs exist
+        if (!empty($requestedIds)) {
+            $existingIds = Garden::whereIn('id', $requestedIds)->pluck('id')->toArray();
+            $nonExistentIds = array_diff($requestedIds, $existingIds);
+            
+            if (!empty($nonExistentIds)) {
+                return response()->json([
+                    'message' => 'Some garden IDs do not exist: ' . implode(', ', $nonExistentIds),
+                    'non_existent_ids' => $nonExistentIds,
+                    'existing_ids' => $existingIds
+                ], 404);
             }
         }
 
@@ -480,9 +503,9 @@ class GardenController extends Controller
      *     )
      * )
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $garden)
     {
-        $garden = Garden::findOrFail($id);
+        $garden = Garden::findOrFail($garden);
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
@@ -491,7 +514,7 @@ class GardenController extends Controller
             'city_id' => 'sometimes|required|exists:cities,id',
             'country' => 'nullable|exists:countries,id',
             'phone' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|email|unique:gardens,email,' . $id,
+            'email' => 'sometimes|required|email|unique:gardens,email,' . $garden,
             'password' => 'sometimes|required|string|min:6',
             'referral' => 'nullable|string|max:255',
             'status' => 'nullable|string|in:active,paused,inactive',
@@ -541,9 +564,9 @@ class GardenController extends Controller
      *     )
      * )
      */
-    public function destroy($id)
+    public function destroy($garden)
     {
-        $garden = Garden::findOrFail($id);
+        $garden = Garden::findOrFail($garden);
         $garden->delete();
 
         return response()->json(['message' => 'Garden deleted']);

@@ -9663,6 +9663,43 @@
                 "responses": {
                     "200": {
                         "description": "Excel file"
+                    },
+                    "404": {
+                        "description": "Garden IDs not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Some garden IDs do not exist: 8,9"
+                                        },
+                                        "non_existent_ids": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer"
+                                            },
+                                            "example": [
+                                                8,
+                                                9
+                                            ]
+                                        },
+                                        "existing_ids": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer"
+                                            },
+                                            "example": [
+                                                4,
+                                                5,
+                                                6
+                                            ]
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
