@@ -39,6 +39,7 @@ class Dister extends Authenticatable
         'balance',
         'iban',
         'referral',
+        'status',
     ];
 
     protected $hidden = [

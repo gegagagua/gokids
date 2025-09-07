@@ -35,6 +35,7 @@ class DisterController extends Controller
      *     @OA\Parameter(name="balance_min", in="query", required=false, description="Filter by minimum balance", @OA\Schema(type="number", format="float")),
      *     @OA\Parameter(name="balance_max", in="query", required=false, description="Filter by maximum balance", @OA\Schema(type="number", format="float")),
      *     @OA\Parameter(name="iban", in="query", required=false, description="Filter by IBAN (partial match)", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Filter by status", @OA\Schema(type="string", enum={"active", "inactive", "suspended"})),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination). Default: 15", @OA\Schema(type="integer", default=15, minimum=1, maximum=100)),
      *     @OA\Parameter(name="page", in="query", required=false, description="Page number for pagination. Default: 1", @OA\Schema(type="integer", default=1, minimum=1)),
      *     @OA\Response(
@@ -58,6 +59,7 @@ class DisterController extends Controller
      *                     @OA\Property(property="formatted_balance", type="string", example="500.00 ₾", nullable=true),
      *                     @OA\Property(property="iban", type="string", example="GE29NB0000000101904917", nullable=true),
      *                     @OA\Property(property="formatted_iban", type="string", example="GE29 NB00 0000 0101 9049 17", nullable=true),
+     *                     @OA\Property(property="status", type="string", example="active", enum={"active", "inactive", "suspended"}),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
        *                     @OA\Property(property="country", type="object",
@@ -157,6 +159,7 @@ class DisterController extends Controller
      *             @OA\Property(property="formatted_balance", type="string", example="500.00 ₾", nullable=true),
      *             @OA\Property(property="iban", type="string", example="GE29NB0000000101904917", nullable=true),
      *             @OA\Property(property="formatted_iban", type="string", example="GE29 NB00 0000 0101 9049 17", nullable=true),
+     *             @OA\Property(property="status", type="string", example="active", enum={"active", "inactive", "suspended"}),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time"),
      *             @OA\Property(property="country", type="object",
@@ -202,7 +205,8 @@ class DisterController extends Controller
            *             @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}, description="Array of garden IDs (optional)"),
      *             @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true, description="Optional percent value (0-100)"),
      *             @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true, description="Optional dister balance"),
-     *             @OA\Property(property="iban", type="string", maxLength=50, example="GE29NB0000000101904917", nullable=true, description="Optional IBAN (International Bank Account Number)")
+     *             @OA\Property(property="iban", type="string", maxLength=50, example="GE29NB0000000101904917", nullable=true, description="Optional IBAN (International Bank Account Number)"),
+     *             @OA\Property(property="status", type="string", example="active", enum={"active", "inactive", "suspended"}, nullable=true, description="Dister status (defaults to active)")
      *         )
      *     ),
      *     @OA\Response(
@@ -221,6 +225,7 @@ class DisterController extends Controller
      *                 @OA\Property(property="city_id", type="integer", example=1),
       *                 @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}),
       *                 @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true),
+     *                 @OA\Property(property="status", type="string", example="active", enum={"active", "inactive", "suspended"}),
      *                 @OA\Property(property="created_at", type="string", format="date-time"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time")
      *             ),
@@ -253,6 +258,7 @@ class DisterController extends Controller
                 'percent' => 'nullable|numeric|min:0|max:100',
                 'balance' => 'nullable|numeric|min:0|max:9999999.99',
                 'iban' => 'nullable|string|max:50',
+                'status' => 'nullable|string|in:active,inactive,suspended',
             ]);
 
             // Create User account first
@@ -341,7 +347,8 @@ class DisterController extends Controller
            *             @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}, description="Array of garden IDs"),
      *             @OA\Property(property="percent", type="number", format="float", example=12.5, nullable=true, description="Optional percent value (0-100)"),
      *             @OA\Property(property="balance", type="number", format="float", example=500.00, nullable=true, description="Optional dister balance"),
-     *             @OA\Property(property="iban", type="string", maxLength=50, example="GE29NB0000000101904917", nullable=true, description="Optional IBAN (International Bank Account Number)")
+     *             @OA\Property(property="iban", type="string", maxLength=50, example="GE29NB0000000101904917", nullable=true, description="Optional IBAN (International Bank Account Number)"),
+     *             @OA\Property(property="status", type="string", example="active", enum={"active", "inactive", "suspended"}, nullable=true, description="Dister status")
      *         )
      *     ),
      *     @OA\Response(
@@ -362,6 +369,7 @@ class DisterController extends Controller
      *             @OA\Property(property="formatted_balance", type="string", example="500.00 ₾", nullable=true),
      *             @OA\Property(property="iban", type="string", example="GE29NB0000000101904917", nullable=true),
      *             @OA\Property(property="formatted_iban", type="string", example="GE29 NB00 0000 0101 9049 17", nullable=true),
+     *             @OA\Property(property="status", type="string", example="active", enum={"active", "inactive", "suspended"}),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
@@ -391,6 +399,7 @@ class DisterController extends Controller
             'percent' => 'nullable|numeric|min:0|max:100',
             'balance' => 'nullable|numeric|min:0|max:9999999.99',
             'iban' => 'nullable|string|max:50',
+            'status' => 'nullable|string|in:active,inactive,suspended',
         ]);
 
         $dister->update($validated);
@@ -643,5 +652,85 @@ class DisterController extends Controller
     {
         $dister = $request->user()->load(['country']);
         return response()->json($dister);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/disters/{id}/status",
+     *     operationId="updateDisterStatus",
+     *     tags={"Disters"},
+     *     summary="Update dister status",
+     *     description="Update the status of a specific dister",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Dister ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"status"},
+     *             @OA\Property(property="status", type="string", example="active", enum={"active", "inactive", "suspended"}, description="New status for the dister")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Dister status updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Dister status updated successfully"),
+     *             @OA\Property(property="dister", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="first_name", type="string", example="John"),
+     *                 @OA\Property(property="last_name", type="string", example="Doe"),
+     *                 @OA\Property(property="email", type="string", example="john@example.com"),
+     *                 @OA\Property(property="status", type="string", example="active", enum={"active", "inactive", "suspended"}),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Dister not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(property="errors", type="object",
+     *                 @OA\Property(property="status", type="array", @OA\Items(type="string", example="The status field is required."))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'status' => 'required|string|in:active,inactive,suspended',
+        ]);
+
+        $dister = Dister::findOrFail($id);
+        
+        $dister->update([
+            'status' => $validated['status']
+        ]);
+
+        return response()->json([
+            'message' => 'Dister status updated successfully',
+            'dister' => [
+                'id' => $dister->id,
+                'first_name' => $dister->first_name,
+                'last_name' => $dister->last_name,
+                'email' => $dister->email,
+                'status' => $dister->status,
+                'updated_at' => $dister->updated_at,
+            ]
+        ], 200);
     }
 }

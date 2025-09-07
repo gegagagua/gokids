@@ -7384,6 +7384,20 @@
                         }
                     },
                     {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "inactive",
+                                "suspended"
+                            ]
+                        }
+                    },
+                    {
                         "name": "per_page",
                         "in": "query",
                         "description": "Items per page (pagination). Default: 15",
@@ -7483,6 +7497,15 @@
                                                         "type": "string",
                                                         "example": "GE29 NB00 0000 0101 9049 17",
                                                         "nullable": true
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "active",
+                                                            "inactive",
+                                                            "suspended"
+                                                        ],
+                                                        "example": "active"
                                                     },
                                                     "created_at": {
                                                         "type": "string",
@@ -7656,6 +7679,17 @@
                                         "maxLength": 50,
                                         "example": "GE29NB0000000101904917",
                                         "nullable": true
+                                    },
+                                    "status": {
+                                        "description": "Dister status (defaults to active)",
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive",
+                                            "suspended"
+                                        ],
+                                        "example": "active",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -7720,6 +7754,15 @@
                                                     "format": "float",
                                                     "example": 12.5,
                                                     "nullable": true
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "active",
+                                                        "inactive",
+                                                        "suspended"
+                                                    ],
+                                                    "example": "active"
                                                 },
                                                 "created_at": {
                                                     "type": "string",
@@ -7859,6 +7902,15 @@
                                             "example": "GE29 NB00 0000 0101 9049 17",
                                             "nullable": true
                                         },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "active",
+                                                "inactive",
+                                                "suspended"
+                                            ],
+                                            "example": "active"
+                                        },
                                         "created_at": {
                                             "type": "string",
                                             "format": "date-time"
@@ -7995,6 +8047,17 @@
                                         "maxLength": 50,
                                         "example": "GE29NB0000000101904917",
                                         "nullable": true
+                                    },
+                                    "status": {
+                                        "description": "Dister status",
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive",
+                                            "suspended"
+                                        ],
+                                        "example": "active",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -8074,6 +8137,15 @@
                                             "type": "string",
                                             "example": "GE29 NB00 0000 0101 9049 17",
                                             "nullable": true
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "active",
+                                                "inactive",
+                                                "suspended"
+                                            ],
+                                            "example": "active"
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -8480,6 +8552,140 @@
                                                 "name": {
                                                     "type": "string",
                                                     "example": "Georgia"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/disters/{id}/status": {
+            "patch": {
+                "tags": [
+                    "Disters"
+                ],
+                "summary": "Update dister status",
+                "description": "Update the status of a specific dister",
+                "operationId": "updateDisterStatus",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Dister ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "description": "New status for the dister",
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive",
+                                            "suspended"
+                                        ],
+                                        "example": "active"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Dister status updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Dister status updated successfully"
+                                        },
+                                        "dister": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "first_name": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "last_name": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@example.com"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "active",
+                                                        "inactive",
+                                                        "suspended"
+                                                    ],
+                                                    "example": "active"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Dister not found"
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "status": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The status field is required."
+                                                    }
                                                 }
                                             },
                                             "type": "object"
