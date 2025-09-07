@@ -257,9 +257,11 @@ class GardenController extends Controller
                 $finalIds = array_values(array_intersect($finalIds, $allowedIds));
             }
         } else {
+            // If no specific IDs requested, export all available gardens
             if (is_array($allowedIds)) {
                 $finalIds = $allowedIds;
             } else {
+                // For non-dister users, export all gardens (empty array means all)
                 $finalIds = [];
             }
         }
