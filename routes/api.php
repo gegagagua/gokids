@@ -45,13 +45,13 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::apiResource('countries', CountryController::class);
     Route::apiResource('cities', CityController::class);
     Route::apiResource('people', PeopleController::class);
-    Route::apiResource('gardens', GardenController::class);
     Route::apiResource('disters', DisterController::class);
     Route::apiResource('payments', PaymentController::class);
     Route::apiResource('notifications', NotificationController::class);
     Route::apiResource('bog-payments', BogPaymentController::class);
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::apiResource('gardens', GardenController::class);
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
