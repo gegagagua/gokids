@@ -24,11 +24,12 @@ class GardenController extends Controller
      *     operationId="getGardens",
      *     tags={"Gardens"},
      *     summary="Get all gardens",
-     *     description="Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, referral_code, tax_id, phone, email.",
+     *     description="Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, referral_code, dister_id, tax_id, phone, email.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="name", in="query", required=false, description="Filter by garden name", @OA\Schema(type="string")),
      *     @OA\Parameter(name="address", in="query", required=false, description="Filter by address", @OA\Schema(type="string")),
      *     @OA\Parameter(name="referral_code", in="query", required=false, description="Filter by referral code", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="dister_id", in="query", required=false, description="Filter by dister ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="country_id", in="query", required=false, description="Filter by country ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="tax_id", in="query", required=false, description="Filter by tax ID", @OA\Schema(type="string")),
      *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
@@ -111,6 +112,15 @@ class GardenController extends Controller
         }
         if ($request->filled('referral_code')) {
             $query->where('referral_code', 'like', '%' . $request->query('referral_code') . '%');
+        }
+        if ($request->filled('dister_id')) {
+            $dister = \App\Models\Dister::find($request->query('dister_id'));
+            if ($dister && $dister->gardens) {
+                $query->whereIn('id', $dister->gardens);
+            } else {
+                // If dister not found or has no gardens, return empty result
+                $query->whereRaw('1 = 0');
+            }
         }
         if ($request->filled('country_id')) {
             $query->where('country_id', $request->query('country_id'));
