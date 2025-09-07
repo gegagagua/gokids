@@ -24,6 +24,7 @@ class Garden extends Model
         'referral',
         'status',
         'balance',
+        'balance_comment',
         'percents',
     ];
 

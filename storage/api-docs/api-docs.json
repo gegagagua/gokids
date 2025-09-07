@@ -8688,6 +8688,12 @@
                                                         "example": "150.00 ₾",
                                                         "nullable": true
                                                     },
+                                                    "balance_comment": {
+                                                        "description": "Comment explaining balance changes",
+                                                        "type": "string",
+                                                        "example": "Balance adjustment comment",
+                                                        "nullable": true
+                                                    },
                                                     "percents": {
                                                         "type": "number",
                                                         "format": "float",
@@ -8880,6 +8886,13 @@
                                         "example": 100,
                                         "nullable": true
                                     },
+                                    "balance_comment": {
+                                        "description": "Comment explaining balance changes",
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Initial balance comment",
+                                        "nullable": true
+                                    },
                                     "percents": {
                                         "description": "Optional garden percentage (0-100)",
                                         "type": "number",
@@ -8948,6 +8961,11 @@
                                                 "formatted_balance": {
                                                     "type": "string",
                                                     "example": "100.00 ₾",
+                                                    "nullable": true
+                                                },
+                                                "balance_comment": {
+                                                    "type": "string",
+                                                    "example": "Initial balance comment",
                                                     "nullable": true
                                                 },
                                                 "created_at": {
@@ -9155,6 +9173,12 @@
                                             "example": "150.00 ₾",
                                             "nullable": true
                                         },
+                                        "balance_comment": {
+                                            "description": "Comment explaining balance changes",
+                                            "type": "string",
+                                            "example": "Balance adjustment comment",
+                                            "nullable": true
+                                        },
                                         "percents": {
                                             "type": "number",
                                             "format": "float",
@@ -9330,6 +9354,13 @@
                                         "example": 200,
                                         "nullable": true
                                     },
+                                    "balance_comment": {
+                                        "description": "Comment explaining balance changes",
+                                        "type": "string",
+                                        "maxLength": 1000,
+                                        "example": "Updated balance comment",
+                                        "nullable": true
+                                    },
                                     "percents": {
                                         "description": "Optional garden percentage (0-100)",
                                         "type": "number",
@@ -9412,6 +9443,11 @@
                                         "formatted_balance": {
                                             "type": "string",
                                             "example": "200.00 ₾",
+                                            "nullable": true
+                                        },
+                                        "balance_comment": {
+                                            "type": "string",
+                                            "example": "Updated balance comment",
                                             "nullable": true
                                         },
                                         "created_at": {

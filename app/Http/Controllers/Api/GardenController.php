@@ -55,9 +55,10 @@ class GardenController extends Controller
      *                     @OA\Property(property="phone", type="string", example="+995599123456"),
      *                     @OA\Property(property="email", type="string", example="sunshine@garden.ge"),
      *                     @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}),
-     *                     @OA\Property(property="balance", type="number", format="float", example=150.00, nullable=true),
-     *                     @OA\Property(property="formatted_balance", type="string", example="150.00 ₾", nullable=true),
-     *                     @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true),
+ *                     @OA\Property(property="balance", type="number", format="float", example=150.00, nullable=true),
+ *                     @OA\Property(property="formatted_balance", type="string", example="150.00 ₾", nullable=true),
+ *                     @OA\Property(property="balance_comment", type="string", example="Balance adjustment comment", nullable=true, description="Comment explaining balance changes"),
+ *                     @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time"),
      *                     @OA\Property(property="city", type="object",
@@ -172,9 +173,10 @@ class GardenController extends Controller
      *             @OA\Property(property="phone", type="string", example="+995599123456"),
      *             @OA\Property(property="email", example="sunshine@garden.ge"),
      *             @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}),
-     *             @OA\Property(property="balance", type="number", format="float", example=150.00, nullable=true),
-     *             @OA\Property(property="formatted_balance", type="string", example="150.00 ₾", nullable=true),
-     *             @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true),
+ *             @OA\Property(property="balance", type="number", format="float", example=150.00, nullable=true),
+ *             @OA\Property(property="formatted_balance", type="string", example="150.00 ₾", nullable=true),
+ *             @OA\Property(property="balance_comment", type="string", example="Balance adjustment comment", nullable=true, description="Comment explaining balance changes"),
+ *             @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time"),
      *             @OA\Property(
@@ -287,8 +289,9 @@ class GardenController extends Controller
      *             @OA\Property(property="password", type="string", minLength=6, example="password123", description="Garden access password"),
      *             @OA\Property(property="referral", type="string", example="REF123", nullable=true, description="Optional referral code"),
      *             @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}, nullable=true, description="Garden status (defaults to active)"),
-     *             @OA\Property(property="balance", type="number", format="float", example=100.00, nullable=true, description="Optional garden balance"),
-     *             @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true, description="Optional garden percentage (0-100)")
+ *             @OA\Property(property="balance", type="number", format="float", example=100.00, nullable=true, description="Optional garden balance"),
+ *             @OA\Property(property="balance_comment", type="string", maxLength=1000, example="Initial balance comment", nullable=true, description="Comment explaining balance changes"),
+ *             @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true, description="Optional garden percentage (0-100)")
      *         )
      *     ),
      *     @OA\Response(
@@ -305,9 +308,10 @@ class GardenController extends Controller
      *                 @OA\Property(property="phone", type="string", example="+995599654321"),
      *                 @OA\Property(property="email", type="string", example="newgarden@garden.ge"),
      *                 @OA\Property(property="status", type="string", example="active", enum={"active", "paused", "inactive"}),
-     *                 @OA\Property(property="balance", type="number", format="float", example=100.00, nullable=true),
-     *                 @OA\Property(property="formatted_balance", type="string", example="100.00 ₾", nullable=true),
-     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+ *                 @OA\Property(property="balance", type="number", format="float", example=100.00, nullable=true),
+ *                 @OA\Property(property="formatted_balance", type="string", example="100.00 ₾", nullable=true),
+ *                 @OA\Property(property="balance_comment", type="string", example="Initial balance comment", nullable=true),
+ *                 @OA\Property(property="created_at", type="string", format="date-time"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time")
      *             ),
      *             @OA\Property(property="user", type="object",
@@ -356,6 +360,7 @@ class GardenController extends Controller
             'referral' => 'nullable|string|max:255',
             'status' => 'nullable|string|in:active,paused,inactive',
             'balance' => 'nullable|numeric|min:0|max:9999999.99',
+            'balance_comment' => 'nullable|string|max:1000',
             'percents' => 'nullable|numeric|min:0|max:100.00',
         ]);
 
@@ -413,8 +418,9 @@ class GardenController extends Controller
      *             @OA\Property(property="password", type="string", minLength=6, example="newpassword123", description="Garden access password"),
      *             @OA\Property(property="referral", type="string", example="REF123", nullable=true, description="Optional referral code"),
      *             @OA\Property(property="status", type="string", example="paused", enum={"active", "paused", "inactive"}, nullable=true, description="Garden status"),
-     *             @OA\Property(property="balance", type="number", format="float", example=200.00, nullable=true, description="Optional garden balance"),
-     *             @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true, description="Optional garden percentage (0-100)")
+ *             @OA\Property(property="balance", type="number", format="float", example=200.00, nullable=true, description="Optional garden balance"),
+ *             @OA\Property(property="balance_comment", type="string", maxLength=1000, example="Updated balance comment", nullable=true, description="Comment explaining balance changes"),
+ *             @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true, description="Optional garden percentage (0-100)")
      *         )
      *     ),
      *     @OA\Response(
@@ -433,9 +439,10 @@ class GardenController extends Controller
      *             @OA\Property(property="referral", type="string", example="REF123", nullable=true),
      *             @OA\Property(property="status", type="string", example="paused", enum={"active", "paused", "inactive"}),
      *             @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true),
-     *             @OA\Property(property="balance", type="number", format="float", example=200.00, nullable=true),
-     *             @OA\Property(property="formatted_balance", type="string", example="200.00 ₾", nullable=true),
-     *             @OA\Property(property="created_at", type="string", format="date-time"),
+ *             @OA\Property(property="balance", type="number", format="float", example=200.00, nullable=true),
+ *             @OA\Property(property="formatted_balance", type="string", example="200.00 ₾", nullable=true),
+ *             @OA\Property(property="balance_comment", type="string", example="Updated balance comment", nullable=true),
+ *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
      *     ),
@@ -487,6 +494,7 @@ class GardenController extends Controller
             'referral' => 'nullable|string|max:255',
             'status' => 'nullable|string|in:active,paused,inactive',
             'balance' => 'nullable|numeric|min:0|max:9999999.99',
+            'balance_comment' => 'nullable|string|max:1000',
             'percents' => 'nullable|numeric|min:0|max:100.00',
         ]);
 
