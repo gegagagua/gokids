@@ -16,7 +16,7 @@ class Garden extends Model
         'address',
         'tax_id',
         'city_id',
-        'country',
+        'country_id',
         'phone',
         'email',
         'password',
@@ -35,7 +35,7 @@ class Garden extends Model
         'percents' => 'decimal:2',
     ];
 
-    protected $appends = ['dister'];
+    protected $appends = ['dister', 'country'];
 
     public static function generateUniqueReferralCode()
     {
@@ -50,9 +50,9 @@ class Garden extends Model
         return $this->belongsTo(City::class);
     }
 
-    public function country()
+    public function countryRelation()
     {
-        return $this->belongsTo(Country::class);
+        return $this->belongsTo(Country::class, 'country_id', 'id');
     }
 
     public function groups()
@@ -80,6 +80,14 @@ class Garden extends Model
     public function getDisterAttribute()
     {
         return \App\Models\Dister::whereJsonContains('gardens', $this->id)->first();
+    }
+
+    /**
+     * Get the country associated with this garden (accessor)
+     */
+    public function getCountryAttribute()
+    {
+        return $this->countryRelation;
     }
 
     /**
