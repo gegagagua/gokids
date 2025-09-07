@@ -733,4 +733,132 @@ class DisterController extends Controller
             ]
         ], 200);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/disters/{id}/transfer-gardens",
+     *     operationId="transferGardens",
+     *     tags={"Disters"},
+     *     summary="Transfer gardens to dister",
+     *     description="Transfer multiple gardens to a specific dister. Gardens will be removed from other disters and assigned to the target dister.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Target dister ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"garden_ids"},
+     *             @OA\Property(
+     *                 property="garden_ids",
+     *                 type="array",
+     *                 description="Array of garden IDs to transfer",
+     *                 @OA\Items(type="integer", example=1)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Gardens transferred successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Gardens transferred successfully"),
+     *             @OA\Property(property="dister", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="first_name", type="string", example="John"),
+     *                 @OA\Property(property="last_name", type="string", example="Doe"),
+     *                 @OA\Property(property="email", type="string", example="john@example.com"),
+     *                 @OA\Property(property="gardens", type="array", @OA\Items(type="integer", example=1))
+     *             ),
+     *             @OA\Property(property="transferred_gardens", type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Garden Name"),
+     *                     @OA\Property(property="previous_dister", type="integer", nullable=true, example=2)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Dister not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Dister not found")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(property="errors", type="object",
+     *                 @OA\Property(property="garden_ids", type="array", @OA\Items(type="string", example="The garden_ids field is required."))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function transferGardens(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'garden_ids' => 'required|array|min:1',
+            'garden_ids.*' => 'required|integer|exists:gardens,id',
+        ]);
+
+        $dister = Dister::findOrFail($id);
+        $gardenIds = $validated['garden_ids'];
+
+        // Get current gardens for this dister
+        $currentGardens = $dister->gardens ?? [];
+
+        // Find previous disters for each garden
+        $transferredGardens = [];
+        $previousDisters = [];
+
+        foreach ($gardenIds as $gardenId) {
+            $garden = Garden::find($gardenId);
+            if ($garden) {
+                // Find which dister currently has this garden
+                $previousDister = Dister::whereJsonContains('gardens', $gardenId)->first();
+                $previousDisters[$gardenId] = $previousDister ? $previousDister->id : null;
+
+                $transferredGardens[] = [
+                    'id' => $garden->id,
+                    'name' => $garden->name,
+                    'previous_dister' => $previousDisters[$gardenId],
+                ];
+            }
+        }
+
+        // Remove gardens from all other disters
+        Dister::where('id', '!=', $id)
+            ->whereNotNull('gardens')
+            ->get()
+            ->each(function ($otherDister) use ($gardenIds) {
+                $gardens = $otherDister->gardens ?? [];
+                $updatedGardens = array_diff($gardens, $gardenIds);
+                $otherDister->update(['gardens' => array_values($updatedGardens)]);
+            });
+
+        // Add gardens to target dister (merge with existing gardens)
+        $newGardens = array_unique(array_merge($currentGardens, $gardenIds));
+        $dister->update(['gardens' => array_values($newGardens)]);
+
+        return response()->json([
+            'message' => 'Gardens transferred successfully',
+            'dister' => [
+                'id' => $dister->id,
+                'first_name' => $dister->first_name,
+                'last_name' => $dister->last_name,
+                'email' => $dister->email,
+                'gardens' => $dister->fresh()->gardens,
+            ],
+            'transferred_gardens' => $transferredGardens,
+        ], 200);
+    }
 }

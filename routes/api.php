@@ -46,6 +46,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::apiResource('cities', CityController::class);
     Route::apiResource('people', PeopleController::class);
     Route::apiResource('disters', DisterController::class);
+    Route::post('/disters/{id}/transfer-gardens', [DisterController::class, 'transferGardens']);
     Route::apiResource('payments', PaymentController::class);
     Route::apiResource('notifications', NotificationController::class);
     Route::apiResource('bog-payments', BogPaymentController::class);

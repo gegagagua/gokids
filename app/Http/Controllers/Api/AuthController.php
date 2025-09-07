@@ -32,7 +32,8 @@ class AuthController extends Controller
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="John Doe"),
      *                 @OA\Property(property="email", type="string", example="john@example.com"),
-     *                 @OA\Property(property="type", type="string", example="user")
+     *                 @OA\Property(property="type", type="string", example="user"),
+     *                 @OA\Property(property="type_display", type="string", example="მომხმარებელი")
      *             ),
      *             @OA\Property(property="token", type="string", example="1|abc123...")
      *         )
@@ -96,7 +97,8 @@ class AuthController extends Controller
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="John Doe"),
      *                 @OA\Property(property="email", type="string", example="john@example.com"),
-     *                 @OA\Property(property="type", type="string", example="garden")
+     *                 @OA\Property(property="type", type="string", example="garden"),
+     *                 @OA\Property(property="type_display", type="string", example="ბაღი")
      *             ),
      *             @OA\Property(property="token", type="string", example="1|abc123..."),
      *             @OA\Property(property="garden", type="object", nullable=true, description="Garden data if user type is garden"),
@@ -126,7 +128,8 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'type' => $user->type !== 'garden' && $user->type !== 'dister' ? 'admin' : $user->type,
+                'type' => $user->type,
+                'type_display' => $user->type_display,
             ],
             'token' => $token,
         ];
@@ -391,6 +394,7 @@ class AuthController extends Controller
      *                 @OA\Property(property="name", type="string", example="John Doe"),
      *                 @OA\Property(property="email", type="string", example="john@example.com"),
      *                 @OA\Property(property="type", type="string", example="user"),
+     *                 @OA\Property(property="type_display", type="string", example="მომხმარებელი"),
      *                 @OA\Property(property="balance", type="number", format="float", example=150.75, nullable=true)
      *             ),
      *             @OA\Property(property="garden", type="object", nullable=true, description="Garden data if user type is garden"),
@@ -415,7 +419,8 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'type' => $user->type !== 'garden' && $user->type !== 'dister' ? 'admin' : $user->type,
+                'type' => $user->type,
+                'type_display' => $user->type_display,
             ],
         ];
 
