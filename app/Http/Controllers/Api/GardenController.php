@@ -26,7 +26,7 @@ class GardenController extends Controller
      *     summary="Get all gardens",
      *     description="Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, referral, dister_id, tax_id, phone, email.",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="name", in="query", required=false, description="Filter by garden name", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="name", in="query", required=false, description="Filter by garden name or referral code", @OA\Schema(type="string")),
      *     @OA\Parameter(name="address", in="query", required=false, description="Filter by address", @OA\Schema(type="string")),
      *     @OA\Parameter(name="referral", in="query", required=false, description="Filter by referral (requires name parameter)", @OA\Schema(type="string")),
      *     @OA\Parameter(name="dister_id", in="query", required=false, description="Filter by dister ID", @OA\Schema(type="integer")),

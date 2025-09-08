@@ -8907,7 +8907,7 @@
                     {
                         "name": "name",
                         "in": "query",
-                        "description": "Filter by garden name",
+                        "description": "Filter by garden name or referral code",
                         "required": false,
                         "schema": {
                             "type": "string"
