@@ -23,7 +23,7 @@ class CountryController extends Controller
      *     description="Retrieve a list of all countries with their tariffs. Supports filtering by name and pagination.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="name", in="query", required=false, description="Filter by country name", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="dister", in="query", required=false, description="Filter by dister ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="dister", in="query", required=false, description="Filter by dister referral code", @OA\Schema(type="string")),
      *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
      *     @OA\Response(
      *         response=200,
@@ -153,7 +153,7 @@ class CountryController extends Controller
      *             @OA\Property(property="tariff", type="number", format="float", example=0.00, description="Tariff amount (0 for free)"),
      *             @OA\Property(property="price", type="number", format="float", example=10.00, description="Price amount"),
      *             @OA\Property(property="exchange_rate", type="number", format="float", example=2.7500, description="Exchange rate for this country"),
-     *             @OA\Property(property="dister", type="integer", example=1, nullable=true, description="Optional dister ID"),
+     *             @OA\Property(property="dister", type="string", example="REF123ABC", nullable=true, description="Optional dister referral code"),
      *             @OA\Property(property="sms_gateway_id", type="integer", example=1, nullable=true, description="Optional SMS gateway ID"),
      *             @OA\Property(property="payment_gateway_id", type="integer", example=1, nullable=true, description="Optional payment gateway ID"),
              @OA\Property(property="language", type="string", maxLength=10, example="ka", nullable=true, description="Optional language code (e.g., ka, en, ru)")
@@ -218,7 +218,7 @@ class CountryController extends Controller
             'tariff' => 'required|numeric|min:0|max:999999.99',
             'price' => 'required|numeric|min:0|max:999999.99',
             'exchange_rate' => 'nullable|numeric|min:0|max:999999.9999',
-            'dister' => 'nullable|exists:disters,id',
+            'dister' => 'nullable|exists:disters,referral',
             'sms_gateway_id' => 'nullable|exists:sms_gateways,id',
             'payment_gateway_id' => 'nullable|exists:payment_gateways,id',
             'language' => 'nullable|string|max:10',
@@ -254,7 +254,7 @@ class CountryController extends Controller
      *             @OA\Property(property="tariff", type="number", format="float", example=10.5),
      *             @OA\Property(property="price", type="number", format="float", example=100.0),
      *             @OA\Property(property="exchange_rate", type="number", format="float", example=2.7500, description="Exchange rate for this country"),
-     *             @OA\Property(property="dister", type="integer", nullable=true, example=1),
+     *             @OA\Property(property="dister", type="string", nullable=true, example="REF123ABC"),
      *             @OA\Property(property="sms_gateway_id", type="integer", nullable=true, example=1),
      *             @OA\Property(property="payment_gateway_id", type="integer", nullable=true, example=1)
      *         )
@@ -323,7 +323,7 @@ class CountryController extends Controller
             'tariff' => 'sometimes|required|numeric|min:0|max:999999.99',
             'price' => 'sometimes|required|numeric|min:0|max:999999.99',
             'exchange_rate' => 'nullable|numeric|min:0|max:999999.9999',
-            'dister' => 'nullable|exists:disters,id',
+            'dister' => 'nullable|exists:disters,referral',
             'sms_gateway_id' => 'nullable|exists:sms_gateways,id',
             'payment_gateway_id' => 'nullable|exists:payment_gateways,id',
             'language' => 'nullable|string|max:10',

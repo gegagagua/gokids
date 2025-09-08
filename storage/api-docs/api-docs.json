@@ -66,6 +66,10 @@
                                                 "type": {
                                                     "type": "string",
                                                     "example": "user"
+                                                },
+                                                "type_display": {
+                                                    "type": "string",
+                                                    "example": "მომხმარებელი"
                                                 }
                                             },
                                             "type": "object"
@@ -153,6 +157,10 @@
                                                 "type": {
                                                     "type": "string",
                                                     "example": "garden"
+                                                },
+                                                "type_display": {
+                                                    "type": "string",
+                                                    "example": "ბაღი"
                                                 }
                                             },
                                             "type": "object"
@@ -491,6 +499,10 @@
                                                 "type": {
                                                     "type": "string",
                                                     "example": "user"
+                                                },
+                                                "type_display": {
+                                                    "type": "string",
+                                                    "example": "მომხმარებელი"
                                                 },
                                                 "balance": {
                                                     "type": "number",
@@ -5049,6 +5061,12 @@
                                         "format": "float",
                                         "example": 10
                                     },
+                                    "exchange_rate": {
+                                        "description": "Exchange rate for this country",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 2.75
+                                    },
                                     "dister": {
                                         "description": "Optional dister ID",
                                         "type": "integer",
@@ -5286,6 +5304,12 @@
                                             "type": "string",
                                             "example": "10.00 ₾"
                                         },
+                                        "exchange_rate": {
+                                            "description": "Exchange rate for this country",
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 2.75
+                                        },
                                         "formatted_garden_percent": {
                                             "type": "string",
                                             "example": "15.00%"
@@ -5395,6 +5419,12 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 100
+                                    },
+                                    "exchange_rate": {
+                                        "description": "Exchange rate for this country",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 2.75
                                     },
                                     "dister": {
                                         "type": "integer",
@@ -8704,13 +8734,174 @@
                 ]
             }
         },
+        "/api/disters/{id}/transfer-gardens": {
+            "post": {
+                "tags": [
+                    "Disters"
+                ],
+                "summary": "Transfer gardens to dister",
+                "description": "Transfer multiple gardens to a specific dister. Gardens will be removed from other disters and assigned to the target dister.",
+                "operationId": "transferGardens",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Target dister ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "garden_ids"
+                                ],
+                                "properties": {
+                                    "garden_ids": {
+                                        "description": "Array of garden IDs to transfer",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Gardens transferred successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Gardens transferred successfully"
+                                        },
+                                        "dister": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "first_name": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "last_name": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@example.com"
+                                                },
+                                                "gardens": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "transferred_gardens": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Garden Name"
+                                                    },
+                                                    "previous_dister": {
+                                                        "type": "integer",
+                                                        "example": 2,
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Dister not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Dister not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "garden_ids": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The garden_ids field is required."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/gardens": {
             "get": {
                 "tags": [
                     "Gardens"
                 ],
                 "summary": "Get all gardens",
-                "description": "Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, city_id, tax_id, phone, email.",
+                "description": "Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, referral_code, dister_id, tax_id, phone, email.",
                 "operationId": "getGardens",
                 "parameters": [
                     {
@@ -8732,9 +8923,18 @@
                         }
                     },
                     {
-                        "name": "city_id",
+                        "name": "referral_code",
                         "in": "query",
-                        "description": "Filter by city ID",
+                        "description": "Filter by referral code",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "dister_id",
+                        "in": "query",
+                        "description": "Filter by dister ID",
                         "required": false,
                         "schema": {
                             "type": "integer"
@@ -8862,9 +9062,10 @@
                                                         "type": "string",
                                                         "example": "123456789"
                                                     },
-                                                    "city_id": {
-                                                        "type": "integer",
-                                                        "example": 1
+                                                    "referral_code": {
+                                                        "type": "string",
+                                                        "example": "REF123456789",
+                                                        "nullable": true
                                                     },
                                                     "phone": {
                                                         "type": "string",
@@ -9044,7 +9245,7 @@
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "country": {
+                                    "country_id": {
                                         "description": "Optional country ID",
                                         "type": "integer",
                                         "example": 1,
@@ -9512,7 +9713,7 @@
                                         "type": "integer",
                                         "example": 2
                                     },
-                                    "country": {
+                                    "country_id": {
                                         "description": "Optional country ID",
                                         "type": "integer",
                                         "example": 1,

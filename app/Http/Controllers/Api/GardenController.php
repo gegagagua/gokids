@@ -24,13 +24,13 @@ class GardenController extends Controller
      *     operationId="getGardens",
      *     tags={"Gardens"},
      *     summary="Get all gardens",
-     *     description="Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, referral_code, dister_id, tax_id, phone, email.",
+     *     description="Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, referral, dister_id, tax_id, phone, email.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="name", in="query", required=false, description="Filter by garden name", @OA\Schema(type="string")),
      *     @OA\Parameter(name="address", in="query", required=false, description="Filter by address", @OA\Schema(type="string")),
-     *     @OA\Parameter(name="referral_code", in="query", required=false, description="Filter by referral code", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="referral", in="query", required=false, description="Filter by referral (requires name parameter)", @OA\Schema(type="string")),
      *     @OA\Parameter(name="dister_id", in="query", required=false, description="Filter by dister ID", @OA\Schema(type="integer")),
-     *     @OA\Parameter(name="country_id", in="query", required=false, description="Filter by country ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="country", in="query", required=false, description="Filter by country ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="tax_id", in="query", required=false, description="Filter by tax ID", @OA\Schema(type="string")),
      *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
      *     @OA\Parameter(name="email", in="query", required=false, description="Filter by email", @OA\Schema(type="string")),
@@ -106,13 +106,13 @@ class GardenController extends Controller
 
         if ($request->filled('name')) {
             $query->where('name', 'like', '%' . $request->query('name') . '%');
+
+            $query->where('referral_code', 'like', '%' . $request->query('name') . '%');
         }
         if ($request->filled('address')) {
             $query->where('address', 'like', '%' . $request->query('address') . '%');
         }
-        if ($request->filled('referral_code')) {
-            $query->where('referral_code', 'like', '%' . $request->query('referral_code') . '%');
-        }
+
         if ($request->filled('dister_id')) {
             $dister = \App\Models\Dister::find($request->query('dister_id'));
             if ($dister && $dister->gardens) {
@@ -122,8 +122,11 @@ class GardenController extends Controller
                 $query->whereRaw('1 = 0');
             }
         }
+        if ($request->filled('country')) {
+            $query->where('country', $request->query('country'));
+        }
         if ($request->filled('country_id')) {
-            $query->where('country_id', $request->query('country_id'));
+            $query->where('country', $request->query('country_id'));
         }
         if ($request->filled('tax_id')) {
             $query->where('tax_id', $request->query('tax_id'));
