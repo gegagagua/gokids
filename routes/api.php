@@ -59,6 +59,8 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::get('/gardens/export', [GardenController::class, 'export']);
         Route::apiResource('gardens', GardenController::class)->except(['store']);
         Route::get('/me', [AuthController::class, 'me']);
+        Route::put('/profile', [AuthController::class, 'updateProfile']);
+        Route::get('/staff-users', [AuthController::class, 'getStaffUsers']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
         Route::get('/payments/export', [PaymentController::class, 'export']);

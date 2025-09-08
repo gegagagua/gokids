@@ -28,6 +28,10 @@
                                         "type": "string",
                                         "format": "email"
                                     },
+                                    "phone": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
                                     "password": {
                                         "type": "string",
                                         "format": "password"
@@ -62,6 +66,11 @@
                                                 "email": {
                                                     "type": "string",
                                                     "example": "john@example.com"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599123456",
+                                                    "nullable": true
                                                 },
                                                 "type": {
                                                     "type": "string",
@@ -210,7 +219,7 @@
         "/api/change-password": {
             "post": {
                 "tags": [
-                    "Auth"
+                    "Authentication"
                 ],
                 "summary": "Change password for the authenticated user",
                 "description": "Change password for the authenticated user (admin or garden). Requires current password, new password, and password confirmation.",
@@ -309,7 +318,7 @@
         "/api/request-password-reset": {
             "post": {
                 "tags": [
-                    "Auth"
+                    "Authentication"
                 ],
                 "summary": "Request password reset (send OTP)",
                 "description": "Send OTP code to user's email for password reset.",
@@ -373,7 +382,7 @@
         "/api/reset-password": {
             "post": {
                 "tags": [
-                    "Auth"
+                    "Authentication"
                 ],
                 "summary": "Reset password with OTP",
                 "description": "Reset password using email, OTP code, new password and confirmation.",
@@ -470,7 +479,7 @@
         "/api/me": {
             "get": {
                 "tags": [
-                    "Auth"
+                    "Authentication"
                 ],
                 "summary": "Get authenticated user information",
                 "description": "Get current authenticated user information with the same format as login response",
@@ -531,6 +540,247 @@
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/profile": {
+            "put": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Update user profile",
+                "description": "Update the authenticated user's profile information (name, email, phone)",
+                "operationId": "updateProfile",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "User's full name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Updated Name"
+                                    },
+                                    "email": {
+                                        "description": "User's email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "updated@example.com"
+                                    },
+                                    "phone": {
+                                        "description": "User's phone number",
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "example": "+995599123456",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Profile updated successfully"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Updated Name"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "updated@example.com"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599123456",
+                                                    "nullable": true
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "user"
+                                                },
+                                                "type_display": {
+                                                    "type": "string",
+                                                    "example": "მომხმარებელი"
+                                                },
+                                                "balance": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/staff-users": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get staff users",
+                "description": "Retrieve a list of all accountant and technical users",
+                "operationId": "getStaffUsers",
+                "responses": {
+                    "200": {
+                        "description": "Staff users retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    },
+                                                    "email": {
+                                                        "type": "string",
+                                                        "example": "john@example.com"
+                                                    },
+                                                    "phone": {
+                                                        "type": "string",
+                                                        "example": "+995599123456",
+                                                        "nullable": true
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "accountant",
+                                                            "technical"
+                                                        ],
+                                                        "example": "accountant"
+                                                    },
+                                                    "type_display": {
+                                                        "type": "string",
+                                                        "example": "ბუღალტერი"
+                                                    },
+                                                    "balance": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 0
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "accountants": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "technical": {
+                                            "type": "integer",
+                                            "example": 2
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -9600,7 +9850,7 @@
                                             "properties": {
                                                 "id": {
                                                     "type": "integer",
-                                                    "example": 1
+                                                    "example": 2
                                                 },
                                                 "name": {
                                                     "type": "string",
@@ -9631,6 +9881,26 @@
                                             },
                                             "type": "object",
                                             "nullable": true
+                                        },
+                                        "images": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Main Entrance"
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "example": "garden_images/abc123.jpg"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
                                         }
                                     },
                                     "type": "object"
@@ -9804,7 +10074,7 @@
                                             "type": "integer",
                                             "example": 2
                                         },
-                                        "country": {
+                                        "country_id": {
                                             "type": "integer",
                                             "example": 1,
                                             "nullable": true
@@ -9860,6 +10130,62 @@
                                         "updated_at": {
                                             "type": "string",
                                             "format": "date-time"
+                                        },
+                                        "city": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Tbilisi"
+                                                },
+                                                "region": {
+                                                    "type": "string",
+                                                    "example": "Tbilisi"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "country": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Georgia"
+                                                },
+                                                "tariff": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0
+                                                }
+                                            },
+                                            "type": "object",
+                                            "nullable": true
+                                        },
+                                        "images": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Main Entrance"
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "example": "garden_images/abc123.jpg"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
                                         }
                                     },
                                     "type": "object"
@@ -14305,8 +14631,8 @@
             "description": "API Endpoints for SMS gateway management"
         },
         {
-            "name": "Auth",
-            "description": "Auth"
+            "name": "Authentication",
+            "description": "Authentication"
         },
         {
             "name": "BOG Payments",

@@ -412,6 +412,7 @@ class GardenController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'phone' => $validated['phone'] ?? null,
             'password' => Hash::make($validated['password']),
             'type' => 'garden',
         ]);
@@ -428,6 +429,7 @@ class GardenController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'phone' => $user->phone,
                 'type' => $user->type,
             ],
             'message' => 'Garden and user account created successfully'

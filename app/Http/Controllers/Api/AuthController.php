@@ -21,6 +21,7 @@ class AuthController extends Controller
      *             required={"name","email","password","password_confirmation"},
      *             @OA\Property(property="name", type="string"),
      *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="phone", type="string", nullable=true),
      *             @OA\Property(property="password", type="string", format="password"),
      *             @OA\Property(property="password_confirmation", type="string", format="password")
      *         )
@@ -32,6 +33,7 @@ class AuthController extends Controller
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="John Doe"),
      *                 @OA\Property(property="email", type="string", example="john@example.com"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456", nullable=true),
      *                 @OA\Property(property="type", type="string", example="user"),
      *                 @OA\Property(property="type_display", type="string", example="მომხმარებელი")
      *             ),
@@ -53,12 +55,14 @@ class AuthController extends Controller
            $fields = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:20',
             'password' => 'required|string|confirmed',
         ]);
 
         $user = User::create([
             'name' => $fields['name'],
             'email' => $fields['email'],
+            'phone' => $fields['phone'] ?? null,
             'password' => bcrypt($fields['password']),
             'type' => 'user', // Default type for regular users
             'balance' => 0.00, // Default balance for new users
@@ -71,6 +75,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'phone' => $user->phone,
                 'type' => $user->type,
                 'balance' => $user->balance,
             ],
@@ -187,7 +192,7 @@ class AuthController extends Controller
      * @OA\Post(
      *     path="/api/change-password",
      *     operationId="changePassword",
-     *     tags={"Auth"},
+     *     tags={"Authentication"},
      *     summary="Change password for the authenticated user",
      *     description="Change password for the authenticated user (admin or garden). Requires current password, new password, and password confirmation.",
      *     security={{"sanctum":{}}},
@@ -247,7 +252,7 @@ class AuthController extends Controller
      * @OA\Post(
      *     path="/api/request-password-reset",
      *     operationId="requestPasswordReset",
-     *     tags={"Auth"},
+     *     tags={"Authentication"},
      *     summary="Request password reset (send OTP)",
      *     description="Send OTP code to user's email for password reset.",
      *     @OA\RequestBody(
@@ -307,7 +312,7 @@ class AuthController extends Controller
      * @OA\Post(
      *     path="/api/reset-password",
      *     operationId="resetPassword",
-     *     tags={"Auth"},
+     *     tags={"Authentication"},
      *     summary="Reset password with OTP",
      *     description="Reset password using email, OTP code, new password and confirmation.",
      *     @OA\RequestBody(
@@ -380,7 +385,7 @@ class AuthController extends Controller
      * @OA\Get(
      *     path="/api/me",
      *     operationId="getMe",
-     *     tags={"Auth"},
+     *     tags={"Authentication"},
      *     summary="Get authenticated user information",
      *     description="Get current authenticated user information with the same format as login response",
      *     security={{"sanctum":{}}},
@@ -455,5 +460,140 @@ class AuthController extends Controller
         }
 
         return response()->json($response, 200);
+    }
+
+    /**
+     * @OA\Put(
+     *     path="/api/profile",
+     *     operationId="updateProfile",
+     *     tags={"Authentication"},
+     *     summary="Update user profile",
+     *     description="Update the authenticated user's profile information (name, email, phone)",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string", maxLength=255, example="Updated Name", description="User's full name"),
+     *             @OA\Property(property="email", type="string", format="email", example="updated@example.com", description="User's email address"),
+     *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599123456", nullable=true, description="User's phone number")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Profile updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Profile updated successfully"),
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Updated Name"),
+     *                 @OA\Property(property="email", type="string", example="updated@example.com"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456", nullable=true),
+     *                 @OA\Property(property="type", type="string", example="user"),
+     *                 @OA\Property(property="type_display", type="string", example="მომხმარებელი"),
+     *                 @OA\Property(property="balance", type="number", format="float", example=0.00)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20',
+        ]);
+
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'type' => $user->type,
+                'type_display' => $user->type_display,
+                'balance' => $user->balance,
+            ]
+        ], 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/staff-users",
+     *     operationId="getStaffUsers",
+     *     tags={"Authentication"},
+     *     summary="Get staff users",
+     *     description="Retrieve a list of all accountant and technical users",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Staff users retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="John Doe"),
+     *                     @OA\Property(property="email", type="string", example="john@example.com"),
+     *                     @OA\Property(property="phone", type="string", example="+995599123456", nullable=true),
+     *                     @OA\Property(property="type", type="string", example="accountant", enum={"accountant", "technical"}),
+     *                     @OA\Property(property="type_display", type="string", example="ბუღალტერი"),
+     *                     @OA\Property(property="balance", type="number", format="float", example=0.00),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )
+     *             ),
+     *             @OA\Property(property="total", type="integer", example=5),
+     *             @OA\Property(property="accountants", type="integer", example=3),
+     *             @OA\Property(property="technical", type="integer", example=2)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     )
+     * )
+     */
+    public function getStaffUsers(Request $request)
+    {
+        $staffUsers = User::whereIn('type', [User::TYPE_ACCOUNTANT, User::TYPE_TECHNICAL])
+            ->orderBy('type')
+            ->orderBy('name')
+            ->get();
+
+        $accountants = $staffUsers->where('type', User::TYPE_ACCOUNTANT)->count();
+        $technical = $staffUsers->where('type', User::TYPE_TECHNICAL)->count();
+
+        return response()->json([
+            'data' => $staffUsers,
+            'total' => $staffUsers->count(),
+            'accountants' => $accountants,
+            'technical' => $technical,
+        ], 200);
     }
 }
