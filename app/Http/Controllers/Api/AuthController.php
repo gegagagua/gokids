@@ -128,7 +128,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'type' => $user->type,
+                'type' => $user->type === 'user' ? 'admin' : $user->type,
                 'type_display' => $user->type_display,
             ],
             'token' => $token,
@@ -419,7 +419,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'type' => $user->type,
+                'type' => $user->type === 'user' ? 'admin' : $user->type,
                 'type_display' => $user->type_display,
             ],
         ];

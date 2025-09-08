@@ -194,20 +194,23 @@ class GardenController extends Controller
  *             @OA\Property(property="percents", type="number", format="float", example=15.50, nullable=true),
      *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time"),
-     *             @OA\Property(
-     *                 property="city",
-     *                 type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="city", type="object",
+     *                 @OA\Property(property="id", type="integer", example=2),
      *                 @OA\Property(property="name", type="string", example="Tbilisi"),
      *                 @OA\Property(property="region", type="string", example="Tbilisi")
      *             ),
-     *             @OA\Property(
-     *                 property="country",
-     *                 type="object",
-     *                 nullable=true,
+     *             @OA\Property(property="country", type="object", nullable=true,
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="Georgia"),
      *                 @OA\Property(property="tariff", type="number", format="float", example=0.00)
+     *             ),
+     *             @OA\Property(property="images", type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="title", type="string", example="Main Entrance"),
+     *                     @OA\Property(property="image", type="string", example="garden_images/abc123.jpg")
+     *                 )
      *             )
      *         )
      *     ),
@@ -474,7 +477,7 @@ class GardenController extends Controller
      *             @OA\Property(property="address", type="string", example="789 Pine Street"),
      *             @OA\Property(property="tax_id", type="string", example="111222333"),
      *             @OA\Property(property="city_id", type="integer", example=2),
-     *             @OA\Property(property="country", type="integer", example=1, nullable=true),
+     *             @OA\Property(property="country_id", type="integer", example=1, nullable=true),
      *             @OA\Property(property="phone", type="string", example="+995599111222"),
      *             @OA\Property(property="email", type="string", example="updated@garden.ge"),
      *             @OA\Property(property="referral", type="string", example="REF123", nullable=true),
@@ -484,7 +487,25 @@ class GardenController extends Controller
  *             @OA\Property(property="formatted_balance", type="string", example="200.00 ₾", nullable=true),
  *             @OA\Property(property="balance_comment", type="string", example="Updated balance comment", nullable=true),
  *             @OA\Property(property="created_at", type="string", format="date-time"),
-     *             @OA\Property(property="updated_at", type="string", format="date-time")
+     *             @OA\Property(property="updated_at", type="string", format="date-time"),
+     *             @OA\Property(property="city", type="object",
+     *                 @OA\Property(property="id", type="integer", example=2),
+     *                 @OA\Property(property="name", type="string", example="Tbilisi"),
+     *                 @OA\Property(property="region", type="string", example="Tbilisi")
+     *             ),
+     *             @OA\Property(property="country", type="object", nullable=true,
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Georgia"),
+     *                 @OA\Property(property="tariff", type="number", format="float", example=0.00)
+     *             ),
+     *             @OA\Property(property="images", type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="title", type="string", example="Main Entrance"),
+     *                     @OA\Property(property="image", type="string", example="garden_images/abc123.jpg")
+     *                 )
+     *             )
      *         )
      *     ),
      *     @OA\Response(
@@ -529,9 +550,9 @@ class GardenController extends Controller
             'address' => 'sometimes|required|string|max:255',
             'tax_id' => 'sometimes|required|string|max:255',
             'city_id' => 'sometimes|required|exists:cities,id',
-            'country_id' => 'nullable|exists:countries,id',
+            'country_id' => 'sometimes|required|exists:countries,id',
             'phone' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|email|unique:gardens,email,' . $garden,
+            'email' => 'sometimes|required|email|unique:gardens,email,' . $garden->id,
             'password' => 'sometimes|required|string|min:6',
             'referral' => 'nullable|string|max:255',
             'status' => 'nullable|string|in:active,paused,inactive',
@@ -546,6 +567,10 @@ class GardenController extends Controller
         }
 
         $garden->update($validated);
+        
+        // Load relationships and make referral_code visible
+        $garden->load(['city', 'countryData', 'images']);
+        $garden->makeVisible('referral_code');
 
         return response()->json($garden);
     }
