@@ -16,7 +16,7 @@ class Garden extends Model
         'address',
         'tax_id',
         'city_id',
-        'country',
+        'country_id',
         'phone',
         'email',
         'password',
@@ -52,7 +52,7 @@ class Garden extends Model
 
     public function countryData()
     {
-        return $this->belongsTo(Country::class, 'country', 'id');
+        return $this->belongsTo(Country::class, 'country_id', 'id');
     }
 
     public function groups()

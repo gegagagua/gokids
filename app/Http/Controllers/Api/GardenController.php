@@ -105,10 +105,12 @@ class GardenController extends Controller
         }
 
         if ($request->filled('name')) {
-            $query->where('name', 'like', '%' . $request->query('name') . '%');
-
-            $query->where('referral_code', 'like', '%' . $request->query('name') . '%');
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->query('name') . '%')
+                  ->orWhere('referral_code', 'like', '%' . $request->query('name') . '%');
+            });
         }
+
         if ($request->filled('address')) {
             $query->where('address', 'like', '%' . $request->query('address') . '%');
         }
@@ -123,10 +125,10 @@ class GardenController extends Controller
             }
         }
         if ($request->filled('country')) {
-            $query->where('country', $request->query('country'));
+            $query->where('country_id', $request->query('country'));
         }
         if ($request->filled('country_id')) {
-            $query->where('country', $request->query('country_id'));
+            $query->where('country_id', $request->query('country_id'));
         }
         if ($request->filled('tax_id')) {
             $query->where('tax_id', $request->query('tax_id'));
@@ -312,7 +314,7 @@ class GardenController extends Controller
      *     tags={"Gardens"},
      *     summary="Create a new garden",
      *     description="Create a new garden with the provided information",
-     *     security={{"sanctum":{}}},
+     *     security={},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -392,7 +394,7 @@ class GardenController extends Controller
             'address' => 'required|string|max:255',
             'tax_id' => 'required|string|max:255',
             'city_id' => 'required|exists:cities,id',
-            'country' => 'nullable|exists:countries,id',
+            'country_id' => 'nullable|exists:countries,id',
             'phone' => 'required|string|max:255',
             'email' => 'required|email|unique:gardens,email|unique:users,email',
             'password' => 'required|string|min:6',
@@ -527,7 +529,7 @@ class GardenController extends Controller
             'address' => 'sometimes|required|string|max:255',
             'tax_id' => 'sometimes|required|string|max:255',
             'city_id' => 'sometimes|required|exists:cities,id',
-            'country' => 'nullable|exists:countries,id',
+            'country_id' => 'nullable|exists:countries,id',
             'phone' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:gardens,email,' . $garden,
             'password' => 'sometimes|required|string|min:6',

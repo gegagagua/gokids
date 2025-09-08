@@ -4854,10 +4854,10 @@
                     {
                         "name": "dister",
                         "in": "query",
-                        "description": "Filter by dister ID",
+                        "description": "Filter by dister referral code",
                         "required": false,
                         "schema": {
-                            "type": "integer"
+                            "type": "string"
                         }
                     },
                     {
@@ -5068,9 +5068,9 @@
                                         "example": 2.75
                                     },
                                     "dister": {
-                                        "description": "Optional dister ID",
-                                        "type": "integer",
-                                        "example": 1,
+                                        "description": "Optional dister referral code",
+                                        "type": "string",
+                                        "example": "REF123ABC",
                                         "nullable": true
                                     },
                                     "sms_gateway_id": {
@@ -5427,8 +5427,8 @@
                                         "example": 2.75
                                     },
                                     "dister": {
-                                        "type": "integer",
-                                        "example": 1,
+                                        "type": "string",
+                                        "example": "REF123ABC",
                                         "nullable": true
                                     },
                                     "sms_gateway_id": {
@@ -8901,7 +8901,7 @@
                     "Gardens"
                 ],
                 "summary": "Get all gardens",
-                "description": "Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, referral_code, dister_id, tax_id, phone, email.",
+                "description": "Retrieve a paginated list of all gardens with their associated city and images. Supports filtering by name, address, referral, dister_id, tax_id, phone, email.",
                 "operationId": "getGardens",
                 "parameters": [
                     {
@@ -8923,9 +8923,9 @@
                         }
                     },
                     {
-                        "name": "referral_code",
+                        "name": "referral",
                         "in": "query",
-                        "description": "Filter by referral code",
+                        "description": "Filter by referral (requires name parameter)",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -9499,11 +9499,7 @@
                         }
                     }
                 },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                "security": []
             }
         },
         "/api/gardens/{id}": {
