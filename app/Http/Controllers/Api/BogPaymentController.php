@@ -325,11 +325,47 @@ class BogPaymentController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     * @OA\Get(
+     *     path="/api/bog-payments/{id}",
+     *     operationId="getBogPayment",
+     *     tags={"BOG Payments"},
+     *     summary="Get BOG payment details",
+     *     description="Retrieve details of a specific BOG payment",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Payment ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment details retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="order_id", type="string", example="BOG_ABC123_1234567890"),
+     *             @OA\Property(property="amount", type="number", example=100.00),
+     *             @OA\Property(property="currency", type="string", example="GEL"),
+     *             @OA\Property(property="status", type="string", example="completed"),
+     *             @OA\Property(property="payment_method", type="string", example="card"),
+     *             @OA\Property(property="bog_transaction_id", type="string", example="bog_123456"),
+     *             @OA\Property(property="created_at", type="string", format="date-time"),
+     *             @OA\Property(property="paid_at", type="string", format="date-time", nullable=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Payment not found"
+     *     )
+     * )
      */
     public function show(string $id)
     {
-        //
+        $payment = BogPayment::findOrFail($id);
+        
+        return response()->json($payment);
     }
 
     /**
@@ -338,6 +374,79 @@ class BogPaymentController extends Controller
     public function update(Request $request, string $id)
     {
         //
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/bog-payments/test",
+     *     operationId="testBogPayment",
+     *     tags={"BOG Payments"},
+     *     summary="Test BOG payment",
+     *     description="Create a test payment to verify BOG payment gateway integration",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"amount"},
+     *             @OA\Property(property="amount", type="number", example=1.00, description="Test payment amount (minimum 1 GEL)"),
+     *             @OA\Property(property="currency", type="string", example="GEL", description="Payment currency"),
+     *             @OA\Property(property="description", type="string", example="Test Payment", description="Payment description")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Test payment initiated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Test payment initiated successfully"),
+     *             @OA\Property(property="payment", type="object"),
+     *             @OA\Property(property="redirect_url", type="string", example="https://payment.bog.ge/..."),
+     *             @OA\Property(property="bog_transaction_id", type="string", example="bog_123456"),
+     *             @OA\Property(property="test_mode", type="boolean", example=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
+     */
+    public function testPayment(Request $request)
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:1.00',
+            'currency' => 'string|in:GEL,USD,EUR|max:3',
+            'description' => 'string|max:255',
+        ]);
+
+        $validated['user_id'] = auth()->id();
+        $validated['currency'] = $validated['currency'] ?? 'GEL';
+        $validated['payment_method'] = 'test';
+        $validated['payment_details'] = [
+            'test_payment' => true,
+            'description' => $validated['description'] ?? 'Test Payment',
+            'test_mode' => config('services.bog.test_mode', true),
+        ];
+
+        $bogService = new BogPaymentService();
+        $result = $bogService->createTestPayment($validated);
+
+        if ($result['success']) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Test payment initiated successfully',
+                'payment' => $result['payment'],
+                'redirect_url' => $result['redirect_url'],
+                'bog_transaction_id' => $result['bog_transaction_id'],
+                'test_mode' => config('services.bog.test_mode', true),
+            ], 201);
+        } else {
+            return response()->json([
+                'success' => false,
+                'error' => $result['error']
+            ], 500);
+        }
     }
 
     /**

@@ -1224,6 +1224,171 @@
                 }
             }
         },
+        "/api/bog-payments/{id}": {
+            "get": {
+                "tags": [
+                    "BOG Payments"
+                ],
+                "summary": "Get BOG payment details",
+                "description": "Retrieve details of a specific BOG payment",
+                "operationId": "getBogPayment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "order_id": {
+                                            "type": "string",
+                                            "example": "BOG_ABC123_1234567890"
+                                        },
+                                        "amount": {
+                                            "type": "number",
+                                            "example": 100
+                                        },
+                                        "currency": {
+                                            "type": "string",
+                                            "example": "GEL"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "completed"
+                                        },
+                                        "payment_method": {
+                                            "type": "string",
+                                            "example": "card"
+                                        },
+                                        "bog_transaction_id": {
+                                            "type": "string",
+                                            "example": "bog_123456"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "paid_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Payment not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bog-payments/test": {
+            "post": {
+                "tags": [
+                    "BOG Payments"
+                ],
+                "summary": "Test BOG payment",
+                "description": "Create a test payment to verify BOG payment gateway integration",
+                "operationId": "testBogPayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "description": "Test payment amount (minimum 1 GEL)",
+                                        "type": "number",
+                                        "example": 1
+                                    },
+                                    "currency": {
+                                        "description": "Payment currency",
+                                        "type": "string",
+                                        "example": "GEL"
+                                    },
+                                    "description": {
+                                        "description": "Payment description",
+                                        "type": "string",
+                                        "example": "Test Payment"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Test payment initiated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Test payment initiated successfully"
+                                        },
+                                        "payment": {
+                                            "type": "object"
+                                        },
+                                        "redirect_url": {
+                                            "type": "string",
+                                            "example": "https://payment.bog.ge/..."
+                                        },
+                                        "bog_transaction_id": {
+                                            "type": "string",
+                                            "example": "bog_123456"
+                                        },
+                                        "test_mode": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/cards": {
             "get": {
                 "tags": [

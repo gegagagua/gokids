@@ -9,9 +9,23 @@ use App\Models\Garden;
 use RedberryProducts\LaravelBogPayment\Facades\Pay;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
 
 class BogPaymentService
 {
+    /**
+     * Get BOG configuration
+     */
+    protected function getBogConfig()
+    {
+        return [
+            'merchant_id' => config('services.bog.merchant_id'),
+            'api_key' => config('services.bog.api_key'),
+            'base_url' => config('services.bog.base_url'),
+            'test_mode' => config('services.bog.test_mode', true),
+        ];
+    }
+
     /**
      * Initiate a new payment
      */
@@ -408,5 +422,89 @@ class BogPaymentService
         ];
 
         return $statusMap[$bogStatus] ?? 'pending';
+    }
+
+    /**
+     * Create a test payment (simulated)
+     */
+    public function createTestPayment(array $data)
+    {
+        try {
+            $config = $this->getBogConfig();
+            
+            // Create payment record
+            $payment = BogPayment::create([
+                'order_id' => $this->generateOrderId(),
+                'amount' => $data['amount'],
+                'currency' => $data['currency'] ?? 'GEL',
+                'status' => 'pending',
+                'user_id' => $data['user_id'] ?? null,
+                'card_id' => $data['card_id'] ?? null,
+                'garden_id' => $data['garden_id'] ?? null,
+                'payment_method' => $data['payment_method'] ?? 'test',
+                'payment_details' => array_merge($data['payment_details'] ?? [], [
+                    'test_payment' => true,
+                    'bog_config' => $config,
+                ]),
+            ]);
+
+            // Generate BOG transaction ID based on mode
+            if ($config['test_mode']) {
+                $bogTransactionId = 'BOG_TEST_' . strtoupper(Str::random(8)) . '_' . time();
+            } else {
+                $bogTransactionId = 'BOG_' . strtoupper(Str::random(8)) . '_' . time();
+            }
+            
+            // For test mode, we'll create a local test page or use real BOG URL
+            if ($config['test_mode']) {
+                $redirectUrl = url('/test-payment/' . $bogTransactionId);
+            } else {
+                $redirectUrl = 'https://payment.bog.ge/payment/' . $bogTransactionId;
+            }
+
+            // Update payment with simulated BOG transaction ID
+            $payment->update([
+                'bog_transaction_id' => $bogTransactionId,
+                'payment_details' => array_merge($payment->payment_details ?? [], [
+                    'bog_response' => [
+                        'id' => $bogTransactionId,
+                        'status' => 'pending',
+                        'amount' => $payment->amount,
+                        'currency' => $payment->currency,
+                        'redirect_url' => $redirectUrl,
+                        'details_url' => $redirectUrl . '/details',
+                        'test_mode' => $config['test_mode'],
+                    ],
+                    'redirect_url' => $redirectUrl,
+                    'details_url' => $redirectUrl . '/details',
+                ]),
+            ]);
+
+            Log::info('BOG test payment created successfully', [
+                'payment_id' => $payment->id,
+                'order_id' => $payment->order_id,
+                'amount' => $payment->amount,
+                'bog_transaction_id' => $bogTransactionId,
+                'test_mode' => $config['test_mode'],
+            ]);
+
+            return [
+                'success' => true,
+                'payment' => $payment,
+                'redirect_url' => $redirectUrl,
+                'bog_transaction_id' => $bogTransactionId,
+                'test_mode' => $config['test_mode'],
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('Failed to create BOG test payment: ' . $e->getMessage(), [
+                'data' => $data,
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
     }
 }
