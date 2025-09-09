@@ -52,8 +52,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/disters/{id}/transfer-gardens', [DisterController::class, 'transferGardens']);
     Route::apiResource('payments', PaymentController::class);
     Route::apiResource('notifications', NotificationController::class);
-    Route::apiResource('bog-payments', BogPaymentController::class);
-    Route::post('/bog-payments/test', [BogPaymentController::class, 'testPayment']);
+    Route::post('/bog-payment', [BogPaymentController::class, 'createPayment']);
 
     Route::middleware('auth:sanctum')->group(function () {
         // Place specific routes before resource to avoid {garden} binding capturing 'export'
