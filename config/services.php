@@ -39,6 +39,7 @@ return [
         'merchant_id' => env('BOG_MERCHANT_ID', '10002133'),
         'api_key' => env('BOG_API_KEY', 'Xf9Q3KjhbEgG'),
         'base_url' => env('BOG_BASE_URL', 'https://api.bog.ge/v1/payment'),
+        'payment_url' => env('BOG_PAYMENT_URL', 'https://payment.bog.ge/payment'),
         'test_mode' => env('BOG_TEST_MODE', false),
     ],
 

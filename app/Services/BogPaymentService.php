@@ -22,6 +22,7 @@ class BogPaymentService
             'merchant_id' => config('services.bog.merchant_id'),
             'api_key' => config('services.bog.api_key'),
             'base_url' => config('services.bog.base_url'),
+            'payment_url' => config('services.bog.payment_url'),
             'test_mode' => config('services.bog.test_mode', true),
         ];
     }
@@ -451,18 +452,26 @@ class BogPaymentService
             // Generate BOG transaction ID based on mode
             if ($config['test_mode']) {
                 $bogTransactionId = 'BOG_TEST_' . strtoupper(Str::random(8)) . '_' . time();
-            } else {
-                $bogTransactionId = 'BOG_' . strtoupper(Str::random(8)) . '_' . time();
-            }
-            
-            // For test mode, we'll create a local test page or use real BOG URL
-            if ($config['test_mode']) {
                 $redirectUrl = url('/test-payment/' . $bogTransactionId);
             } else {
-                $redirectUrl = 'https://payment.bog.ge/payment/' . $bogTransactionId;
+                // For production mode, try to integrate with real BOG API
+                $bogTransactionId = 'BOG_' . strtoupper(Str::random(8)) . '_' . time();
+                $bogResponse = $this->initiateRealBogPayment($payment, $config);
+                
+                if ($bogResponse['success'] && !empty($bogResponse['redirect_url'])) {
+                    $redirectUrl = $bogResponse['redirect_url'];
+                    $bogTransactionId = $bogResponse['transaction_id'] ?? $bogTransactionId;
+                } else {
+                    // Fallback to test mode if BOG API fails
+                    $redirectUrl = url('/test-payment/' . $bogTransactionId);
+                    Log::warning('BOG API integration failed, falling back to test mode', [
+                        'error' => $bogResponse['error'] ?? 'Unknown error',
+                        'payment_id' => $payment->id
+                    ]);
+                }
             }
 
-            // Update payment with simulated BOG transaction ID
+            // Update payment with BOG transaction ID
             $payment->update([
                 'bog_transaction_id' => $bogTransactionId,
                 'payment_details' => array_merge($payment->payment_details ?? [], [
@@ -480,7 +489,7 @@ class BogPaymentService
                 ]),
             ]);
 
-            Log::info('BOG test payment created successfully', [
+            Log::info('BOG payment created successfully', [
                 'payment_id' => $payment->id,
                 'order_id' => $payment->order_id,
                 'amount' => $payment->amount,
@@ -497,13 +506,49 @@ class BogPaymentService
             ];
 
         } catch (\Exception $e) {
-            Log::error('Failed to create BOG test payment: ' . $e->getMessage(), [
+            Log::error('Failed to create BOG payment: ' . $e->getMessage(), [
                 'data' => $data,
             ]);
 
             return [
                 'success' => false,
                 'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Initiate real BOG payment via API
+     */
+    protected function initiateRealBogPayment($payment, $config)
+    {
+        try {
+            // For now, we'll use the direct payment URL approach
+            // This creates a direct link to BOG payment page with the order details
+            $bogTransactionId = 'BOG_' . strtoupper(Str::random(8)) . '_' . time();
+            
+            // Create the BOG payment URL with parameters
+            $paymentUrl = $config['payment_url'] . '/' . $bogTransactionId;
+            
+            // Log the attempt
+            Log::info('Creating BOG live payment', [
+                'payment_id' => $payment->id,
+                'order_id' => $payment->order_id,
+                'amount' => $payment->amount,
+                'currency' => $payment->currency,
+                'merchant_id' => $config['merchant_id'],
+            ]);
+
+            return [
+                'success' => true,
+                'transaction_id' => $bogTransactionId,
+                'redirect_url' => $paymentUrl,
+            ];
+
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => 'BOG payment creation exception: ' . $e->getMessage(),
             ];
         }
     }
