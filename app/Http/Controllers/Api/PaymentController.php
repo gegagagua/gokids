@@ -16,7 +16,7 @@ class PaymentController extends Controller
      *     operationId="getPayments",
      *     tags={"Payments"},
      *     summary="Get all payments",
-     *     description="Retrieve a paginated list of all payments",
+     *     description="Retrieve a paginated list of all payments. Supports filtering by payment type.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="page",
@@ -31,6 +31,13 @@ class PaymentController extends Controller
      *         description="Number of items per page",
      *         required=false,
      *         @OA\Schema(type="integer", default=15)
+     *     ),
+     *     @OA\Parameter(
+     *         name="type",
+     *         in="query",
+     *         description="Filter by payment type",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"bank","garden_balance","agent_balance","garden_card_change"}, example="bank")
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -68,6 +75,11 @@ class PaymentController extends Controller
     public function index(Request $request)
     {
         $query = Payment::with('card:id,phone,status');
+        
+        // Filter by type if provided
+        if ($request->filled('type')) {
+            $query->where('type', $request->query('type'));
+        }
         
         $perPage = $request->query('per_page', 15);
         $page = $request->query('page', 1);

@@ -13288,7 +13288,7 @@
                     "Payments"
                 ],
                 "summary": "Get all payments",
-                "description": "Retrieve a paginated list of all payments",
+                "description": "Retrieve a paginated list of all payments. Supports filtering by payment type.",
                 "operationId": "getPayments",
                 "parameters": [
                     {
@@ -13309,6 +13309,22 @@
                         "schema": {
                             "type": "integer",
                             "default": 15
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Filter by payment type",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "bank",
+                                "garden_balance",
+                                "agent_balance",
+                                "garden_card_change"
+                            ],
+                            "example": "bank"
                         }
                     }
                 ],
