@@ -13,10 +13,12 @@ class Device extends Model
         'status',
         'garden_id',
         'garden_groups',
+        'active_garden_groups',
     ];
 
     protected $casts = [
         'garden_groups' => 'array',
+        'active_garden_groups' => 'array',
     ];
 
     protected static function boot()
@@ -60,5 +62,14 @@ class Device extends Model
         }
         
         return \App\Models\GardenGroup::whereIn('id', $this->garden_groups);
+    }
+
+    public function activeGardenGroups()
+    {
+        if (empty($this->active_garden_groups)) {
+            return \App\Models\GardenGroup::whereIn('id', []);
+        }
+        
+        return \App\Models\GardenGroup::whereIn('id', $this->active_garden_groups);
     }
 }

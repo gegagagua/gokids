@@ -79,6 +79,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         
         Route::apiResource('devices', DeviceController::class);
         Route::patch('/devices/{id}/status', [DeviceController::class, 'updateStatus']);
+        Route::patch('/devices/{id}/active-garden-groups', [DeviceController::class, 'updateActiveGardenGroups']);
         Route::post('/devices/{id}/regenerate-code', [DeviceController::class, 'regenerateCode']);
 
         Route::apiResource('garden-groups', GardenGroupController::class);

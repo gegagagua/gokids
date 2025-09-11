@@ -247,10 +247,12 @@ class DeviceController extends Controller
         
         // Load garden groups data
         $gardenGroups = $device->gardenGroups()->get();
+        $activeGardenGroups = $device->activeGardenGroups()->get();
         
         // Add garden groups data to device response
         $deviceData = $device->toArray();
         $deviceData['garden_groups_data'] = $gardenGroups;
+        $deviceData['active_garden_groups_data'] = $activeGardenGroups;
         
         return $deviceData;
     }
@@ -447,6 +449,112 @@ class DeviceController extends Controller
             'garden_id' => $device->garden_id,
             'garden_groups' => $device->garden_groups,
             'message' => 'Status updated successfully',
+        ]);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/devices/{id}/active-garden-groups",
+     *     operationId="updateDeviceActiveGardenGroups",
+     *     tags={"Devices"},
+     *     summary="Update device active garden groups",
+     *     description="Update the active garden groups for a specific device. Active garden groups must be a subset of the device's assigned garden groups.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="id", in="path", required=true, description="Device ID", @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"active_garden_groups"},
+     *             @OA\Property(property="active_garden_groups", type="array", @OA\Items(type="integer"), example={1,2}, description="Array of garden group IDs to set as active")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Active garden groups updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="name", type="string", example="Device 1"),
+     *             @OA\Property(property="code", type="string", example="X7K9M2"),
+     *             @OA\Property(property="status", type="string", example="active"),
+     *             @OA\Property(property="garden_id", type="integer", example=1),
+     *             @OA\Property(property="garden_groups", type="array", @OA\Items(type="integer"), example={1,2,3}),
+     *             @OA\Property(property="active_garden_groups", type="array", @OA\Items(type="integer"), example={1,2}),
+     *             @OA\Property(property="active_garden_groups_data", type="array", @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Group 1"),
+     *                 @OA\Property(property="garden_id", type="integer", example=1),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )),
+     *             @OA\Property(property="message", type="string", example="Active garden groups updated successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid active garden groups",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Active garden groups must be a subset of assigned garden groups")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Device not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No query results for model [App\\Models\\Device]")
+     *         )
+     *     )
+     * )
+     */
+    public function updateActiveGardenGroups(Request $request, $id)
+    {
+        $query = Device::query();
+        
+        // Get garden_id from authenticated user if they are a garden user
+        $user = $request->user();
+        $userGardenId = null;
+        
+        if ($user->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $user->email)->first();
+            if ($garden) {
+                $userGardenId = $garden->id;
+                $query->where('garden_id', $userGardenId);
+            }
+        }
+        
+        $device = $query->findOrFail($id);
+        
+        $validated = $request->validate([
+            'active_garden_groups' => 'required|array',
+            'active_garden_groups.*' => 'integer|exists:garden_groups,id',
+        ]);
+        
+        // Validate that active garden groups are a subset of assigned garden groups
+        $assignedGroups = $device->garden_groups ?? [];
+        $activeGroups = $validated['active_garden_groups'];
+        
+        if (!empty(array_diff($activeGroups, $assignedGroups))) {
+            return response()->json([
+                'message' => 'Active garden groups must be a subset of assigned garden groups'
+            ], 400);
+        }
+        
+        $device->update(['active_garden_groups' => $activeGroups]);
+        
+        // Load active garden groups data
+        $activeGardenGroups = $device->activeGardenGroups()->get();
+        
+        return response()->json([
+            'id' => $device->id,
+            'name' => $device->name,
+            'code' => $device->code,
+            'status' => $device->status,
+            'garden_id' => $device->garden_id,
+            'garden_groups' => $device->garden_groups,
+            'active_garden_groups' => $device->active_garden_groups,
+            'active_garden_groups_data' => $activeGardenGroups,
+            'message' => 'Active garden groups updated successfully',
         ]);
     }
 
@@ -930,6 +1038,15 @@ class DeviceController extends Controller
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time")
      *                 )),
+     *                 @OA\Property(property="active_garden_groups", type="array", @OA\Items(type="integer"), example={1,2}),
+     *                 @OA\Property(property="active_garden_groups_data", type="array", @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Group 1"),
+     *                     @OA\Property(property="garden_id", type="integer", example=1),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )),
      *                 @OA\Property(property="created_at", type="string", format="date-time"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time"),
      *                 @OA\Property(property="garden", type="object",
@@ -984,10 +1101,12 @@ class DeviceController extends Controller
 
         // Load garden groups data
         $gardenGroups = $device->gardenGroups()->get();
+        $activeGardenGroups = $device->activeGardenGroups()->get();
         
         // Add garden groups data to device response
         $deviceData = $device->toArray();
         $deviceData['garden_groups_data'] = $gardenGroups;
+        $deviceData['active_garden_groups_data'] = $activeGardenGroups;
 
         return response()->json([
             'message' => 'Device login successful',
