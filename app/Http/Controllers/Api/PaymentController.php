@@ -44,9 +44,11 @@ class PaymentController extends Controller
      *                     @OA\Property(property="id", type="integer", example=1),
      *                     @OA\Property(property="transaction_number", type="string", example="TXN123456789"),
      *                     @OA\Property(property="transaction_number_bank", type="string", nullable=true, example="BANK123456"),
-      *                     @OA\Property(property="card_number", type="string", example="1234567890123456"),
- *                     @OA\Property(property="card_id", type="integer", example=1),
- *                     @OA\Property(property="currency", type="string", example="GEL", description="Payment currency"),
+     *                     @OA\Property(property="card_number", type="string", example="1234567890123456"),
+     *                     @OA\Property(property="card_id", type="integer", example=1),
+     *                     @OA\Property(property="currency", type="string", example="GEL", description="Payment currency"),
+     *                     @OA\Property(property="comment", type="string", example="Payment for monthly subscription", nullable=true, description="Payment comment"),
+     *                     @OA\Property(property="type", type="string", example="bank", nullable=true, description="Payment type"),
      *                     @OA\Property(property="card", type="object", description="Card information",
      *                         @OA\Property(property="id", type="integer", example=1),
      *                         @OA\Property(property="phone", type="string", example="+995555123456"),
@@ -73,6 +75,8 @@ class PaymentController extends Controller
         return $query->paginate($perPage, ['*'], 'page', $page);
     }
 
+    // type: bank, garden_balance, agent_balance, garden_card_change
+
     /**
      * @OA\Post(
      *     path="/api/payments",
@@ -85,11 +89,13 @@ class PaymentController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             required={"transaction_number","card_number","card_id"},
-      *             @OA\Property(property="transaction_number", type="string", example="TXN123456789", description="Unique transaction number"),
- *             @OA\Property(property="transaction_number_bank", type="string", example="BANK123456", nullable=true, description="Bank transaction number (optional)"),
- *             @OA\Property(property="card_number", type="string", example="1234567890123456", description="Card number"),
- *             @OA\Property(property="card_id", type="integer", example=1, description="Card ID"),
- *             @OA\Property(property="currency", type="string", example="GEL", description="Payment currency (defaults to GEL)")
+     *             @OA\Property(property="transaction_number", type="string", example="TXN123456789", description="Unique transaction number"),
+     *             @OA\Property(property="transaction_number_bank", type="string", example="BANK123456", nullable=true, description="Bank transaction number (optional)"),
+     *             @OA\Property(property="card_number", type="string", example="1234567890123456", description="Card number"),
+     *             @OA\Property(property="card_id", type="integer", example=1, description="Card ID"),
+     *             @OA\Property(property="currency", type="string", example="GEL", description="Payment currency (defaults to GEL)"),
+     *             @OA\Property(property="comment", type="string", example="Payment for monthly subscription", nullable=true, description="Payment comment (optional, max 1000 characters)"),
+     *             @OA\Property(property="type", type="string", example="bank", nullable=true, description="Payment type - choose one of: bank, garden_balance, agent_balance, garden_card_change")
      *         )
      *     ),
      *     @OA\Response(
@@ -100,10 +106,12 @@ class PaymentController extends Controller
      *             @OA\Property(property="id", type="integer", example=1),
      *             @OA\Property(property="transaction_number", type="string", example="TXN123456789"),
      *             @OA\Property(property="transaction_number_bank", type="string", example="BANK123456"),
-      *             @OA\Property(property="card_number", type="string", example="1234567890123456"),
- *             @OA\Property(property="card_id", type="integer", example=1),
- *             @OA\Property(property="currency", type="string", example="GEL"),
- *             @OA\Property(property="created_at", type="string", format="date-time"),
+     *             @OA\Property(property="card_number", type="string", example="1234567890123456"),
+     *             @OA\Property(property="card_id", type="integer", example=1),
+     *             @OA\Property(property="currency", type="string", example="GEL"),
+     *             @OA\Property(property="comment", type="string", example="Payment for monthly subscription", nullable=true),
+     *             @OA\Property(property="type", type="string", example="bank", nullable=true),
+     *             @OA\Property(property="created_at", type="string", format="date-time"),
      *             @OA\Property(property="updated_at", type="string", format="date-time")
      *         )
      *     ),
@@ -133,6 +141,8 @@ class PaymentController extends Controller
             'card_number' => 'required|string|max:255',
             'card_id' => 'required|exists:cards,id',
             'currency' => 'nullable|string|max:10',
+            'comment' => 'nullable|string|max:1000',
+            'type' => 'nullable|string|in:bank,garden_balance,agent_balance,garden_card_change',
         ]);
 
         $payment = Payment::create($validated);
@@ -164,9 +174,11 @@ class PaymentController extends Controller
      *             @OA\Property(property="id", type="integer", example=1),
      *             @OA\Property(property="transaction_number", type="string", example="TXN123456789"),
      *             @OA\Property(property="transaction_number_bank", type="string", nullable=true, example="BANK123456"),
-      *             @OA\Property(property="card_number", type="string", example="1234567890123456"),
- *             @OA\Property(property="card_id", type="integer", example=1),
- *             @OA\Property(property="currency", type="string", example="GEL", description="Payment currency"),
+     *             @OA\Property(property="card_number", type="string", example="1234567890123456"),
+     *             @OA\Property(property="card_id", type="integer", example=1),
+     *             @OA\Property(property="currency", type="string", example="GEL", description="Payment currency"),
+     *             @OA\Property(property="comment", type="string", example="Payment for monthly subscription", nullable=true, description="Payment comment"),
+     *             @OA\Property(property="type", type="string", example="bank", nullable=true, description="Payment type"),
  *             @OA\Property(property="card", type="object", description="Card information",
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="phone", type="string", example="+995555123456"),
@@ -272,6 +284,8 @@ class PaymentController extends Controller
             'card_number' => 'sometimes|required|string|max:255',
             'card_id' => 'sometimes|required|exists:cards,id',
             'currency' => 'nullable|string|max:10',
+            'comment' => 'nullable|string|max:1000',
+            'type' => 'nullable|string|in:bank,garden_balance,agent_balance,garden_card_change',
         ]);
 
         $payment->update($validated);

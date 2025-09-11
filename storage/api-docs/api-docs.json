@@ -13353,6 +13353,18 @@
                                                         "type": "string",
                                                         "example": "GEL"
                                                     },
+                                                    "comment": {
+                                                        "description": "Payment comment",
+                                                        "type": "string",
+                                                        "example": "Payment for monthly subscription",
+                                                        "nullable": true
+                                                    },
+                                                    "type": {
+                                                        "description": "Payment type",
+                                                        "type": "string",
+                                                        "example": "bank",
+                                                        "nullable": true
+                                                    },
                                                     "card": {
                                                         "description": "Card information",
                                                         "properties": {
@@ -13451,6 +13463,18 @@
                                         "description": "Payment currency (defaults to GEL)",
                                         "type": "string",
                                         "example": "GEL"
+                                    },
+                                    "comment": {
+                                        "description": "Payment comment (optional, max 1000 characters)",
+                                        "type": "string",
+                                        "example": "Payment for monthly subscription",
+                                        "nullable": true
+                                    },
+                                    "type": {
+                                        "description": "Payment type - choose one of: bank, garden_balance, agent_balance, garden_card_change",
+                                        "type": "string",
+                                        "example": "bank",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -13488,6 +13512,16 @@
                                         "currency": {
                                             "type": "string",
                                             "example": "GEL"
+                                        },
+                                        "comment": {
+                                            "type": "string",
+                                            "example": "Payment for monthly subscription",
+                                            "nullable": true
+                                        },
+                                        "type": {
+                                            "type": "string",
+                                            "example": "bank",
+                                            "nullable": true
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -13591,6 +13625,18 @@
                                             "description": "Payment currency",
                                             "type": "string",
                                             "example": "GEL"
+                                        },
+                                        "comment": {
+                                            "description": "Payment comment",
+                                            "type": "string",
+                                            "example": "Payment for monthly subscription",
+                                            "nullable": true
+                                        },
+                                        "type": {
+                                            "description": "Payment type",
+                                            "type": "string",
+                                            "example": "bank",
+                                            "nullable": true
                                         },
                                         "card": {
                                             "description": "Card information",
