@@ -147,7 +147,7 @@ class AuthController extends Controller
         }
 
         if ($user->type === 'garden') {
-            $garden = \App\Models\Garden::with(['city', 'country', 'images'])->where('email', $user->email)->first();
+            $garden = \App\Models\Garden::with(['city', 'countryData', 'images'])->where('email', $user->email)->first();
             if ($garden) {
                 $response['garden'] = $garden;
                 
@@ -155,8 +155,8 @@ class AuthController extends Controller
                 $dister = \App\Models\Dister::whereJsonContains('gardens', $garden->id)->first();
                 
                 // If no direct dister found, try to find dister who owns the country where the garden is located
-                if (!$dister && $garden->country) {
-                    $dister = \App\Models\Dister::where('country', $garden->country->id)->first();
+                if (!$dister && $garden->countryData) {
+                    $dister = \App\Models\Dister::where('country', $garden->countryData->id)->first();
                 }
                 
                 if ($dister) {
@@ -437,7 +437,7 @@ class AuthController extends Controller
         }
 
         if ($user->type === 'garden') {
-            $garden = \App\Models\Garden::with(['city', 'country', 'images'])->where('email', $user->email)->first();
+            $garden = \App\Models\Garden::with(['city', 'countryData', 'images'])->where('email', $user->email)->first();
             if ($garden) {
                 $response['garden'] = $garden;
                 
@@ -445,8 +445,8 @@ class AuthController extends Controller
                 $dister = \App\Models\Dister::whereJsonContains('gardens', $garden->id)->first();
                 
                 // If no direct dister found, try to find dister who owns the country where the garden is located
-                if (!$dister && $garden->country) {
-                    $dister = \App\Models\Dister::where('country', $garden->country->id)->first();
+                if (!$dister && $garden->countryData) {
+                    $dister = \App\Models\Dister::where('country', $garden->countryData->id)->first();
                 }
                 
                 if ($dister) {
