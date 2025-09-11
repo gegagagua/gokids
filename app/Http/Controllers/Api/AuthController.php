@@ -156,7 +156,7 @@ class AuthController extends Controller
                 
                 // If no direct dister found, try to find dister who owns the country where the garden is located
                 if (!$dister && $garden->countryData) {
-                    $dister = \App\Models\Dister::where('country', $garden->countryData->id)->first();
+                    $dister = \App\Models\Dister::where('country_id', $garden->countryData->id)->first();
                 }
                 
                 if ($dister) {
@@ -446,7 +446,7 @@ class AuthController extends Controller
                 
                 // If no direct dister found, try to find dister who owns the country where the garden is located
                 if (!$dister && $garden->countryData) {
-                    $dister = \App\Models\Dister::where('country', $garden->countryData->id)->first();
+                    $dister = \App\Models\Dister::where('country_id', $garden->countryData->id)->first();
                 }
                 
                 if ($dister) {
