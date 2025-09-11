@@ -52,4 +52,13 @@ class Device extends Model
     {
         return $this->belongsTo(\App\Models\Garden::class);
     }
+
+    public function gardenGroups()
+    {
+        if (empty($this->garden_groups)) {
+            return \App\Models\GardenGroup::whereIn('id', []);
+        }
+        
+        return \App\Models\GardenGroup::whereIn('id', $this->garden_groups);
+    }
 }

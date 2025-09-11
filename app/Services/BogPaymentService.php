@@ -15,8 +15,9 @@ class BogPaymentService
     protected function getBogConfig()
     {
         return [
-            'merchant_id' => config('services.bog.merchant_id'),
-            'api_key' => config('services.bog.api_key'),
+            'client_id' => config('services.bog.client_id'),
+            'secret' => config('services.bog.secret'),
+            'public_key' => config('services.bog.public_key'),
             'base_url' => config('services.bog.base_url'),
             'payment_url' => config('services.bog.payment_url'),
         ];
@@ -95,20 +96,39 @@ class BogPaymentService
     }
 
     /**
-     * Initiate BOG payment via API
+     * Initiate BOG payment via direct URL generation
+     * Based on Redberry BOG Payment Gateway documentation
      */
     protected function initiateBogPayment($payment, $config)
     {
         try {
-            // Since BOG API endpoints are not working properly, 
-            // we'll create a direct payment URL with parameters
+            // Generate transaction ID
             $transactionId = 'BOG_' . strtoupper(Str::random(8)) . '_' . time();
             
-            // Create BOG payment URL with parameters
-            $paymentUrl = $config['payment_url'] . '/' . $transactionId . '?' . http_build_query([
-                'merchant_id' => $config['merchant_id'],
+            // Use direct URL generation (BOG doesn't provide working API)
+            return $this->generateDirectPaymentUrl($payment, $config, $transactionId);
+
+        } catch (\Exception $e) {
+            Log::error('BOG payment URL generation exception: ' . $e->getMessage());
+            
+            return [
+                'success' => false,
+                'error' => 'BOG payment URL generation failed: ' . $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Generate direct payment URL as fallback
+     */
+    protected function generateDirectPaymentUrl($payment, $config, $transactionId)
+    {
+        try {
+            // Use the correct BOG payment URL format
+            $paymentUrl = 'https://payment.bog.ge/payment?' . http_build_query([
+                'client_id' => $config['client_id'],
                 'order_id' => $payment->order_id,
-                'amount' => (int)($payment->amount * 100), // Convert to tetri (cents)
+                'amount' => (int)($payment->amount * 100),
                 'currency' => $payment->currency,
                 'description' => $payment->payment_details['description'] ?? 'Payment via MyKids',
                 'return_url' => url('/bog-payment/success'),
@@ -116,12 +136,9 @@ class BogPaymentService
                 'callback_url' => url('/api/bog-payment/callback'),
             ]);
 
-            Log::info('Creating BOG payment URL', [
+            Log::info('Using direct BOG payment URL (fallback)', [
                 'transaction_id' => $transactionId,
                 'payment_url' => $paymentUrl,
-                'merchant_id' => $config['merchant_id'],
-                'order_id' => $payment->order_id,
-                'amount' => $payment->amount,
             ]);
 
             return [
@@ -129,9 +146,9 @@ class BogPaymentService
                 'transaction_id' => $transactionId,
                 'redirect_url' => $paymentUrl,
                 'response_data' => [
-                    'transaction_id' => $transactionId,
-                    'payment_url' => $paymentUrl,
-                    'merchant_id' => $config['merchant_id'],
+                    'id' => $transactionId,
+                    'redirect_url' => $paymentUrl,
+                    'client_id' => $config['client_id'],
                     'order_id' => $payment->order_id,
                     'amount' => $payment->amount,
                     'currency' => $payment->currency,
@@ -141,7 +158,7 @@ class BogPaymentService
         } catch (\Exception $e) {
             return [
                 'success' => false,
-                'error' => 'BOG payment creation exception: ' . $e->getMessage(),
+                'error' => 'BOG payment URL generation failed: ' . $e->getMessage(),
             ];
         }
     }
@@ -223,6 +240,7 @@ class BogPaymentService
 
         return $orderId;
     }
+
 
     /**
      * Map BOG status to internal status

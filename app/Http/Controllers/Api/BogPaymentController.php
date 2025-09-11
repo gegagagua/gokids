@@ -97,6 +97,7 @@ class BogPaymentController extends Controller
      *     )
      * )
      */
+
     public function handleCallback(Request $request)
     {
         $callbackData = $request->all();

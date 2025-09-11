@@ -243,7 +243,12 @@ class DeviceController extends Controller
             }
         }
         
-        return $query->findOrFail($id);
+        $device = $query->findOrFail($id);
+        
+        // Load garden groups data
+        $device->load('gardenGroups');
+        
+        return $device;
     }
 
     /**
@@ -912,7 +917,14 @@ class DeviceController extends Controller
      *                 @OA\Property(property="code", type="string", example="X7K9M2"),
      *                 @OA\Property(property="status", type="string", enum={"active","inactive"}, example="active"),
      *                 @OA\Property(property="garden_id", type="integer", example=1),
-     *                 @OA\Property(property="garden_groups", type="array", @OA\Items(type="integer"), example={1,2,3}),
+     *                 @OA\Property(property="garden_groups", type="array", @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Group 1"),
+     *                     @OA\Property(property="garden_id", type="integer", example=1),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )),
      *                 @OA\Property(property="created_at", type="string", format="date-time"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time"),
      *                 @OA\Property(property="garden", type="object",
@@ -958,6 +970,11 @@ class DeviceController extends Controller
             ->where('code', $request->code)
             ->where('status', 'active')
             ->first();
+
+        if ($device) {
+            // Load garden groups data
+            $device->load('gardenGroups');
+        }
 
         if (!$device) {
             return response()->json([
