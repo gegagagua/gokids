@@ -246,9 +246,13 @@ class DeviceController extends Controller
         $device = $query->findOrFail($id);
         
         // Load garden groups data
-        $device->load('gardenGroups');
+        $gardenGroups = $device->gardenGroups()->get();
         
-        return $device;
+        // Add garden groups data to device response
+        $deviceData = $device->toArray();
+        $deviceData['garden_groups_data'] = $gardenGroups;
+        
+        return $deviceData;
     }
 
     /**
@@ -917,7 +921,8 @@ class DeviceController extends Controller
      *                 @OA\Property(property="code", type="string", example="X7K9M2"),
      *                 @OA\Property(property="status", type="string", enum={"active","inactive"}, example="active"),
      *                 @OA\Property(property="garden_id", type="integer", example=1),
-     *                 @OA\Property(property="garden_groups", type="array", @OA\Items(
+     *                 @OA\Property(property="garden_groups", type="array", @OA\Items(type="integer"), example={1,2,3}),
+     *                 @OA\Property(property="garden_groups_data", type="array", @OA\Items(
      *                     type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
      *                     @OA\Property(property="name", type="string", example="Group 1"),
@@ -971,20 +976,22 @@ class DeviceController extends Controller
             ->where('status', 'active')
             ->first();
 
-        if ($device) {
-            // Load garden groups data
-            $device->load('gardenGroups');
-        }
-
         if (!$device) {
             return response()->json([
                 'message' => 'Invalid device code or device is inactive'
             ], 401);
         }
 
+        // Load garden groups data
+        $gardenGroups = $device->gardenGroups()->get();
+        
+        // Add garden groups data to device response
+        $deviceData = $device->toArray();
+        $deviceData['garden_groups_data'] = $gardenGroups;
+
         return response()->json([
             'message' => 'Device login successful',
-            'device' => $device
+            'device' => $deviceData
         ]);
     }
 
