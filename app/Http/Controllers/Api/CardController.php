@@ -1902,7 +1902,8 @@ class CardController extends Controller
      *     operationId="getAllSpamCards",
      *     tags={"Cards"},
      *     summary="Get all spam cards",
-     *     description="Retrieve all cards that have been marked as spam (spam = 1) with their associated group and garden information",
+     *     description="Retrieve all cards that have been marked as spam (spam = 1) with their associated group and garden information. Supports filtering by garden name or referral code.",
+     *     @OA\Parameter(name="garden_filter", in="query", required=false, description="Filter by garden name or referral code", @OA\Schema(type="string")),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -1924,7 +1925,8 @@ class CardController extends Controller
      *                     @OA\Property(property="name", type="string", example="Group 1"),
      *                     @OA\Property(property="garden", type="object",
      *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="name", type="string", example="Garden Name")
+     *                         @OA\Property(property="name", type="string", example="Garden Name"),
+     *                         @OA\Property(property="referral_code", type="string", example="REF123456")
      *                     )
      *                 )
      *             )
@@ -1932,10 +1934,19 @@ class CardController extends Controller
      *     )
      * )
      */
-    public function getAllSpamCards()
+    public function getAllSpamCards(Request $request)
     {
-        $query = Card::with(['group.garden:id,name'])
+        $query = Card::with(['group.garden:id,name,referral_code'])
             ->where('spam', 1);
+
+        // Add garden filter if provided
+        if ($request->filled('garden_filter')) {
+            $gardenFilter = $request->query('garden_filter');
+            $query->whereHas('group.garden', function ($q) use ($gardenFilter) {
+                $q->where('name', 'like', '%' . $gardenFilter . '%')
+                  ->orWhere('referral_code', 'like', '%' . $gardenFilter . '%');
+            });
+        }
 
         return $query->get();
     }

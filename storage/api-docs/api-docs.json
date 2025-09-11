@@ -3856,8 +3856,19 @@
                     "Cards"
                 ],
                 "summary": "Get all spam cards",
-                "description": "Retrieve all cards that have been marked as spam (spam = 1) with their associated group and garden information",
+                "description": "Retrieve all cards that have been marked as spam (spam = 1) with their associated group and garden information. Supports filtering by garden name or referral code.",
                 "operationId": "getAllSpamCards",
+                "parameters": [
+                    {
+                        "name": "garden_filter",
+                        "in": "query",
+                        "description": "Filter by garden name or referral code",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successful operation",
@@ -3927,6 +3938,10 @@
                                                             "name": {
                                                                 "type": "string",
                                                                 "example": "Garden Name"
+                                                            },
+                                                            "referral_code": {
+                                                                "type": "string",
+                                                                "example": "REF123456"
                                                             }
                                                         },
                                                         "type": "object"
