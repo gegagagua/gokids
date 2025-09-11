@@ -39,6 +39,19 @@
                                     "password_confirmation": {
                                         "type": "string",
                                         "format": "password"
+                                    },
+                                    "type": {
+                                        "description": "User type (defaults to 'user' if not provided)",
+                                        "type": "string",
+                                        "enum": [
+                                            "user",
+                                            "admin",
+                                            "accountant",
+                                            "technical",
+                                            "garden",
+                                            "dister"
+                                        ],
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"

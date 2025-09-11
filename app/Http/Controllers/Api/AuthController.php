@@ -23,7 +23,8 @@ class AuthController extends Controller
      *             @OA\Property(property="email", type="string", format="email"),
      *             @OA\Property(property="phone", type="string", nullable=true),
      *             @OA\Property(property="password", type="string", format="password"),
-     *             @OA\Property(property="password_confirmation", type="string", format="password")
+     *             @OA\Property(property="password_confirmation", type="string", format="password"),
+     *             @OA\Property(property="type", type="string", enum={"user","admin","accountant","technical","garden","dister"}, nullable=true, description="User type (defaults to 'user' if not provided)")
      *         )
      *     ),
      *     @OA\Response(response=200, description="User registered",
@@ -57,6 +58,7 @@ class AuthController extends Controller
             'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string|max:20',
             'password' => 'required|string|confirmed',
+            'type' => 'nullable|string|in:user,admin,accountant,technical,garden,dister',
         ]);
 
         $user = User::create([
@@ -64,7 +66,7 @@ class AuthController extends Controller
             'email' => $fields['email'],
             'phone' => $fields['phone'] ?? null,
             'password' => bcrypt($fields['password']),
-            'type' => 'user', // Default type for regular users
+            'type' => $fields['type'] ?? 'user', // Use provided type or default to 'user'
             'balance' => 0.00, // Default balance for new users
         ]);
 
