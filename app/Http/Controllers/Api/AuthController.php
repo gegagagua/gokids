@@ -598,4 +598,108 @@ class AuthController extends Controller
             'technical' => $technical,
         ], 200);
     }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/users/{id}/change-type",
+     *     operationId="changeUserType",
+     *     tags={"Authentication"},
+     *     summary="Change user type (Admin only)",
+     *     description="Allow admin users to change the type of other users",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="User ID to change type for",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"type"},
+     *             @OA\Property(property="type", type="string", enum={"user","admin","accountant","technical","garden","dister"}, example="admin", description="New user type")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User type changed successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="User type updated successfully"),
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="email", type="string", example="john@example.com"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456", nullable=true),
+     *                 @OA\Property(property="type", type="string", example="admin"),
+     *                 @OA\Property(property="type_display", type="string", example="ადმინისტრატორი"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden - Only admins can change user types",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Only administrators can change user types")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="User not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="User not found")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="type", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function changeUserType(Request $request, $id)
+    {
+        // Check if the authenticated user is an admin
+        $currentUser = $request->user();
+        if ($currentUser->type !== 'admin') {
+            return response()->json([
+                'message' => 'Only administrators can change user types'
+            ], 403);
+        }
+
+        // Validate the request
+        $validated = $request->validate([
+            'type' => 'required|string|in:user,admin,accountant,technical,garden,dister',
+        ]);
+
+        // Find the user to update
+        $user = User::findOrFail($id);
+
+        // Update the user type
+        $user->update([
+            'type' => $validated['type']
+        ]);
+
+        return response()->json([
+            'message' => 'User type updated successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'type' => $user->type,
+                'type_display' => $user->type_display,
+                'updated_at' => $user->updated_at,
+            ]
+        ], 200);
+    }
 }
