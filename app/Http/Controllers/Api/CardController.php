@@ -1896,6 +1896,42 @@ class CardController extends Controller
         ], 200);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/get-spam-cards",
+     *     operationId="getAllSpamCards",
+     *     tags={"Cards"},
+     *     summary="Get all spam cards",
+     *     description="Retrieve all cards that have been marked as spam (spam = 1) with their associated group and garden information",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                 @OA\Property(property="status", type="string", enum={"pending","active","inactive"}, example="active"),
+     *                 @OA\Property(property="spam", type="boolean", example=true),
+     *                 @OA\Property(property="group_id", type="integer", example=1),
+     *                 @OA\Property(property="person_type_id", type="integer", example=1),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(property="group", type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Group 1"),
+     *                     @OA\Property(property="garden", type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Garden Name")
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     )
+     * )
+     */
     public function getAllSpamCards()
     {
         $query = Card::with(['group.garden:id,name'])
