@@ -169,6 +169,17 @@ class AuthController extends Controller
             $dister = \App\Models\Dister::with(['country'])->where('email', $user->email)->first();
             if ($dister) {
                 $response['dister'] = $dister;
+                
+                // Get parent dister information if main_dister exists
+                if ($dister->main_dister && isset($dister->main_dister['id'])) {
+                    $parentDister = \App\Models\Dister::with(['country'])
+                        ->select('id', 'first_name', 'last_name', 'email', 'phone', 'country_id', 'status', 'created_at')
+                        ->find($dister->main_dister['id']);
+                    
+                    if ($parentDister) {
+                        $response['parent_dister'] = $parentDister;
+                    }
+                }
             }
         }
 
@@ -459,6 +470,17 @@ class AuthController extends Controller
             $dister = \App\Models\Dister::with(['country'])->where('email', $user->email)->first();
             if ($dister) {
                 $response['dister'] = $dister;
+                
+                // Get parent dister information if main_dister exists
+                if ($dister->main_dister && isset($dister->main_dister['id'])) {
+                    $parentDister = \App\Models\Dister::with(['country'])
+                        ->select('id', 'first_name', 'last_name', 'email', 'phone', 'country_id', 'status', 'created_at')
+                        ->find($dister->main_dister['id']);
+                    
+                    if ($parentDister) {
+                        $response['parent_dister'] = $parentDister;
+                    }
+                }
             }
         }
 
