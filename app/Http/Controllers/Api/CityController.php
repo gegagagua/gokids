@@ -72,7 +72,7 @@ class CityController extends Controller
         }
         
         $perPage = $request->query('per_page', 15);
-        $cities = $query->paginate($perPage);
+        $cities = $query->orderBy('created_at', 'desc')->paginate($perPage);
         
         return response()->json($cities);
     }

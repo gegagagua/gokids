@@ -152,7 +152,7 @@ class GardenController extends Controller
 
         $perPage = $request->query('per_page', 15);
         $page = $request->query('page', 1);
-        $gardens = $query->paginate($perPage, ['*'], 'page', $page);
+        $gardens = $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
         // დაამატე referral_code ყველა garden-ს
         $gardens->getCollection()->transform(function ($garden) {
             $garden->makeVisible('referral_code');

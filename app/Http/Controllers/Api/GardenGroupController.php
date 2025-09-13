@@ -92,7 +92,7 @@ class GardenGroupController extends Controller
 
         $perPage = $request->query('per_page', 15);
         $page = $request->query('page', 1);
-        $groups = $query->withCount('cards')->paginate($perPage, ['*'], 'page', $page);
+        $groups = $query->withCount('cards')->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
         // დაამატე cards_count ველი
         $groups->getCollection()->transform(function ($group) {
             $group->cards_count = $group->cards_count ?? 0;

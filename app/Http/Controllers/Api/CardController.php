@@ -161,7 +161,7 @@ class CardController extends Controller
             $query->whereJsonContains('license->type', $request->query('license_type'));
         }
         $perPage = $request->query('per_page', 15);
-        $cards = $query->paginate($perPage);
+        $cards = $query->orderBy('created_at', 'desc')->paginate($perPage);
         
         // Add country tariff information to each card
         $cards->getCollection()->transform(function ($card) {

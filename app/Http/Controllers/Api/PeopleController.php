@@ -90,7 +90,7 @@ class PeopleController extends Controller
             $query->where('card_id', $request->query('card_id'));
         }
         
-        return $query->get();
+        return $query->orderBy('created_at', 'desc')->get();
     }
 
     /**

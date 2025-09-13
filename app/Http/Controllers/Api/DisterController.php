@@ -125,7 +125,7 @@ class DisterController extends Controller
         
         $perPage = $request->query('per_page', 15);
         $page = $request->query('page', 1);
-        return $query->paginate($perPage, ['*'], 'page', $page);
+        return $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
     }
 
     /**
