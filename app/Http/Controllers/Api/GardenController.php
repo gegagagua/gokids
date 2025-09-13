@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Garden;
 use App\Models\User;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Exports\GardensExport;
@@ -947,11 +948,33 @@ class GardenController extends Controller
             }
         }
 
+        // Store the old balance for comparison
+        $oldBalance = $garden->balance;
+        
         // Update the balance and balance_comment fields
         $garden->update([
             'balance' => $validated['balance'],
             'balance_comment' => $validated['balance_comment'] === '' ? null : $validated['balance_comment']
         ]);
+
+        // Create a payment record for the balance change
+        $balanceChange = $validated['balance'] - $oldBalance;
+        
+        if ($balanceChange != 0) {
+            // Generate a unique transaction number for the balance change
+            $transactionNumber = 'GARDEN_BALANCE_' . $garden->id . '_' . time();
+            
+            // Create payment record
+            Payment::create([
+                'transaction_number' => $transactionNumber,
+                'transaction_number_bank' => null,
+                'card_number' => 'GARDEN_BALANCE_UPDATE',
+                'card_id' => null, // No specific card for garden balance updates
+                'currency' => 'GEL', // Default currency
+                'comment' => $validated['balance_comment'] ?? 'Garden balance updated',
+                'type' => 'garden_balance',
+            ]);
+        }
 
         return response()->json([
             'message' => 'Garden balance updated successfully',
@@ -962,7 +985,9 @@ class GardenController extends Controller
                 'formatted_balance' => $garden->formatted_balance,
                 'balance_comment' => $garden->balance_comment,
                 'updated_at' => $garden->updated_at,
-            ]
+            ],
+            'balance_change' => $balanceChange,
+            'payment_created' => $balanceChange != 0
         ], 200);
     }
 }
