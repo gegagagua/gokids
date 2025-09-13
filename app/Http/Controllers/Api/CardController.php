@@ -107,7 +107,7 @@ class CardController extends Controller
     // ყველა ბარათის წამოღება
     public function index(Request $request)
     {
-        $query = Card::with(['group', 'personType', 'parents', 'people']);
+        $query = Card::with(['group.garden.countryData', 'personType', 'parents', 'people']);
         
         // Filter by garden_id if authenticated user is a garden user
         if ($request->user() && $request->user()->type === 'garden') {
@@ -161,7 +161,24 @@ class CardController extends Controller
             $query->whereJsonContains('license->type', $request->query('license_type'));
         }
         $perPage = $request->query('per_page', 15);
-        return $query->paginate($perPage);
+        $cards = $query->paginate($perPage);
+        
+        // Add country tariff information to each card
+        $cards->getCollection()->transform(function ($card) {
+            if ($card->group && $card->group->garden && $card->group->garden->countryData) {
+                $card->country_tariff = [
+                    'tariff' => $card->group->garden->countryData->tariff,
+                    'formatted_tariff' => $card->group->garden->countryData->formatted_tariff,
+                    'currency' => $card->group->garden->countryData->currency,
+                    'country_name' => $card->group->garden->countryData->name,
+                ];
+            } else {
+                $card->country_tariff = null;
+            }
+            return $card;
+        });
+        
+        return $cards;
     }
 
     /**
@@ -249,7 +266,7 @@ class CardController extends Controller
     public function show(Request $request, $id)
     {
         $query = Card::with([
-            'group', 
+            'group.garden.countryData', 
             'personType', 
             'parents' => function($query) {
                 $query->select('id', 'first_name', 'last_name', 'status', 'phone', 'code', 'group_id', 'card_id', 'created_at', 'updated_at');
@@ -288,6 +305,18 @@ class CardController extends Controller
             $person->full_name = $person->name;
             return $person;
         });
+        
+        // Add country tariff information
+        if ($card->group && $card->group->garden && $card->group->garden->countryData) {
+            $card->country_tariff = [
+                'tariff' => $card->group->garden->countryData->tariff,
+                'formatted_tariff' => $card->group->garden->countryData->formatted_tariff,
+                'currency' => $card->group->garden->countryData->currency,
+                'country_name' => $card->group->garden->countryData->name,
+            ];
+        } else {
+            $card->country_tariff = null;
+        }
         
         return $card;
     }
