@@ -670,7 +670,7 @@ class AuthController extends Controller
     {
         // Check if the authenticated user is an admin
         $currentUser = $request->user();
-        if ($currentUser->type !== 'admin') {
+        if ($currentUser->type !== 'admin' || $currentUser->type !== 'user') {
             return response()->json([
                 'message' => 'Only administrators can change user types'
             ], 403);
@@ -776,7 +776,7 @@ class AuthController extends Controller
     {
         // Check if the authenticated user is an admin
         $currentUser = $request->user();
-        if ($currentUser->type !== 'admin') {
+        if ($currentUser->type !== 'admin' || $currentUser->type !== 'user') {
             return response()->json([
                 'message' => 'Only administrators can change user status'
             ], 403);
