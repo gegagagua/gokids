@@ -11,9 +11,19 @@ class Payment extends Model
         'transaction_number_bank',
         'card_number',
         'card_id',
+        'amount',
         'currency',
         'comment',
         'type',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'amount' => 'decimal:2',
     ];
 
     /**

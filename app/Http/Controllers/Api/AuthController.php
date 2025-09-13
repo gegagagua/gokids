@@ -135,6 +135,7 @@ class AuthController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
+                'status' => $user->status,
                 'type' => $user->type === 'user' ? 'admin' : $user->type,
                 'type_display' => $user->type_display,
             ],

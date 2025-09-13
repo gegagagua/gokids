@@ -970,6 +970,7 @@ class GardenController extends Controller
                 'transaction_number_bank' => null,
                 'card_number' => 'GARDEN_BALANCE_UPDATE',
                 'card_id' => null, // No specific card for garden balance updates
+                'amount' => abs($balanceChange), // Use absolute value of balance change
                 'currency' => 'GEL', // Default currency
                 'comment' => $validated['balance_comment'] ?? 'Garden balance updated',
                 'type' => 'garden_balance',
