@@ -21,6 +21,10 @@ class User extends Authenticatable
     const TYPE_ACCOUNTANT = 'accountant';
     const TYPE_TECHNICAL = 'technical';
 
+    // User status constants
+    const STATUS_ACTIVE = 'active';
+    const STATUS_INACTIVE = 'inactive';
+
     /**
      * The attributes that are mass assignable.
      *
@@ -33,6 +37,7 @@ class User extends Authenticatable
         'password',
         'type',
         'balance',
+        'status',
     ];
 
     /**
@@ -45,7 +50,7 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected $appends = ['type_display'];
+    protected $appends = ['type_display', 'status_display'];
 
     /**
      * Get the attributes that should be cast.
@@ -83,5 +88,57 @@ class User extends Authenticatable
     {
         $types = self::getUserTypes();
         return $types[$this->type] ?? $this->type;
+    }
+
+    /**
+     * Get all available user statuses
+     */
+    public static function getUserStatuses()
+    {
+        return [
+            self::STATUS_ACTIVE => 'აქტიური',
+            self::STATUS_INACTIVE => 'არააქტიური',
+        ];
+    }
+
+    /**
+     * Get user status display name
+     */
+    public function getStatusDisplayAttribute()
+    {
+        $statuses = self::getUserStatuses();
+        return $statuses[$this->status] ?? $this->status;
+    }
+
+    /**
+     * Check if user is active
+     */
+    public function isActive()
+    {
+        return $this->status === self::STATUS_ACTIVE;
+    }
+
+    /**
+     * Check if user is inactive
+     */
+    public function isInactive()
+    {
+        return $this->status === self::STATUS_INACTIVE;
+    }
+
+    /**
+     * Activate user
+     */
+    public function activate()
+    {
+        $this->update(['status' => self::STATUS_ACTIVE]);
+    }
+
+    /**
+     * Deactivate user
+     */
+    public function deactivate()
+    {
+        $this->update(['status' => self::STATUS_INACTIVE]);
     }
 }

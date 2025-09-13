@@ -702,4 +702,112 @@ class AuthController extends Controller
             ]
         ], 200);
     }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/users/{id}/change-status",
+     *     operationId="changeUserStatus",
+     *     tags={"Authentication"},
+     *     summary="Change user status (Admin only)",
+     *     description="Allow admin users to change the status of other users (active/inactive)",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="User ID to change status for",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"status"},
+     *             @OA\Property(property="status", type="string", enum={"active","inactive"}, example="inactive", description="New user status")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="User status changed successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="User status updated successfully"),
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="email", type="string", example="john@example.com"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456", nullable=true),
+     *                 @OA\Property(property="type", type="string", example="user"),
+     *                 @OA\Property(property="type_display", type="string", example="მომხმარებელი"),
+     *                 @OA\Property(property="status", type="string", example="inactive"),
+     *                 @OA\Property(property="status_display", type="string", example="არააქტიური"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden - Only admins can change user status",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Only administrators can change user status")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="User not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="User not found")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="status", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function changeUserStatus(Request $request, $id)
+    {
+        // Check if the authenticated user is an admin
+        $currentUser = $request->user();
+        if ($currentUser->type !== 'admin') {
+            return response()->json([
+                'message' => 'Only administrators can change user status'
+            ], 403);
+        }
+
+        // Validate the request
+        $validated = $request->validate([
+            'status' => 'required|string|in:active,inactive',
+        ]);
+
+        // Find the user to update
+        $user = User::findOrFail($id);
+
+        // Update the user status
+        $user->update([
+            'status' => $validated['status']
+        ]);
+
+        return response()->json([
+            'message' => 'User status updated successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'type' => $user->type,
+                'type_display' => $user->type_display,
+                'status' => $user->status,
+                'status_display' => $user->status_display,
+                'updated_at' => $user->updated_at,
+            ]
+        ], 200);
+    }
 }
