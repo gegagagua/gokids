@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Dister;
 use App\Models\Country;
+use App\Models\Payment;
 
 use App\Models\Garden;
 use Illuminate\Support\Facades\Hash;
@@ -859,6 +860,114 @@ class DisterController extends Controller
                 'gardens' => $dister->fresh()->gardens,
             ],
             'transferred_gardens' => $transferredGardens,
+        ], 200);
+    }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/disters/{id}/balance",
+     *     operationId="updateDisterBalance",
+     *     tags={"Disters"},
+     *     summary="Update dister balance",
+     *     description="Update the balance and balance comment for a specific dister. Creates a payment record with type 'agent_balance' when balance changes.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Dister ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"balance"},
+     *             @OA\Property(property="balance", type="number", format="float", example=500.00, description="New balance amount"),
+     *             @OA\Property(property="balance_comment", type="string", example="Balance updated for commission payment", nullable=true, description="Optional comment explaining the balance change")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Dister balance updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Dister balance updated successfully"),
+     *             @OA\Property(property="dister", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="first_name", type="string", example="John"),
+     *                 @OA\Property(property="last_name", type="string", example="Doe"),
+     *                 @OA\Property(property="email", type="string", example="john@example.com"),
+     *                 @OA\Property(property="balance", type="number", format="float", example=500.00),
+     *                 @OA\Property(property="balance_comment", type="string", example="Balance updated for commission payment"),
+     *                 @OA\Property(property="formatted_balance", type="string", example="500.00 ₾"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time")
+     *             ),
+     *             @OA\Property(property="balance_change", type="number", format="float", example=100.00, description="The amount the balance changed by"),
+     *             @OA\Property(property="payment_created", type="boolean", example=true, description="Whether a payment record was created")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Dister not found"
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
+     * )
+     */
+    public function updateBalance(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'balance' => 'required|numeric|min:0|max:9999999.99',
+            'balance_comment' => 'nullable|string|max:1000',
+        ]);
+
+        $dister = Dister::findOrFail($id);
+
+        // Store the old balance for comparison
+        $oldBalance = $dister->balance;
+        
+        // Update the balance and balance_comment fields
+        $dister->update([
+            'balance' => $validated['balance'],
+            'balance_comment' => $validated['balance_comment'] === '' ? null : $validated['balance_comment']
+        ]);
+
+        // Create a payment record for the balance change
+        $balanceChange = $validated['balance'] - $oldBalance;
+        
+        if ($balanceChange != 0) {
+            // Generate a unique transaction number for the balance change
+            $transactionNumber = 'AGENT_BALANCE_' . $dister->id . '_' . time();
+            
+            // Create payment record
+            Payment::create([
+                'transaction_number' => $transactionNumber,
+                'transaction_number_bank' => null,
+                'card_number' => 'AGENT_BALANCE_UPDATE',
+                'card_id' => null, // No specific card for agent balance updates
+                'amount' => abs($balanceChange), // Use absolute value of balance change
+                'currency' => 'GEL', // Default currency
+                'comment' => $validated['balance_comment'] ?? 'Agent balance updated',
+                'type' => 'agent_balance',
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Dister balance updated successfully',
+            'dister' => [
+                'id' => $dister->id,
+                'first_name' => $dister->first_name,
+                'last_name' => $dister->last_name,
+                'email' => $dister->email,
+                'balance' => $dister->balance,
+                'balance_comment' => $dister->balance_comment,
+                'formatted_balance' => $dister->formatted_balance,
+                'updated_at' => $dister->updated_at,
+            ],
+            'balance_change' => $balanceChange,
+            'payment_created' => $balanceChange != 0
         ], 200);
     }
 }

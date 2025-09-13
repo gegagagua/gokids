@@ -37,6 +37,7 @@ class Dister extends Authenticatable
         'percent',
         'main_dister',
         'balance',
+        'balance_comment',
         'iban',
         'referral',
         'status',

@@ -76,6 +76,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         
         Route::patch('/disters/{id}/change-password', [DisterController::class, 'changePassword']);
         Route::patch('/disters/{id}/status', [DisterController::class, 'updateStatus']);
+        Route::patch('/disters/{id}/balance', [DisterController::class, 'updateBalance']);
         Route::post('/disters/logout', [DisterController::class, 'logout']);
         Route::get('/disters/profile', [DisterController::class, 'profile']);
         
