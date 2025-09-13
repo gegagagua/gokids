@@ -25,12 +25,13 @@ class CardController extends Controller
      *     operationId="getCards",
      *     tags={"Cards"},
      *     summary="Get all cards",
-     *     description="Retrieve a paginated list of all child cards with their associated group and person type information. Supports filtering by search (child's or parent's name fields), phone, status, group_id, person_type_id, parent_code.",
+     *     description="Retrieve a paginated list of all child cards with their associated group and person type information. Supports filtering by search (child's or parent's name fields), phone, status, group_id, person_type_id, parent_code, garden_id.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="search", in="query", required=false, description="Search in child's and parent's name fields", @OA\Schema(type="string")),
      *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by status", @OA\Schema(type="string", enum={"pending","active","inactive"})),
      *     @OA\Parameter(name="group_id", in="query", required=false, description="Filter by group ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="garden_id", in="query", required=false, description="Filter by garden ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="person_type_id", in="query", required=false, description="Filter by person type ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="parent_code", in="query", required=false, description="Filter by parent code", @OA\Schema(type="string")),
      *     @OA\Parameter(name="parent_verification", in="query", required=false, description="Filter by parent verification status", @OA\Schema(type="boolean")),
@@ -147,6 +148,11 @@ class CardController extends Controller
         }
         if ($request->filled('group_id')) {
             $query->where('group_id', $request->query('group_id'));
+        }
+        if ($request->filled('garden_id')) {
+            $query->whereHas('group', function ($q) use ($request) {
+                $q->where('garden_id', $request->query('garden_id'));
+            });
         }
         if ($request->filled('person_type_id')) {
             $query->where('person_type_id', $request->query('person_type_id'));
