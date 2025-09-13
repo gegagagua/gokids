@@ -37,8 +37,9 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/request-password-reset', [AuthController::class, 'requestPasswordReset']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     
-    // Dister creation (no authentication required)
+    // Dister creation and login (no authentication required)
     Route::post('/disters', [DisterController::class, 'store']);
+    Route::post('/disters/login', [DisterController::class, 'login']);
     
     // Garden creation (no authentication required)
     Route::post('/gardens', [GardenController::class, 'store']);

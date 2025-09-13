@@ -544,6 +544,10 @@ class DisterController extends Controller
      *                 @OA\Property(property="country_id", type="integer", example=1),
      *                 @OA\Property(property="city_id", type="integer", example=1),
      *                 @OA\Property(property="gardens", type="array", @OA\Items(type="integer"), example={1, 2, 3}),
+     *                 @OA\Property(property="main_dister", type="object", nullable=true, description="Parent dister information if this is a child dister",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="email", type="string", example="parent@example.com")
+     *                 ),
      *                 @OA\Property(property="created_at", type="string", format="date-time"),
      *                 @OA\Property(property="updated_at", type="string", format="date-time"),
      *                 @OA\Property(property="country", type="object",
@@ -553,6 +557,20 @@ class DisterController extends Controller
      *                 @OA\Property(property="city", type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
      *                     @OA\Property(property="name", type="string", example="Tbilisi")
+     *                 )
+     *             ),
+     *             @OA\Property(property="parent_dister", type="object", nullable=true, description="Full parent dister information (only present if main_dister exists)",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="first_name", type="string", example="Parent"),
+     *                 @OA\Property(property="last_name", type="string", example="Dister"),
+     *                 @OA\Property(property="email", type="string", example="parent@example.com"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                 @OA\Property(property="country_id", type="integer", example=1),
+     *                 @OA\Property(property="status", type="string", example="active"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="country", type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Georgia")
      *                 )
      *             )
      *         )
@@ -588,11 +606,25 @@ class DisterController extends Controller
         $token = $dister->createToken('dister-token')->plainTextToken;
         $dister->load(['country']);
 
-        return response()->json([
+        // Get parent dister information if main_dister exists
+        $parentDister = null;
+        if ($dister->main_dister && isset($dister->main_dister['id'])) {
+            $parentDister = Dister::with(['country'])
+                ->select('id', 'first_name', 'last_name', 'email', 'phone', 'country_id', 'status', 'created_at')
+                ->find($dister->main_dister['id']);
+        }
+
+        $response = [
             'message' => 'Login successful',
             'token' => $token,
             'dister' => $dister
-        ]);
+        ];
+
+        if ($parentDister) {
+            $response['parent_dister'] = $parentDister;
+        }
+
+        return response()->json($response);
     }
 
     /**
