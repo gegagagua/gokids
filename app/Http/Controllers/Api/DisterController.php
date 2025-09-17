@@ -30,7 +30,7 @@ class DisterController extends Controller
      *     summary="Get all disters",
      *     description="Retrieve a paginated list of all distributors with their associated country information.",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(name="search", in="query", required=false, description="Search in first_name, last_name, email fields", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Search in first_name, last_name, email, referral fields", @OA\Schema(type="string")),
      *     @OA\Parameter(name="country_id", in="query", required=false, description="Filter by country ID", @OA\Schema(type="integer")),
     
      *     @OA\Parameter(name="balance_min", in="query", required=false, description="Filter by minimum balance", @OA\Schema(type="number", format="float")),
@@ -104,7 +104,8 @@ class DisterController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('first_name', 'like', "%$search%")
                     ->orWhere('last_name', 'like', "%$search%")
-                    ->orWhere('email', 'like', "%$search%");
+                    ->orWhere('email', 'like', "%$search%")
+                    ->orWhere('referral', 'like', "%$search%");
             });
         }
         

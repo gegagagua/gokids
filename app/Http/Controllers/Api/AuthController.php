@@ -623,6 +623,69 @@ class AuthController extends Controller
     }
 
     /**
+     * @OA\Get(
+     *     path="/api/staff-users/{id}",
+     *     operationId="getStaffUser",
+     *     tags={"Authentication"},
+     *     summary="Get staff user by ID",
+     *     description="Retrieve a specific staff user (accountant or technical) by their ID with full details",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Staff user ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Staff user retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", example="john@example.com"),
+     *             @OA\Property(property="phone", type="string", example="+995599123456", nullable=true),
+     *             @OA\Property(property="type", type="string", example="accountant", enum={"accountant", "technical"}),
+     *             @OA\Property(property="type_display", type="string", example="ბუღალტერი"),
+     *             @OA\Property(property="status", type="string", example="active", enum={"active", "inactive"}),
+     *             @OA\Property(property="status_display", type="string", example="აქტიური"),
+     *             @OA\Property(property="balance", type="number", format="float", example=0.00),
+     *             @OA\Property(property="created_at", type="string", format="date-time"),
+     *             @OA\Property(property="updated_at", type="string", format="date-time")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Staff user not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Staff user not found")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     )
+     * )
+     */
+    public function getStaffUser(Request $request, $id)
+    {
+        $user = User::whereIn('type', [User::TYPE_ACCOUNTANT, User::TYPE_TECHNICAL])
+            ->find($id);
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Staff user not found'
+            ], 404);
+        }
+
+        return response()->json($user, 200);
+    }
+
+    /**
      * @OA\Patch(
      *     path="/api/users/{id}/change-type",
      *     operationId="changeUserType",

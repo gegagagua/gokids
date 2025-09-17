@@ -62,6 +62,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::put('/profile', [AuthController::class, 'updateProfile']);
         Route::get('/staff-users', [AuthController::class, 'getStaffUsers']);
+        Route::get('/staff-users/{id}', [AuthController::class, 'getStaffUser']);
         Route::patch('/users/{id}/change-type', [AuthController::class, 'changeUserType']);
         Route::patch('/users/{id}/change-status', [AuthController::class, 'changeUserStatus']);
         Route::post('/logout', [AuthController::class, 'logout']);
