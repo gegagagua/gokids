@@ -178,10 +178,20 @@ class CardController extends Controller
         if ($request->filled('license_type')) {
             $query->whereJsonContains('license->type', $request->query('license_type'));
         }
+        
+        // Include deleted cards that can be restored (within 20 days)
+        $query->where(function($q) {
+            $q->where('is_deleted', false)
+              ->orWhere(function($subQ) {
+                  $subQ->where('is_deleted', true)
+                       ->where('deleted_at', '>=', now()->subDays(20));
+              });
+        });
+        
         $perPage = $request->query('per_page', 15);
         $cards = $query->orderBy('created_at', 'desc')->paginate($perPage);
         
-        // Add country tariff information to each card
+        // Add country tariff information and soft delete info to each card
         $cards->getCollection()->transform(function ($card) {
             if ($card->group && $card->group->garden && $card->group->garden->countryData) {
                 $card->country_tariff = [
@@ -193,6 +203,17 @@ class CardController extends Controller
             } else {
                 $card->country_tariff = null;
             }
+            
+            // Add soft delete information
+            $card->soft_delete_info = [
+                'is_deleted' => $card->is_deleted,
+                'deleted_at' => $card->deleted_at,
+                'can_restore' => $card->canBeRestored(),
+                'days_since_deletion' => $card->getDaysSinceDeletion(),
+                'restore_until' => $card->is_deleted && $card->deleted_at ? 
+                    $card->deleted_at->addDays(20)->toISOString() : null
+            ];
+            
             return $card;
         });
         
@@ -850,7 +871,7 @@ class CardController extends Controller
      *     operationId="deleteCard",
      *     tags={"Cards"},
      *     summary="Delete a card",
-     *     description="Permanently delete a child card",
+     *     description="Soft delete a child card. Card will be visible for 20 days with restore option.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
@@ -863,7 +884,9 @@ class CardController extends Controller
      *         response=200,
      *         description="Card deleted successfully",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Card deleted")
+     *             @OA\Property(property="message", type="string", example="Card deleted successfully"),
+     *             @OA\Property(property="can_restore", type="boolean", example=true),
+     *             @OA\Property(property="restore_until", type="string", format="date-time", example="2025-10-07T22:55:44.000000Z")
      *         )
      *     ),
      *     @OA\Response(
@@ -894,10 +917,20 @@ class CardController extends Controller
         }
         
         $card = $query->findOrFail($id);
-        $card->deleted = true;
-        $card->save();
+        
+        // Check if already deleted
+        if ($card->is_deleted) {
+            return response()->json(['message' => 'Card is already deleted'], 400);
+        }
+        
+        // Soft delete the card
+        $card->softDelete();
 
-        return response()->json(['message' => 'Card deleted']);
+        return response()->json([
+            'message' => 'Card deleted successfully',
+            'can_restore' => true,
+            'restore_until' => now()->addDays(20)->toISOString(),
+        ]);
     }
 
     /**
@@ -1033,8 +1066,22 @@ class CardController extends Controller
         }
         $card = $query->findOrFail($id);
         
-        $card->deleted = false;
-        $card->save();
+        // Check if card is deleted
+        if (!$card->is_deleted) {
+            return response()->json(['message' => 'Card is not deleted'], 400);
+        }
+        
+        // Check if card can be restored (within 20 days)
+        if (!$card->canBeRestored()) {
+            return response()->json([
+                'message' => 'Card cannot be restored. 20-day restoration period has expired.',
+                'deleted_at' => $card->deleted_at,
+                'days_since_deletion' => $card->getDaysSinceDeletion()
+            ], 400);
+        }
+        
+        // Restore the card
+        $card->restore();
         
         return response()->json([
             'message' => 'Card restored successfully',
@@ -1045,7 +1092,7 @@ class CardController extends Controller
                 'parent_name' => $card->parent_name,
                 'phone' => $card->phone,
                 'status' => $card->status,
-                'deleted' => $card->deleted,
+                'is_deleted' => $card->is_deleted,
                 'updated_at' => $card->updated_at
             ]
         ]);

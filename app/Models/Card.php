@@ -28,12 +28,16 @@ class Card extends Model
         'spam',
         'comment',
         'spam_comment',
+        'is_deleted',
+        'deleted_at',
     ];
 
     protected $casts = [
         'parent_verification' => 'boolean',
         'license' => 'array',
         'spam' => 'boolean',
+        'is_deleted' => 'boolean',
+        'deleted_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -183,5 +187,84 @@ class Card extends Model
             return url('storage/' . $this->image_path);
         }
         return null;
+    }
+
+    /**
+     * Soft delete the card (mark as deleted)
+     */
+    public function softDelete()
+    {
+        $this->update([
+            'is_deleted' => true,
+            'deleted_at' => now(),
+        ]);
+    }
+
+    /**
+     * Restore the card (mark as not deleted)
+     */
+    public function restore()
+    {
+        $this->update([
+            'is_deleted' => false,
+            'deleted_at' => null,
+        ]);
+    }
+
+    /**
+     * Check if card is deleted
+     */
+    public function isDeleted()
+    {
+        return $this->is_deleted;
+    }
+
+    /**
+     * Check if card can be restored (deleted within 20 days)
+     */
+    public function canBeRestored()
+    {
+        if (!$this->is_deleted || !$this->deleted_at) {
+            return false;
+        }
+
+        return $this->deleted_at->diffInDays(now()) <= 20;
+    }
+
+    /**
+     * Get days since deletion
+     */
+    public function getDaysSinceDeletion()
+    {
+        if (!$this->is_deleted || !$this->deleted_at) {
+            return null;
+        }
+
+        return $this->deleted_at->diffInDays(now());
+    }
+
+    /**
+     * Scope to get only non-deleted cards
+     */
+    public function scopeNotDeleted($query)
+    {
+        return $query->where('is_deleted', false);
+    }
+
+    /**
+     * Scope to get only deleted cards
+     */
+    public function scopeDeleted($query)
+    {
+        return $query->where('is_deleted', true);
+    }
+
+    /**
+     * Scope to get cards that can be restored (deleted within 20 days)
+     */
+    public function scopeRestorable($query)
+    {
+        return $query->where('is_deleted', true)
+                    ->where('deleted_at', '>=', now()->subDays(20));
     }
 }
