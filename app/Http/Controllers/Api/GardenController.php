@@ -245,9 +245,19 @@ class GardenController extends Controller
      *     operationId="exportGardens",
      *     tags={"Gardens"},
      *     summary="Export gardens to Excel",
-     *     description="Download an Excel report of gardens with full information. Optionally filter by garden IDs. If dister is logged in, export is automatically restricted to their assigned gardens.",
+     *     description="Download an Excel report of gardens with full information. Optionally filter by garden IDs, country, or other filters. If dister is logged in, export is automatically restricted to their assigned gardens.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="ids", in="query", required=false, description="Comma-separated garden IDs or multiple ids[] query params", @OA\Schema(type="string", example="37,42")),
+     *     @OA\Parameter(name="country", in="query", required=false, description="Filter by country ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="country_id", in="query", required=false, description="Filter by country ID (alternative parameter)", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="name", in="query", required=false, description="Filter by garden name or referral code", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="address", in="query", required=false, description="Filter by address", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="tax_id", in="query", required=false, description="Filter by tax ID", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="email", in="query", required=false, description="Filter by email", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Filter by status", @OA\Schema(type="string", enum={"active", "paused", "inactive"})),
+     *     @OA\Parameter(name="balance_min", in="query", required=false, description="Filter by minimum balance", @OA\Schema(type="number")),
+     *     @OA\Parameter(name="balance_max", in="query", required=false, description="Filter by maximum balance", @OA\Schema(type="number")),
      *     @OA\Response(response=200, description="Excel file"),
      *     @OA\Response(
      *         response=404,
@@ -270,6 +280,24 @@ class GardenController extends Controller
         } elseif (is_array($request->query('ids'))) {
             $requestedIds = array_values(array_filter(array_map('intval', (array) $request->query('ids'))));
         }
+
+        // Collect filter parameters
+        $filters = [
+            'name' => $request->query('name'),
+            'address' => $request->query('address'),
+            'country' => $request->query('country') ?: $request->query('country_id'),
+            'tax_id' => $request->query('tax_id'),
+            'phone' => $request->query('phone'),
+            'email' => $request->query('email'),
+            'status' => $request->query('status'),
+            'balance_min' => $request->query('balance_min'),
+            'balance_max' => $request->query('balance_max'),
+        ];
+
+        // Remove empty filters
+        $filters = array_filter($filters, function($value) {
+            return $value !== null && $value !== '';
+        });
 
         // If dister, restrict export to their assigned gardens
         $allowedIds = null;
@@ -308,7 +336,7 @@ class GardenController extends Controller
             }
         }
 
-        return Excel::download(new GardensExport($finalIds), 'gardens.xlsx');
+        return Excel::download(new GardensExport($finalIds, $filters), 'gardens.xlsx');
     }
 
     /**
