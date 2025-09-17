@@ -25,13 +25,15 @@ class CardController extends Controller
      *     operationId="getCards",
      *     tags={"Cards"},
      *     summary="Get all cards",
-     *     description="Retrieve a paginated list of all child cards with their associated group and person type information. Supports filtering by search (child's or parent's name fields), phone, status, group_id, person_type_id, parent_code, garden_id.",
+     *     description="Retrieve a paginated list of all child cards with their associated group and person type information. Supports filtering by search (child's or parent's name fields), phone, status, group_id, person_type_id, parent_code, garden_id, country_id, city_id.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="search", in="query", required=false, description="Search in child's and parent's name fields", @OA\Schema(type="string")),
      *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by status", @OA\Schema(type="string", enum={"pending","active","inactive"})),
      *     @OA\Parameter(name="group_id", in="query", required=false, description="Filter by group ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="garden_id", in="query", required=false, description="Filter by garden ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="country_id", in="query", required=false, description="Filter by country ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="city_id", in="query", required=false, description="Filter by city ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="person_type_id", in="query", required=false, description="Filter by person type ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="parent_code", in="query", required=false, description="Filter by parent code", @OA\Schema(type="string")),
      *     @OA\Parameter(name="parent_verification", in="query", required=false, description="Filter by parent verification status", @OA\Schema(type="boolean")),
@@ -152,6 +154,16 @@ class CardController extends Controller
         if ($request->filled('garden_id')) {
             $query->whereHas('group', function ($q) use ($request) {
                 $q->where('garden_id', $request->query('garden_id'));
+            });
+        }
+        if ($request->filled('country_id')) {
+            $query->whereHas('group.garden', function ($q) use ($request) {
+                $q->where('country_id', $request->query('country_id'));
+            });
+        }
+        if ($request->filled('city_id')) {
+            $query->whereHas('group.garden', function ($q) use ($request) {
+                $q->where('city_id', $request->query('city_id'));
             });
         }
         if ($request->filled('person_type_id')) {
@@ -1684,9 +1696,20 @@ class CardController extends Controller
      *     operationId="exportCards",
      *     tags={"Cards"},
      *     summary="Export cards to Excel",
-     *     description="Download an Excel report of cards. Optionally filter by card IDs. If dister is logged in, export is restricted to their assigned gardens.",
+     *     description="Download an Excel report of cards. Optionally filter by card IDs, country, city, garden, or other filters. If dister is logged in, export is restricted to their assigned gardens.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="ids", in="query", required=false, description="Comma-separated card IDs or multiple ids[] query params", @OA\Schema(type="string", example="1,2,3")),
+     *     @OA\Parameter(name="country_id", in="query", required=false, description="Filter by country ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="city_id", in="query", required=false, description="Filter by city ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="garden_id", in="query", required=false, description="Filter by garden ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="search", in="query", required=false, description="Search in child's and parent's name fields", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="status", in="query", required=false, description="Filter by status", @OA\Schema(type="string", enum={"pending","active","inactive"})),
+     *     @OA\Parameter(name="group_id", in="query", required=false, description="Filter by group ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="person_type_id", in="query", required=false, description="Filter by person type ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="parent_code", in="query", required=false, description="Filter by parent code", @OA\Schema(type="string")),
+     *     @OA\Parameter(name="parent_verification", in="query", required=false, description="Filter by parent verification status", @OA\Schema(type="boolean")),
+     *     @OA\Parameter(name="license_type", in="query", required=false, description="Filter by license type", @OA\Schema(type="string", enum={"boolean", "date"})),
      *     @OA\Response(response=200, description="Excel file")
      * )
      */
@@ -1701,6 +1724,26 @@ class CardController extends Controller
             $requestedIds = array_values(array_filter(array_map('intval', (array) $request->query('ids'))));
         }
 
+        // Collect filter parameters
+        $filters = [
+            'search' => $request->query('search'),
+            'phone' => $request->query('phone'),
+            'status' => $request->query('status'),
+            'group_id' => $request->query('group_id'),
+            'garden_id' => $request->query('garden_id'),
+            'country_id' => $request->query('country_id'),
+            'city_id' => $request->query('city_id'),
+            'person_type_id' => $request->query('person_type_id'),
+            'parent_code' => $request->query('parent_code'),
+            'parent_verification' => $request->query('parent_verification'),
+            'license_type' => $request->query('license_type'),
+        ];
+
+        // Remove empty filters
+        $filters = array_filter($filters, function($value) {
+            return $value !== null && $value !== '';
+        });
+
         // Allowed gardens for dister
         $allowedGardenIds = [];
         if ($request->user() instanceof \App\Models\Dister) {
@@ -1709,7 +1752,7 @@ class CardController extends Controller
             $allowedGardenIds = [(int) $request->user()->garden_id];
         }
 
-        return Excel::download(new CardsExport($allowedGardenIds, $requestedIds), 'cards.xlsx');
+        return Excel::download(new CardsExport($allowedGardenIds, $requestedIds, $filters), 'cards.xlsx');
     }
 
     /**
