@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\People;
+use App\Models\PeopleOtp;
+use App\Models\Card;
+use App\Services\SmsService;
 
 /**
  * @OA\Tag(

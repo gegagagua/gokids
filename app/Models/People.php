@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Sanctum\HasApiTokens;
 
 class People extends Model
 {
+    use HasApiTokens;
+
     protected $fillable = [
         'name',
         'phone',

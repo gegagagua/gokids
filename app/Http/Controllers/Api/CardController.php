@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Card;
 use App\Models\CardOtp;
+use App\Models\People;
+use App\Models\PeopleOtp;
 use App\Services\SmsService;
 use App\Rules\LicenseValueRule;
 use App\Exports\CardsExport;
@@ -1435,19 +1437,19 @@ class CardController extends Controller
     {
         $request->validate([
             'phone' => 'required|string|max:255',
-
         ]);
 
-        // First verify the card exists with this phone number
+        // Check if phone exists in either cards or people
         $card = Card::where('phone', $request->phone)->first();
+        $person = People::where('phone', $request->phone)->first();
 
-        if (!$card) {
+        if (!$card && !$person) {
             return response()->json([
                 'message' => 'Invalid phone number'
             ], 401);
         }
 
-        // Generate and save OTP
+        // Generate and save OTP (use CardOtp for both)
         $otp = CardOtp::createOtp($request->phone);
 
         // Send SMS
@@ -1607,15 +1609,25 @@ class CardController extends Controller
             ->where('spam', '!=', 1)
             ->get();
 
-        // Generate token for the first card (assuming one phone can have multiple cards)
+        // Get all people with this phone number
+        $people = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
+            ->where('phone', $request->phone)
+            ->get();
+
+        // Generate token for the first card or person
         $token = null;
+        $userType = null;
         if ($cards->isNotEmpty()) {
             $token = $cards->first()->createToken('card-token')->plainTextToken;
+            $userType = 'card';
+        } elseif ($people->isNotEmpty()) {
+            $token = $people->first()->createToken('people-token')->plainTextToken;
+            $userType = 'people';
         }
 
-        if ($cards->isEmpty()) {
+        if ($cards->isEmpty() && $people->isEmpty()) {
             return response()->json([
-                'message' => 'No cards found for this phone number'
+                'message' => 'No cards or people found for this phone number'
             ], 404);
         }
 
@@ -1645,10 +1657,51 @@ class CardController extends Controller
             ];
         });
 
+        // Transform people to include full card data
+        $transformedPeople = $people->map(function ($person) {
+            $cardData = null;
+            if ($person->card) {
+                $cardData = [
+                    'id' => $person->card->id,
+                    'child_first_name' => $person->card->child_first_name,
+                    'child_last_name' => $person->card->child_last_name,
+                    'parent_name' => $person->card->parent_name,
+                    'phone' => $person->card->phone,
+                    'status' => $person->card->status,
+                    'parent_code' => $person->card->parent_code,
+                    'image_url' => $person->card->image_url,
+                    'parent_verification' => $person->card->parent_verification,
+                    'license' => $person->card->license,
+                    'created_at' => $person->card->created_at,
+                    'updated_at' => $person->card->updated_at,
+                    'group' => $person->card->group,
+                    'person_type' => $person->card->personType,
+                    'parents' => $person->card->parents,
+                    'people' => $person->card->people,
+                    'garden_images' => $person->card->garden_images,
+                    'garden' => $person->card->garden
+                ];
+            }
+
+            return [
+                'id' => $person->id,
+                'name' => $person->name,
+                'phone' => $person->phone,
+                'person_type_id' => $person->person_type_id,
+                'card_id' => $person->card_id,
+                'created_at' => $person->created_at,
+                'updated_at' => $person->updated_at,
+                'person_type' => $person->personType,
+                'card' => $cardData
+            ];
+        });
+
         return response()->json([
             'message' => 'Login successful',
-            'token' => $token,
-            'cards' => $transformedCards
+            'cards' => $transformedCards,
+            'people' => $transformedPeople,
+            'user_type' => $userType,
+            'token' => $token
         ]);
     }
 
@@ -1705,11 +1758,15 @@ class CardController extends Controller
             'phone' => 'required|string|max:255',
         ]);
 
+        // Check if phone exists in either cards or people
         $card = Card::with(['group.garden.images', 'personType', 'parents', 'people'])
             ->where('phone', $request->phone)
             ->first();
+        $person = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
+            ->where('phone', $request->phone)
+            ->first();
 
-        if (!$card) {
+        if (!$card && !$person) {
             return response()->json([
                 'message' => 'Invalid phone number'
             ], 401);
@@ -1720,7 +1777,7 @@ class CardController extends Controller
 
         // Send OTP via SMS
         $smsService = new \App\Services\SmsService();
-        $smsResult = $smsService->sendOtp($card->phone, $otp->otp);
+        $smsResult = $smsService->sendOtp($request->phone, $otp->otp);
 
         if (!$smsResult['success']) {
             // If SMS fails, delete the OTP and return error
@@ -1881,47 +1938,105 @@ class CardController extends Controller
      */
     public function me(Request $request)
     {
-        $card = $request->user();
+        $user = $request->user();
         
-        if (!$card) {
+        if (!$user) {
             return response()->json([
                 'message' => 'Unauthenticated'
             ], 401);
         }
 
-        // If phone is provided, validate it matches the authenticated card
-        if ($request->has('phone') && $request->phone !== $card->phone) {
+        // Check if user is a Card or People
+        if ($user instanceof Card) {
+            // If phone is provided, validate it matches the authenticated card
+            if ($request->has('phone') && $request->phone !== $user->phone) {
+                return response()->json([
+                    'message' => 'Phone number does not match authenticated card'
+                ], 403);
+            }
+
+            // Load all related data like in verify-otp
+            $user->load(['group.garden.images', 'personType', 'parents', 'people']);
+
             return response()->json([
-                'message' => 'Phone number does not match authenticated card'
-            ], 403);
+                'message' => 'Card data retrieved successfully',
+                'user_type' => 'card',
+                'card' => [
+                    'id' => $user->id,
+                    'child_first_name' => $user->child_first_name,
+                    'child_last_name' => $user->child_last_name,
+                    'parent_name' => $user->parent_name,
+                    'phone' => $user->phone,
+                    'status' => $user->status,
+                    'parent_code' => $user->parent_code,
+                    'image_url' => $user->image_url,
+                    'parent_verification' => $user->parent_verification,
+                    'license' => $user->license,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                    'group' => $user->group,
+                    'personType' => $user->personType,
+                    'parents' => $user->parents,
+                    'people' => $user->people,
+                    'garden_images' => $user->garden_images,
+                    'garden' => $user->garden
+                ]
+            ]);
+        } elseif ($user instanceof People) {
+            // If phone is provided, validate it matches the authenticated person
+            if ($request->has('phone') && $request->phone !== $user->phone) {
+                return response()->json([
+                    'message' => 'Phone number does not match authenticated person'
+                ], 403);
+            }
+
+            // Load all related data like in verify-otp
+            $user->load(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people']);
+
+            $cardData = null;
+            if ($user->card) {
+                $cardData = [
+                    'id' => $user->card->id,
+                    'child_first_name' => $user->card->child_first_name,
+                    'child_last_name' => $user->card->child_last_name,
+                    'parent_name' => $user->card->parent_name,
+                    'phone' => $user->card->phone,
+                    'status' => $user->card->status,
+                    'parent_code' => $user->card->parent_code,
+                    'image_url' => $user->card->image_url,
+                    'parent_verification' => $user->card->parent_verification,
+                    'license' => $user->card->license,
+                    'created_at' => $user->card->created_at,
+                    'updated_at' => $user->card->updated_at,
+                    'group' => $user->card->group,
+                    'person_type' => $user->card->personType,
+                    'parents' => $user->card->parents,
+                    'people' => $user->card->people,
+                    'garden_images' => $user->card->garden_images,
+                    'garden' => $user->card->garden
+                ];
+            }
+
+            return response()->json([
+                'message' => 'People data retrieved successfully',
+                'user_type' => 'people',
+                'person' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'phone' => $user->phone,
+                    'person_type_id' => $user->person_type_id,
+                    'card_id' => $user->card_id,
+                    'created_at' => $user->created_at,
+                    'updated_at' => $user->updated_at,
+                    'person_type' => $user->personType,
+                    'card' => $cardData
+                ]
+            ]);
         }
 
-        // Load all related data like in verify-otp
-        $card->load(['group.garden.images', 'personType', 'parents', 'people']);
-
         return response()->json([
-            'message' => 'Card data retrieved successfully',
-            'card' => [
-                'id' => $card->id,
-                'child_first_name' => $card->child_first_name,
-                'child_last_name' => $card->child_last_name,
-                'parent_name' => $card->parent_name,
-                'phone' => $card->phone,
-                'status' => $card->status,
-                'parent_code' => $card->parent_code,
-                'image_url' => $card->image_url,
-                'parent_verification' => $card->parent_verification,
-                'license' => $card->license,
-                'created_at' => $card->created_at,
-                'updated_at' => $card->updated_at,
-                'group' => $card->group,
-                'personType' => $card->personType,
-                'parents' => $card->parents,
-                'people' => $card->people,
-                'garden_images' => $card->garden_images,
-                'garden' => $card->garden
-            ]
-        ]);
+            'message' => 'Unknown user type'
+        ], 400);
     }
 
     /**
