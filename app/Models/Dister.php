@@ -35,6 +35,7 @@ class Dister extends Authenticatable
         'country_id',
         'gardens',
         'percent',
+        'second_percent',
         'main_dister',
         'balance',
         'balance_comment',
@@ -54,6 +55,7 @@ class Dister extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'percent' => 'decimal:2',
+        'second_percent' => 'decimal:2',
         'main_dister' => 'array',
         'balance' => 'decimal:2',
     ];
