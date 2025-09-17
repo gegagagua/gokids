@@ -1015,8 +1015,8 @@ class GardenController extends Controller
                 'balance_comment' => $garden->balance_comment,
                 'updated_at' => $garden->updated_at,
             ],
-            'balance_change' => $balanceChange,
-            'payment_created' => $balanceChange != 0
+            'balance_change' => $validated['balance'],
+            'old_balance' => $oldBalance
         ], 200);
     }
 }
