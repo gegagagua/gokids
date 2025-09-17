@@ -284,7 +284,7 @@ class CityController extends Controller
      *     operationId="deleteCity",
      *     tags={"Cities"},
      *     summary="Delete a city",
-     *     description="Permanently delete a city",
+     *     description="Permanently delete a city. Cannot delete if city is being used by gardens.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
@@ -306,12 +306,31 @@ class CityController extends Controller
      *         @OA\JsonContent(
      *             @OA\Property(property="message", type="string", example="No query results for model [App\\Models\\City]")
      *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Cannot delete city - city is in use",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Cannot delete city. This city is being used by gardens."),
+     *             @OA\Property(property="usage_count", type="integer", example=5, description="Number of gardens using this city")
+     *         )
      *     )
      * )
      */
     public function destroy($id): JsonResponse
     {
         $city = City::findOrFail($id);
+        
+        // Check if city is being used by any gardens
+        $gardenCount = $city->gardens()->count();
+        
+        if ($gardenCount > 0) {
+            return response()->json([
+                'message' => 'Cannot delete city. This city is being used by gardens.',
+                'usage_count' => $gardenCount
+            ], 422);
+        }
+        
         $city->delete();
 
         return response()->json(['message' => 'City deleted']);
