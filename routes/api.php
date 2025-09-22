@@ -91,6 +91,9 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::apiResource('garden-groups', GardenGroupController::class);
         Route::delete('/garden-groups/bulk-delete', [GardenGroupController::class, 'bulkDestroy']);
         
+        // Card authenticated routes (must be before garden-filtered routes to avoid conflicts)
+        Route::get('/cards/me', [CardController::class, 'me'])->middleware('auth:sanctum');
+        
         // Garden-filtered routes
         Route::middleware(['garden.filter', ForceJsonResponse::class])->group(function () {
             // Specific routes before resource to avoid binding conflicts
@@ -130,10 +133,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::patch('/cards/{id}/delete-as-spam', [CardController::class, 'deleteAsSpam']);
     Route::post('/cards/{id}/restore', [CardController::class, 'restore']);
     
-    // Card authenticated routes
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/cards/me', [CardController::class, 'me']);
-    });
+    // Card authenticated routes (moved above garden-filtered routes)
     
     // Device login route (no authentication required)
     Route::post('/devices/login', [DeviceController::class, 'deviceLogin']);
