@@ -1675,7 +1675,8 @@ class CardController extends Controller
                 'parents' => $card->parents,
                 'people' => $card->people,
                 'garden_images' => $card->garden_images,
-                'garden' => $card->garden
+                'garden' => $card->garden,
+                'main_parent' => true
             ];
         });
 
@@ -1714,14 +1715,17 @@ class CardController extends Controller
                 'created_at' => $person->created_at,
                 'updated_at' => $person->updated_at,
                 'person_type' => $person->personType,
-                'card' => $cardData
+                'card' => $cardData,
+                'main_parent' => false
             ];
         });
 
+        // Combine cards and people into one array
+        $allCards = $transformedCards->concat($transformedPeople);
+
         return response()->json([
             'message' => 'Login successful',
-            'cards' => $transformedCards,
-            'people' => $transformedPeople,
+            'cards' => $allCards,
             'user_type' => $userType,
             'token' => $token
         ]);
