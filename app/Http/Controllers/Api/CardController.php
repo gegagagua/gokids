@@ -1106,7 +1106,7 @@ class CardController extends Controller
      *     operationId="bulkDeleteCards",
      *     tags={"Cards"},
      *     summary="Delete multiple cards",
-     *     description="Permanently delete multiple child cards by their IDs",
+     *     description="Soft delete multiple child cards by their IDs. Cards will be visible for 20 days with restore option.",
      *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
@@ -1124,8 +1124,10 @@ class CardController extends Controller
      *         response=200,
      *         description="Cards deleted successfully",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Cards deleted"),
-     *             @OA\Property(property="deleted_count", type="integer", example=3)
+     *             @OA\Property(property="message", type="string", example="Cards deleted successfully"),
+     *             @OA\Property(property="deleted_count", type="integer", example=3),
+     *             @OA\Property(property="can_restore", type="boolean", example=true),
+     *             @OA\Property(property="restore_until", type="string", format="date-time", example="2025-10-07T22:55:44.000000Z")
      *         )
      *     ),
      *     @OA\Response(
@@ -1160,14 +1162,27 @@ class CardController extends Controller
             });
         }
 
-        $deleted = $query->delete();
+        // Get cards that are not already deleted
+        $cards = $query->where('is_deleted', false)->get();
+        
+        if ($cards->isEmpty()) {
+            return response()->json(['message' => 'No cards found to delete'], 400);
+        }
+
+        // Soft delete all cards
+        $deletedCount = 0;
+        foreach ($cards as $card) {
+            $card->softDelete();
+            $deletedCount++;
+        }
 
         return response()->json([
-            'message' => 'Cards deleted',
-            'deleted_count' => $deleted,
+            'message' => 'Cards deleted successfully',
+            'deleted_count' => $deletedCount,
+            'can_restore' => true,
+            'restore_until' => now()->addDays(20)->toISOString(),
         ]);
     }
-
 
     /**
      * @OA\Post(

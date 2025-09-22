@@ -128,6 +128,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/cards/verify-otp', [CardController::class, 'verifyOtp']);
     Route::post('/cards/{id}/image', [CardController::class, 'uploadImage']);
     Route::patch('/cards/{id}/delete-as-spam', [CardController::class, 'deleteAsSpam']);
+    Route::post('/cards/{id}/restore', [CardController::class, 'restore']);
     
     // Card authenticated routes
     Route::middleware('auth:sanctum')->group(function () {
