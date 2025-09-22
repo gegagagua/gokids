@@ -1609,6 +1609,13 @@ class CardController extends Controller
             ->where('spam', '!=', 1)
             ->get();
 
+        // Update parent verification status for all cards associated with this phone number
+        if ($cards->isNotEmpty()) {
+            Card::where('phone', $request->phone)
+                ->where('spam', '!=', 1)
+                ->update(['parent_verification' => true]);
+        }
+
         // Get all people with this phone number
         $people = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
             ->where('phone', $request->phone)
