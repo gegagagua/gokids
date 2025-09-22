@@ -102,7 +102,12 @@ class DisterController extends Controller
         $query = Dister::with(['country']);
         
         // If logged-in user is a dister, restrict to only their child disters
-        if ($request->user() instanceof \App\Models\User && $request->user()->type === 'dister') {
+        if ($request->user() instanceof \App\Models\Dister) {
+            // Direct dister authentication - filter by current dister's ID
+            $currentDister = $request->user();
+            $query->whereJsonContains('main_dister', ['id' => $currentDister->id]);
+        } elseif ($request->user() instanceof \App\Models\User && $request->user()->type === 'dister') {
+            // User with dister type - find corresponding dister
             $currentDister = \App\Models\Dister::where('email', $request->user()->email)->first();
             if ($currentDister) {
                 // Look for disters where current dister is in the main_dister array
