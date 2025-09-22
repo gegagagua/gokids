@@ -202,6 +202,20 @@ class DisterController extends Controller
      *             @OA\Property(property="city", type="object",
      *                 @OA\Property(property="id", type="integer", example=1),
      *                 @OA\Property(property="name", type="string", example="Tbilisi")
+     *             ),
+     *             @OA\Property(property="parent_dister", type="object", nullable=true,
+     *                 @OA\Property(property="id", type="integer", example=2),
+     *                 @OA\Property(property="first_name", type="string", example="Parent"),
+     *                 @OA\Property(property="last_name", type="string", example="Dister"),
+     *                 @OA\Property(property="email", type="string", example="parent@example.com"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123457"),
+     *                 @OA\Property(property="country_id", type="integer", example=1),
+     *                 @OA\Property(property="status", type="string", example="active"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="country", type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Georgia")
+     *                 )
      *             )
      *         )
      *     ),
@@ -214,6 +228,18 @@ class DisterController extends Controller
     public function show($id)
     {
         $dister = Dister::with(['country'])->findOrFail($id);
+        
+        // Add parent dister information if main_dister exists
+        if ($dister->main_dister && isset($dister->main_dister['id'])) {
+            $parentDister = Dister::with(['country'])
+                ->select('id', 'first_name', 'last_name', 'email', 'phone', 'country_id', 'status', 'created_at')
+                ->find($dister->main_dister['id']);
+            
+            if ($parentDister) {
+                $dister->parent_dister = $parentDister;
+            }
+        }
+        
         return response()->json($dister);
     }
 
