@@ -569,7 +569,7 @@ class AuthController extends Controller
      *     operationId="updateStaffUserProfile",
      *     tags={"Authentication"},
      *     summary="Update staff user profile by ID",
-     *     description="Update a staff user's profile information (name, email, phone) by their ID. Only accessible by admins.",
+     *     description="Update a staff user's profile information (name, email, phone, type) by their ID. Only accessible by admins.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="id",
@@ -583,7 +583,8 @@ class AuthController extends Controller
      *         @OA\JsonContent(
      *             @OA\Property(property="name", type="string", maxLength=255, example="Updated Name", description="User's full name"),
      *             @OA\Property(property="email", type="string", format="email", example="updated@example.com", description="User's email address"),
-     *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599123456", nullable=true, description="User's phone number")
+     *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599123456", nullable=true, description="User's phone number"),
+     *             @OA\Property(property="type", type="string", enum={"accountant", "technical"}, example="accountant", description="User type - accountant or technical")
      *         )
      *     ),
      *     @OA\Response(
@@ -656,6 +657,7 @@ class AuthController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|max:20',
+            'type' => 'sometimes|required|string|in:accountant,technical',
         ]);
 
         $user->update($validated);
