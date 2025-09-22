@@ -1682,31 +1682,7 @@ class CardController extends Controller
 
         // Transform people to include full card data
         $transformedPeople = $people->map(function ($person) {
-            $cardData = null;
-            if ($person->card) {
-                $cardData = [
-                    'id' => $person->card->id,
-                    'child_first_name' => $person->card->child_first_name,
-                    'child_last_name' => $person->card->child_last_name,
-                    'parent_name' => $person->card->parent_name,
-                    'phone' => $person->card->phone,
-                    'status' => $person->card->status,
-                    'parent_code' => $person->card->parent_code,
-                    'image_url' => $person->card->image_url,
-                    'parent_verification' => $person->card->parent_verification,
-                    'license' => $person->card->license,
-                    'created_at' => $person->card->created_at,
-                    'updated_at' => $person->card->updated_at,
-                    'group' => $person->card->group,
-                    'person_type' => $person->card->personType,
-                    'parents' => $person->card->parents,
-                    'people' => $person->card->people,
-                    'garden_images' => $person->card->garden_images,
-                    'garden' => $person->card->garden
-                ];
-            }
-
-            return [
+            $baseData = [
                 'id' => $person->id,
                 'name' => $person->name,
                 'phone' => $person->phone,
@@ -1715,9 +1691,37 @@ class CardController extends Controller
                 'created_at' => $person->created_at,
                 'updated_at' => $person->updated_at,
                 'person_type' => $person->personType,
-                'card' => $cardData,
                 'main_parent' => false
             ];
+
+            // If person has a card, merge card data directly into the base data
+            if ($person->card) {
+                $cardData = [
+                    'card_id' => $person->card->id,
+                    'child_first_name' => $person->card->child_first_name,
+                    'child_last_name' => $person->card->child_last_name,
+                    'parent_name' => $person->card->parent_name,
+                    'card_phone' => $person->card->phone,
+                    'status' => $person->card->status,
+                    'parent_code' => $person->card->parent_code,
+                    'image_url' => $person->card->image_url,
+                    'parent_verification' => $person->card->parent_verification,
+                    'license' => $person->card->license,
+                    'card_created_at' => $person->card->created_at,
+                    'card_updated_at' => $person->card->updated_at,
+                    'group' => $person->card->group,
+                    'card_person_type' => $person->card->personType,
+                    'parents' => $person->card->parents,
+                    'people' => $person->card->people,
+                    'garden_images' => $person->card->garden_images,
+                    'garden' => $person->card->garden
+                ];
+                
+                // Merge card data into base data (like JavaScript spread operator)
+                $baseData = array_merge($baseData, $cardData);
+            }
+
+            return $baseData;
         });
 
         // Combine cards and people into one array
