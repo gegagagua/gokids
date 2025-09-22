@@ -2013,7 +2013,17 @@ class CardController extends Controller
             }
 
             // Load all related data like in verify-otp
-            $user->load(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people']);
+            $user->load(['personType']);
+            
+            // Only load card relationship if card_id exists
+            if ($user->card_id) {
+                try {
+                    $user->load(['card.group.garden.images', 'card.personType', 'card.parents', 'card.people']);
+                } catch (\Exception $e) {
+                    // If card doesn't exist, continue without card data
+                    $user->card = null;
+                }
+            }
 
             $cardData = null;
             if ($user->card) {
@@ -2057,7 +2067,7 @@ class CardController extends Controller
         }
 
         return response()->json([
-            'message' => 'Unknown user type'
+            'message' => 'This endpoint is only for Card or People authentication. Current user type: ' . get_class($user)
         ], 400);
     }
 
