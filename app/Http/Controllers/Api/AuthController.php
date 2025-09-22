@@ -564,6 +564,117 @@ class AuthController extends Controller
     }
 
     /**
+     * @OA\Put(
+     *     path="/api/staff-users/{id}/profile",
+     *     operationId="updateStaffUserProfile",
+     *     tags={"Authentication"},
+     *     summary="Update staff user profile by ID",
+     *     description="Update a staff user's profile information (name, email, phone) by their ID. Only accessible by admins.",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Staff user ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string", maxLength=255, example="Updated Name", description="User's full name"),
+     *             @OA\Property(property="email", type="string", format="email", example="updated@example.com", description="User's email address"),
+     *             @OA\Property(property="phone", type="string", maxLength=20, example="+995599123456", nullable=true, description="User's phone number")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Profile updated successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Profile updated successfully"),
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Updated Name"),
+     *                 @OA\Property(property="email", type="string", example="updated@example.com"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456", nullable=true),
+     *                 @OA\Property(property="type", type="string", example="user"),
+     *                 @OA\Property(property="type_display", type="string", example="მომხმარებელი"),
+     *                 @OA\Property(property="balance", type="number", format="float", example=0.00)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden - Admin access required",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Access denied. Admin privileges required.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="User not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="User not found.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
+     */
+    public function updateStaffUserProfile(Request $request, $id)
+    {
+        // Check if user is admin
+        $currentUser = $request->user();
+        if ($currentUser->type !== 'admin' && $currentUser->type !== 'user') {
+            return response()->json([
+                'message' => 'Access denied. Admin privileges required.'
+            ], 403);
+        }
+
+        // Find the staff user
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json([
+                'message' => 'User not found.'
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20',
+        ]);
+
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'type' => $user->type,
+                'type_display' => $user->type_display,
+                'balance' => $user->balance,
+            ]
+        ], 200);
+    }
+
+    /**
      * @OA\Get(
      *     path="/api/staff-users",
      *     operationId="getStaffUsers",
