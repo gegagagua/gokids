@@ -1455,10 +1455,10 @@ class CardController extends Controller
         ]);
 
         // Check if phone exists in either cards or people
-        $card = Card::where('phone', $request->phone)->first();
-        $person = People::where('phone', $request->phone)->first();
+        $cards = Card::where('phone', $request->phone)->get();
+        $people = People::where('phone', $request->phone)->get();
 
-        if (!$card && !$person) {
+        if ($cards->isEmpty() && $people->isEmpty()) {
             return response()->json([
                 'message' => 'Invalid phone number'
             ], 401);
@@ -1781,14 +1781,10 @@ class CardController extends Controller
         ]);
 
         // Check if phone exists in either cards or people
-        $card = Card::with(['group.garden.images', 'personType', 'parents', 'people'])
-            ->where('phone', $request->phone)
-            ->first();
-        $person = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
-            ->where('phone', $request->phone)
-            ->first();
+        $cards = Card::where('phone', $request->phone)->get();
+        $people = People::where('phone', $request->phone)->get();
 
-        if (!$card && !$person) {
+        if ($cards->isEmpty() && $people->isEmpty()) {
             return response()->json([
                 'message' => 'Invalid phone number'
             ], 401);
@@ -1810,7 +1806,8 @@ class CardController extends Controller
         }
 
         return response()->json([
-            'message' => 'Login successful'
+            'message' => 'OTP sent successfully. Please verify to complete login.',
+            'phone' => $request->phone
         ]);
     }
 
