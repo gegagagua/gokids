@@ -66,6 +66,20 @@ class DisterController extends Controller
        *                     @OA\Property(property="country", type="object",
  *                         @OA\Property(property="id", type="integer", example=1),
  *                         @OA\Property(property="name", type="string", example="Georgia")
+ *                     ),
+ *                     @OA\Property(property="parent_dister", type="object", nullable=true,
+ *                         @OA\Property(property="id", type="integer", example=2),
+ *                         @OA\Property(property="first_name", type="string", example="Parent"),
+ *                         @OA\Property(property="last_name", type="string", example="Dister"),
+ *                         @OA\Property(property="email", type="string", example="parent@example.com"),
+ *                         @OA\Property(property="phone", type="string", example="+995599123457"),
+ *                         @OA\Property(property="country_id", type="integer", example=1),
+ *                         @OA\Property(property="status", type="string", example="active"),
+ *                         @OA\Property(property="created_at", type="string", format="date-time"),
+ *                         @OA\Property(property="country", type="object",
+ *                             @OA\Property(property="id", type="integer", example=1),
+ *                             @OA\Property(property="name", type="string", example="Georgia")
+ *                         )
  *                     )
      *                 )
      *             ),
@@ -126,7 +140,23 @@ class DisterController extends Controller
         
         $perPage = $request->query('per_page', 15);
         $page = $request->query('page', 1);
-        return $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
+        $disters = $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
+        
+        // Add parent dister information for each dister that has main_dister
+        $disters->getCollection()->transform(function ($dister) {
+            if ($dister->main_dister && isset($dister->main_dister['id'])) {
+                $parentDister = Dister::with(['country'])
+                    ->select('id', 'first_name', 'last_name', 'email', 'phone', 'country_id', 'status', 'created_at')
+                    ->find($dister->main_dister['id']);
+                
+                if ($parentDister) {
+                    $dister->parent_dister = $parentDister;
+                }
+            }
+            return $dister;
+        });
+        
+        return $disters;
     }
 
     /**

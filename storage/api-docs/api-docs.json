@@ -816,6 +816,133 @@
                 ]
             }
         },
+        "/api/staff-users/{id}": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Get staff user by ID",
+                "description": "Retrieve a specific staff user (accountant or technical) by their ID with full details",
+                "operationId": "getStaffUser",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Staff user ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Staff user retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "name": {
+                                            "type": "string",
+                                            "example": "John Doe"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "john@example.com"
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599123456",
+                                            "nullable": true
+                                        },
+                                        "type": {
+                                            "type": "string",
+                                            "enum": [
+                                                "accountant",
+                                                "technical"
+                                            ],
+                                            "example": "accountant"
+                                        },
+                                        "type_display": {
+                                            "type": "string",
+                                            "example": "ბუღალტერი"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "enum": [
+                                                "active",
+                                                "inactive"
+                                            ],
+                                            "example": "active"
+                                        },
+                                        "status_display": {
+                                            "type": "string",
+                                            "example": "აქტიური"
+                                        },
+                                        "balance": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 0
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Staff user not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Staff user not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/users/{id}/change-type": {
             "patch": {
                 "tags": [
@@ -1289,7 +1416,7 @@
                     "Cards"
                 ],
                 "summary": "Get all cards",
-                "description": "Retrieve a paginated list of all child cards with their associated group and person type information. Supports filtering by search (child's or parent's name fields), phone, status, group_id, person_type_id, parent_code, garden_id.",
+                "description": "Retrieve a paginated list of all child cards with their associated group and person type information. Supports filtering by search (child's or parent's name fields), phone, status, group_id, person_type_id, parent_code, garden_id, country_id, city_id.",
                 "operationId": "getCards",
                 "parameters": [
                     {
@@ -1337,6 +1464,24 @@
                         "name": "garden_id",
                         "in": "query",
                         "description": "Filter by garden ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "country_id",
+                        "in": "query",
+                        "description": "Filter by country ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "city_id",
+                        "in": "query",
+                        "description": "Filter by city ID",
                         "required": false,
                         "schema": {
                             "type": "integer"
@@ -2408,7 +2553,7 @@
                     "Cards"
                 ],
                 "summary": "Delete a card",
-                "description": "Permanently delete a child card",
+                "description": "Soft delete a child card. Card will be visible for 20 days with restore option.",
                 "operationId": "deleteCard",
                 "parameters": [
                     {
@@ -2431,7 +2576,16 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Card deleted"
+                                            "example": "Card deleted successfully"
+                                        },
+                                        "can_restore": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "restore_until": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-10-07T22:55:44.000000Z"
                                         }
                                     },
                                     "type": "object"
@@ -3840,7 +3994,7 @@
                     "Cards"
                 ],
                 "summary": "Export cards to Excel",
-                "description": "Download an Excel report of cards. Optionally filter by card IDs. If dister is logged in, export is restricted to their assigned gardens.",
+                "description": "Download an Excel report of cards. Optionally filter by card IDs, country, city, garden, or other filters. If dister is logged in, export is restricted to their assigned gardens.",
                 "operationId": "exportCards",
                 "parameters": [
                     {
@@ -3851,6 +4005,114 @@
                         "schema": {
                             "type": "string",
                             "example": "1,2,3"
+                        }
+                    },
+                    {
+                        "name": "country_id",
+                        "in": "query",
+                        "description": "Filter by country ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "city_id",
+                        "in": "query",
+                        "description": "Filter by city ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "garden_id",
+                        "in": "query",
+                        "description": "Filter by garden ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search in child's and parent's name fields",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "Filter by phone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "active",
+                                "inactive"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "group_id",
+                        "in": "query",
+                        "description": "Filter by group ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "person_type_id",
+                        "in": "query",
+                        "description": "Filter by person type ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "parent_code",
+                        "in": "query",
+                        "description": "Filter by parent code",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "parent_verification",
+                        "in": "query",
+                        "description": "Filter by parent verification status",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "license_type",
+                        "in": "query",
+                        "description": "Filter by license type",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "boolean",
+                                "date"
+                            ]
                         }
                     }
                 ],
@@ -5205,7 +5467,7 @@
                     "Cities"
                 ],
                 "summary": "Delete a city",
-                "description": "Permanently delete a city",
+                "description": "Permanently delete a city. Cannot delete if city is being used by gardens.",
                 "operationId": "deleteCity",
                 "parameters": [
                     {
@@ -5245,6 +5507,27 @@
                                         "message": {
                                             "type": "string",
                                             "example": "No query results for model [App\\\\Models\\\\City]"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Cannot delete city - city is in use",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cannot delete city. This city is being used by gardens."
+                                        },
+                                        "usage_count": {
+                                            "description": "Number of gardens using this city",
+                                            "type": "integer",
+                                            "example": 5
                                         }
                                     },
                                     "type": "object"
@@ -8033,7 +8316,7 @@
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search in first_name, last_name, email fields",
+                        "description": "Search in first_name, last_name, email, referral fields",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -8360,6 +8643,13 @@
                                         "example": 12.5,
                                         "nullable": true
                                     },
+                                    "second_percent": {
+                                        "description": "Optional second percent value (0-100)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 8.5,
+                                        "nullable": true
+                                    },
                                     "balance": {
                                         "description": "Optional dister balance",
                                         "type": "number",
@@ -8575,6 +8865,12 @@
                                             "example": 12.5,
                                             "nullable": true
                                         },
+                                        "second_percent": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 8.5,
+                                            "nullable": true
+                                        },
                                         "balance": {
                                             "type": "number",
                                             "format": "float",
@@ -8728,6 +9024,13 @@
                                         "example": 12.5,
                                         "nullable": true
                                     },
+                                    "second_percent": {
+                                        "description": "Optional second percent value (0-100)",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 8.5,
+                                        "nullable": true
+                                    },
                                     "balance": {
                                         "description": "Optional dister balance",
                                         "type": "number",
@@ -8809,6 +9112,12 @@
                                             "type": "number",
                                             "format": "float",
                                             "example": 12.5,
+                                            "nullable": true
+                                        },
+                                        "second_percent": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 8.5,
                                             "nullable": true
                                         },
                                         "balance": {
@@ -10983,7 +11292,7 @@
                     "Gardens"
                 ],
                 "summary": "Export gardens to Excel",
-                "description": "Download an Excel report of gardens with full information. Optionally filter by garden IDs. If dister is logged in, export is automatically restricted to their assigned gardens.",
+                "description": "Download an Excel report of gardens with full information. Optionally filter by garden IDs, country, or other filters. If dister is logged in, export is automatically restricted to their assigned gardens.",
                 "operationId": "exportGardens",
                 "parameters": [
                     {
@@ -10994,6 +11303,101 @@
                         "schema": {
                             "type": "string",
                             "example": "37,42"
+                        }
+                    },
+                    {
+                        "name": "country",
+                        "in": "query",
+                        "description": "Filter by country ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "country_id",
+                        "in": "query",
+                        "description": "Filter by country ID (alternative parameter)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Filter by garden name or referral code",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "in": "query",
+                        "description": "Filter by address",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tax_id",
+                        "in": "query",
+                        "description": "Filter by tax ID",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "phone",
+                        "in": "query",
+                        "description": "Filter by phone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "email",
+                        "in": "query",
+                        "description": "Filter by email",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "active",
+                                "paused",
+                                "inactive"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "balance_min",
+                        "in": "query",
+                        "description": "Filter by minimum balance",
+                        "required": false,
+                        "schema": {
+                            "type": "number"
+                        }
+                    },
+                    {
+                        "name": "balance_max",
+                        "in": "query",
+                        "description": "Filter by maximum balance",
+                        "required": false,
+                        "schema": {
+                            "type": "number"
                         }
                     }
                 ],
