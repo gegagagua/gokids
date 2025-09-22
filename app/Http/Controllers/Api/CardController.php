@@ -1985,29 +1985,35 @@ class CardController extends Controller
             // Load all related data like in verify-otp
             $user->load(['group.garden.images', 'personType', 'parents', 'people']);
 
+            // Transform card to include garden images and garden info (same as verifyOtp)
+            $transformedCard = [
+                'id' => $user->id,
+                'child_first_name' => $user->child_first_name,
+                'child_last_name' => $user->child_last_name,
+                'parent_name' => $user->parent_name,
+                'phone' => $user->phone,
+                'status' => $user->status,
+                'group_id' => $user->group_id,
+                'person_type_id' => $user->person_type_id,
+                'parent_code' => $user->parent_code,
+                'image_path' => $user->image_path,
+                'active_garden_image' => $user->active_garden_image,
+                'image_url' => $user->image_url,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+                'group' => $user->group,
+                'personType' => $user->personType,
+                'parents' => $user->parents,
+                'people' => $user->people,
+                'garden_images' => $user->garden_images,
+                'garden' => $user->garden,
+                'main_parent' => true
+            ];
+
             return response()->json([
                 'message' => 'Card data retrieved successfully',
-                'user_type' => 'card',
-                'card' => [
-                    'id' => $user->id,
-                    'child_first_name' => $user->child_first_name,
-                    'child_last_name' => $user->child_last_name,
-                    'parent_name' => $user->parent_name,
-                    'phone' => $user->phone,
-                    'status' => $user->status,
-                    'parent_code' => $user->parent_code,
-                    'image_url' => $user->image_url,
-                    'parent_verification' => $user->parent_verification,
-                    'license' => $user->license,
-                    'created_at' => $user->created_at,
-                    'updated_at' => $user->updated_at,
-                    'group' => $user->group,
-                    'personType' => $user->personType,
-                    'parents' => $user->parents,
-                    'people' => $user->people,
-                    'garden_images' => $user->garden_images,
-                    'garden' => $user->garden
-                ]
+                'cards' => [$transformedCard], // Same structure as verifyOtp
+                'user_type' => 'card'
             ]);
         } elseif ($user instanceof People) {
             // If phone is provided, validate it matches the authenticated person
@@ -2030,44 +2036,50 @@ class CardController extends Controller
                 }
             }
 
-            $cardData = null;
+            // Transform people to include full card data (same as verifyOtp)
+            $baseData = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'phone' => $user->phone,
+                'person_type_id' => $user->person_type_id,
+                'card_id' => $user->card_id,
+                'created_at' => $user->created_at,
+                'updated_at' => $user->updated_at,
+                'person_type' => $user->personType,
+                'main_parent' => false
+            ];
+
+            // If person has a card, merge card data directly into the base data
             if ($user->card) {
                 $cardData = [
-                    'id' => $user->card->id,
+                    'card_id' => $user->card->id,
                     'child_first_name' => $user->card->child_first_name,
                     'child_last_name' => $user->card->child_last_name,
                     'parent_name' => $user->card->parent_name,
-                    'phone' => $user->card->phone,
+                    'card_phone' => $user->card->phone,
                     'status' => $user->card->status,
                     'parent_code' => $user->card->parent_code,
                     'image_url' => $user->card->image_url,
                     'parent_verification' => $user->card->parent_verification,
                     'license' => $user->card->license,
-                    'created_at' => $user->card->created_at,
-                    'updated_at' => $user->card->updated_at,
+                    'card_created_at' => $user->card->created_at,
+                    'card_updated_at' => $user->card->updated_at,
                     'group' => $user->card->group,
-                    'person_type' => $user->card->personType,
+                    'card_person_type' => $user->card->personType,
                     'parents' => $user->card->parents,
                     'people' => $user->card->people,
                     'garden_images' => $user->card->garden_images,
                     'garden' => $user->card->garden
                 ];
+                
+                // Merge card data into base data (like JavaScript spread operator)
+                $baseData = array_merge($baseData, $cardData);
             }
 
             return response()->json([
                 'message' => 'People data retrieved successfully',
-                'user_type' => 'people',
-                'person' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'phone' => $user->phone,
-                    'person_type_id' => $user->person_type_id,
-                    'card_id' => $user->card_id,
-                    'created_at' => $user->created_at,
-                    'updated_at' => $user->updated_at,
-                    'person_type' => $user->personType,
-                    'card' => $cardData
-                ]
+                'cards' => [$baseData], // Same structure as verifyOtp
+                'user_type' => 'people'
             ]);
         }
 
