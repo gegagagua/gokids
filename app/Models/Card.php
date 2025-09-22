@@ -22,6 +22,7 @@ class Card extends Model
         'person_type_id',
         'parent_code',
         'image_path',
+        'active_garden_image',
         'parent_verification',
         'license',
         'deleted',
