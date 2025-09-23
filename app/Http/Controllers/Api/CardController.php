@@ -1685,7 +1685,6 @@ class CardController extends Controller
         // Transform people to include full card data
         $transformedPeople = $people->map(function ($person) {
             $baseData = [
-                'id' => $person->id,
                 'name' => $person->name,
                 'phone' => $person->phone,
                 'person_type_id' => $person->person_type_id,
@@ -1699,7 +1698,7 @@ class CardController extends Controller
             // If person has a card, merge card data directly into the base data
             if ($person->card) {
                 $cardData = [
-                    'card_id' => $person->card->id,
+                    'id' => $person->card->id,
                     'child_first_name' => $person->card->child_first_name,
                     'child_last_name' => $person->card->child_last_name,
                     'parent_name' => $person->card->parent_name,
@@ -2021,7 +2020,6 @@ class CardController extends Controller
             // Transform people to include full card data (same as verifyOtp)
             $transformedPeople = $people->map(function ($person) {
                 $baseData = [
-                    'id' => $person->id,
                     'name' => $person->name,
                     'phone' => $person->phone,
                     'person_type_id' => $person->person_type_id,
@@ -2035,7 +2033,7 @@ class CardController extends Controller
                 // If person has a card, merge card data directly into the base data
                 if ($person->card) {
                     $cardData = [
-                        'card_id' => $person->card->id,
+                        'id' => $person->card->id,
                         'child_first_name' => $person->card->child_first_name,
                         'child_last_name' => $person->card->child_last_name,
                         'parent_name' => $person->card->parent_name,
