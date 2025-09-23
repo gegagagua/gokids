@@ -145,6 +145,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/notifications/send-card-info', [NotificationController::class, 'sendCardInfo']);
     Route::get('/notifications/device/{deviceId}', [NotificationController::class, 'getDeviceNotifications']);
     Route::get('/notifications/device/{deviceId}/child-calls', [NotificationController::class, 'getDeviceChildCallNotifications']);
+    Route::post('/notifications/{notificationId}/accept', [NotificationController::class, 'acceptNotification']);
     Route::get('/notifications/stats', [NotificationController::class, 'getStats']);
     
     // BOG Payment additional routes

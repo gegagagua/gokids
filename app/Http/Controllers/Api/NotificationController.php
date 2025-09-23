@@ -463,6 +463,74 @@ class NotificationController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *     path="/api/notifications/{notificationId}/accept",
+     *     operationId="acceptNotification",
+     *     tags={"Notifications"},
+     *     summary="Accept a notification",
+     *     description="Mark a notification as accepted when device button is pressed",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="notificationId",
+     *         in="path",
+     *         required=true,
+     *         description="Notification ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Notification accepted successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Notification accepted successfully"),
+     *             @OA\Property(property="notification", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="title", type="string", example="Card Info"),
+     *                 @OA\Property(property="body", type="string", example="Card information sent"),
+     *                 @OA\Property(property="status", type="string", example="accepted"),
+     *                 @OA\Property(property="accepted_at", type="string", format="date-time"),
+     *                 @OA\Property(property="card", type="object", description="Card information")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Notification not found"
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Notification already accepted or invalid status"
+     *     )
+     * )
+     */
+    public function acceptNotification(string $notificationId)
+    {
+        $notification = Notification::with(['card:id,child_first_name,child_last_name,phone,status'])
+            ->findOrFail($notificationId);
+
+        // Check if notification is already accepted
+        if ($notification->status === 'accepted') {
+            return response()->json([
+                'message' => 'Notification already accepted',
+                'notification' => $notification
+            ], 400);
+        }
+
+        // Update notification status to accepted
+        $notification->status = 'accepted';
+        $notification->accepted_at = now();
+        $notification->save();
+
+        // Reload the notification to get updated data
+        $notification->refresh();
+
+        return response()->json([
+            'message' => 'Notification accepted successfully',
+            'notification' => $notification
+        ]);
+    }
+
+    /**
      * @OA\Get(
      *     path="/api/notifications/export",
      *     operationId="exportNotifications",
