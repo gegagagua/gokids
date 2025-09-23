@@ -44,7 +44,7 @@ class CardNotificationService
             ];
 
             $results = $this->expoService->sendToMultipleDevices(
-                $devices,
+                $devices->toArray(),
                 $title,
                 $body,
                 $data,
@@ -90,7 +90,7 @@ class CardNotificationService
             ];
 
             $results = $this->expoService->sendToMultipleDevices(
-                $devices,
+                $devices->toArray(),
                 $title,
                 $body,
                 $data,
@@ -137,7 +137,7 @@ class CardNotificationService
             ];
 
             $results = $this->expoService->sendToMultipleDevices(
-                $devices,
+                $devices->toArray(),
                 $title,
                 $body,
                 $data,
@@ -184,7 +184,7 @@ class CardNotificationService
             ];
 
             $results = $this->expoService->sendToMultipleDevices(
-                $devices,
+                $devices->toArray(),
                 $title,
                 $body,
                 $data,
@@ -231,7 +231,7 @@ class CardNotificationService
             ];
 
             $results = $this->expoService->sendToMultipleDevices(
-                $devices,
+                $devices->toArray(),
                 $title,
                 $body,
                 $data,
@@ -278,7 +278,7 @@ class CardNotificationService
             ];
 
             $results = $this->expoService->sendToMultipleDevices(
-                $devices,
+                $devices->toArray(),
                 $title,
                 $body,
                 $data,
