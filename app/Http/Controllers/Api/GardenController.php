@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Payment;
 use App\Models\GardenOtp;
 use App\Services\SmsService;
+use App\Services\GardenMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Exports\GardensExport;
@@ -1070,14 +1071,12 @@ class GardenController extends Controller
         // Create OTP
         $otp = GardenOtp::createOtp($email);
 
-        // Send OTP via SMS service (using email as phone for now)
-        $smsService = new SmsService();
+        // Send OTP via Mail service
+        $mailService = new GardenMailService();
+        $mailResult = $mailService->sendOtp($email, $otp->otp);
         
-        try {
-            $smsService->sendOtp($email, $otp->otp);
-        } catch (\Exception $e) {
-            // Log error but don't fail the request
-            \Log::error('Failed to send garden OTP SMS: ' . $e->getMessage());
+        if (!$mailResult['success']) {
+            \Log::error('Failed to send garden OTP email: ' . $mailResult['message']);
         }
 
         return response()->json([
