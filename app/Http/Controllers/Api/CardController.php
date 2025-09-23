@@ -1988,40 +1988,45 @@ class CardController extends Controller
                 ], 403);
             }
 
-            // Load all related data like in verify-otp
-            $user->load(['group.garden.images', 'personType', 'parents', 'people']);
+            // Get ALL cards with this phone number (same as verifyOtp)
+            $cards = Card::with(['group.garden.images', 'personType', 'parents', 'people'])
+                ->where('phone', $user->phone)
+                ->where('spam', '!=', 1)
+                ->get();
 
             // Get all people with this phone number (same as verifyOtp)
             $people = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
                 ->where('phone', $user->phone)
                 ->get();
 
-            // Transform card to include garden images and garden info (same as verifyOtp)
-            $transformedCard = [
-                'id' => $user->id,
-                'child_first_name' => $user->child_first_name,
-                'child_last_name' => $user->child_last_name,
-                'parent_name' => $user->parent_name,
-                'phone' => $user->phone,
-                'status' => $user->status,
-                'group_id' => $user->group_id,
-                'person_type_id' => $user->person_type_id,
-                'parent_code' => $user->parent_code,
-                'image_path' => $user->image_path,
-                'active_garden_image' => $user->active_garden_image,
-                'image_url' => $user->image_url,
-                'is_deleted' => $user->is_deleted,
-                'deleted_at' => $user->deleted_at,
-                'created_at' => $user->created_at,
-                'updated_at' => $user->updated_at,
-                'group' => $user->group,
-                'personType' => $user->personType,
-                'parents' => $user->parents,
-                'people' => $user->people,
-                'garden_images' => $user->garden_images,
-                'garden' => $user->garden,
-                'main_parent' => true
-            ];
+            // Transform cards to include garden images and garden info (same as verifyOtp)
+            $transformedCards = $cards->map(function ($card) {
+                return [
+                    'id' => $card->id,
+                    'child_first_name' => $card->child_first_name,
+                    'child_last_name' => $card->child_last_name,
+                    'parent_name' => $card->parent_name,
+                    'phone' => $card->phone,
+                    'status' => $card->status,
+                    'group_id' => $card->group_id,
+                    'person_type_id' => $card->person_type_id,
+                    'parent_code' => $card->parent_code,
+                    'image_path' => $card->image_path,
+                    'active_garden_image' => $card->active_garden_image,
+                    'image_url' => $card->image_url,
+                    'is_deleted' => $card->is_deleted,
+                    'deleted_at' => $card->deleted_at,
+                    'created_at' => $card->created_at,
+                    'updated_at' => $card->updated_at,
+                    'group' => $card->group,
+                    'personType' => $card->personType,
+                    'parents' => $card->parents,
+                    'people' => $card->people,
+                    'garden_images' => $card->garden_images,
+                    'garden' => $card->garden,
+                    'main_parent' => true
+                ];
+            });
 
             // Transform people to include full card data (same as verifyOtp)
             $transformedPeople = $people->map(function ($person) {
@@ -2070,7 +2075,7 @@ class CardController extends Controller
             });
 
             // Combine cards and people into one array (same as verifyOtp)
-            $allCards = collect([$transformedCard])->concat($transformedPeople);
+            $allCards = $transformedCards->concat($transformedPeople);
 
             return response()->json([
                 'message' => 'Card data retrieved successfully',
