@@ -112,9 +112,11 @@ class ExpoNotificationService
             'card_id' => (string) $card->id,
             'card_phone' => $card->phone,
             'card_status' => $card->status,
+            'card_group_name' => $card->group?->name ?? 'Unknown Group',
             'garden_name' => $card->group?->garden?->name ?? 'Unknown Garden',
             'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
             'parent_name' => $card->parent_name,
+            'image_url' => $card->image_url,
             'active_garden_image' => $activeGardenImage ? [
                 'id' => (string) $activeGardenImage->id,
                 'title' => $activeGardenImage->title,
