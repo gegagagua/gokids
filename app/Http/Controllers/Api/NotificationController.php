@@ -401,6 +401,69 @@ class NotificationController extends Controller
 
     /**
      * @OA\Get(
+     *     path="/api/notifications/device/{deviceId}/child-calls",
+     *     operationId="getDeviceChildCallNotifications",
+     *     tags={"Notifications"},
+     *     summary="Get child call notifications for a specific device",
+     *     description="Retrieve the last 10 child call notifications sent to a specific device",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="deviceId",
+     *         in="path",
+     *         required=true,
+     *         description="Device ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="device_id", type="integer", example=1),
+     *             @OA\Property(property="device_name", type="string", example="Device Name"),
+     *             @OA\Property(property="notifications", type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="title", type="string", example="Child Call Notification"),
+     *                     @OA\Property(property="body", type="string", example="Child called from device"),
+     *                     @OA\Property(property="data", type="object", description="Notification data with card information"),
+     *                     @OA\Property(property="status", type="string", example="sent"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="sent_at", type="string", format="date-time", nullable=true)
+     *                 )
+     *             ),
+     *             @OA\Property(property="total_count", type="integer", example=10)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Device not found"
+     *     )
+     * )
+     */
+    public function getDeviceChildCallNotifications(string $deviceId)
+    {
+        $device = Device::findOrFail($deviceId);
+        
+        // Get the last 10 child call notifications for this device
+        $notifications = Notification::where('device_id', $deviceId)
+            ->where('data', 'like', '%child_call%')
+            ->with(['card:id,child_first_name,child_last_name,phone,status'])
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'device_id' => $device->id,
+            'device_name' => $device->name,
+            'notifications' => $notifications,
+            'total_count' => $notifications->count()
+        ]);
+    }
+
+    /**
+     * @OA\Get(
      *     path="/api/notifications/export",
      *     operationId="exportNotifications",
      *     tags={"Notifications"},
