@@ -22,7 +22,7 @@ class ExpoNotificationService
             $notification = Notification::create([
                 'title' => $title,
                 'body' => $body,
-                'data' => $data,
+                'data' => $data, // Laravel will automatically cast to JSON
                 'expo_token' => $device->expo_token,
                 'device_id' => $device->id,
                 'card_id' => $card?->id,
@@ -52,11 +52,19 @@ class ExpoNotificationService
     /**
      * Send notification to multiple devices
      */
-    public function sendToMultipleDevices(array $devices, string $title, string $body, array $data = [], ?Card $card = null)
+    public function sendToMultipleDevices($devices, string $title, string $body, array $data = [], ?Card $card = null)
     {
         $results = [];
         
-        foreach ($devices as $device) {
+        // Handle both Collection and array
+        if (is_array($devices)) {
+            $deviceArray = $devices;
+        } else {
+            // Keep as Collection to preserve Device objects
+            $deviceArray = $devices;
+        }
+        
+        foreach ($deviceArray as $device) {
             $results[] = $this->sendToDevice($device, $title, $body, $data, $card);
         }
 
