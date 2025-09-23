@@ -105,6 +105,29 @@ class ExpoNotificationService
     }
 
     /**
+     * Send child call notification (without full card data to avoid Expo limits)
+     */
+    public function sendChildCall(Device $device, Card $card, $callTime = null)
+    {
+        $callTime = $callTime ?: now();
+        $title = "Child Call";
+        $body = "Child called from device at " . $callTime->format('H:i');
+        
+        $data = [
+            'type' => 'child_call',
+            'card_id' => $card->id,
+            'call_time' => $callTime->toISOString(),
+            'device_id' => $device->id,
+            'card_phone' => $card->phone,
+            'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+            'garden_name' => $card->group?->garden?->name ?? 'Unknown Garden',
+            // No full card data to stay under Expo limits
+        ];
+
+        return $this->sendToDevice($device, $title, $body, $data, $card);
+    }
+
+    /**
      * Get full card data with people information (same as cards/me and verifyOtp)
      */
     public function getFullCardData(Card $card)

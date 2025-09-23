@@ -128,19 +128,29 @@ class NotificationController extends Controller
             'device_ids.*' => 'integer|exists:devices,id',
             'card_id' => 'nullable|integer|exists:cards,id',
             'data' => 'nullable|array',
+            'type' => 'nullable|string',
         ]);
 
         $devices = Device::whereIn('id', $validated['device_ids'])->get();
         $card = $validated['card_id'] ? Card::find($validated['card_id']) : null;
         
         $expoService = new ExpoNotificationService();
-        $results = $expoService->sendToMultipleDevices(
-            $devices,
-            $validated['title'],
-            $validated['body'],
-            $validated['data'] ?? [],
-            $card
-        );
+        
+        // Special handling for child call notifications
+        if ($validated['type'] === 'child_call' && $card) {
+            $results = [];
+            foreach ($devices as $device) {
+                $results[] = $expoService->sendChildCall($device, $card);
+            }
+        } else {
+            $results = $expoService->sendToMultipleDevices(
+                $devices,
+                $validated['title'],
+                $validated['body'],
+                $validated['data'] ?? [],
+                $card
+            );
+        }
 
         return response()->json([
             'message' => 'Notifications sent successfully',
@@ -461,6 +471,7 @@ class NotificationController extends Controller
             'total_count' => $notifications->count()
         ]);
     }
+
 
     /**
      * @OA\Post(
