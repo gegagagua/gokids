@@ -100,6 +100,10 @@ class ExpoNotificationService
             'garden_name' => $card->group?->garden?->name ?? 'Unknown Garden',
             'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
             'parent_name' => $card->parent_name,
+            'active_garden_image' => $card->active_garden_image,
+            'image_path' => $card->image_path,
+            'image_url' => $card->image_url,
+            'person_type_id' => $card->person_type_id,
             // No full card data to stay under Expo limits
         ];
 
@@ -122,7 +126,12 @@ class ExpoNotificationService
             'device_id' => $device->id,
             'card_phone' => $card->phone,
             'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+            'parent_name' => $card->parent_name,
             'garden_name' => $card->group?->garden?->name ?? 'Unknown Garden',
+            'active_garden_image' => $card->active_garden_image,
+            'image_path' => $card->image_path,
+            'image_url' => $card->image_url,
+            'person_type_id' => $card->person_type_id,
             // No full card data to stay under Expo limits
         ];
 
