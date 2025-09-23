@@ -29,17 +29,22 @@ class ExpoNotificationService
                 'status' => 'pending',
             ]);
 
+            // Add notification ID to data
+            $data['notification_id'] = (string) $notification->id;
+
             $response = $this->sendExpoNotification($device->expo_token, $title, $body, $data);
 
             if ($response['success']) {
                 $notification->update([
                     'status' => 'sent',
                     'sent_at' => now(),
+                    'data' => $data, // Update with notification ID
                 ]);
                 return true;
             } else {
                 $notification->update([
                     'status' => 'failed',
+                    'data' => $data, // Update with notification ID
                 ]);
                 return false;
             }
@@ -91,19 +96,38 @@ class ExpoNotificationService
         $title = "Card {$action}";
         $body = "Card {$card->phone} has been {$action}";
         
+        // Load necessary relationships
+        $card->load(['personType', 'group.garden.images']);
+        
+        // Find the active garden image
+        $activeGardenImage = null;
+        if ($card->active_garden_image && $card->group?->garden?->images) {
+            $activeGardenImage = $card->group->garden->images->where('id', $card->active_garden_image)->first();
+        }
+        
         $data = [
             'type' => 'card_info',
             'action' => $action,
-            'card_id' => $card->id,
+            'notification_id' => null, // Will be set after notification is created
+            'card_id' => (string) $card->id,
             'card_phone' => $card->phone,
             'card_status' => $card->status,
             'garden_name' => $card->group?->garden?->name ?? 'Unknown Garden',
             'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
             'parent_name' => $card->parent_name,
-            'active_garden_image' => $card->active_garden_image,
+            'active_garden_image' => $activeGardenImage ? [
+                'id' => (string) $activeGardenImage->id,
+                'title' => $activeGardenImage->title,
+                'image_path' => $activeGardenImage->image_path,
+                'image_url' => $activeGardenImage->image_url,
+                'created_at' => $activeGardenImage->created_at,
+            ] : null,
             'image_path' => $card->image_path,
-            'image_url' => $card->image_url,
-            'person_type_id' => $card->person_type_id,
+            'person_type' => $card->personType ? [
+                'id' => (string) $card->personType->id,
+                'name' => $card->personType->name,
+                'description' => $card->personType->description,
+            ] : null,
             // No full card data to stay under Expo limits
         ];
 
@@ -119,19 +143,39 @@ class ExpoNotificationService
         $title = "Child Call";
         $body = "Child called from device at " . $callTime->format('H:i');
         
+        // Load necessary relationships
+        $card->load(['personType', 'group.garden.images']);
+        
+        // Find the active garden image
+        $activeGardenImage = null;
+        if ($card->active_garden_image && $card->group?->garden?->images) {
+            $activeGardenImage = $card->group->garden->images->where('id', $card->active_garden_image)->first();
+        }
+        
         $data = [
             'type' => 'child_call',
-            'card_id' => $card->id,
+            'notification_id' => null, // Will be set after notification is created
+            'card_id' => (string) $card->id,
             'call_time' => $callTime->toISOString(),
-            'device_id' => $device->id,
+            'device_id' => (string) $device->id,
             'card_phone' => $card->phone,
             'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
             'parent_name' => $card->parent_name,
             'garden_name' => $card->group?->garden?->name ?? 'Unknown Garden',
-            'active_garden_image' => $card->active_garden_image,
+            'active_garden_image' => $activeGardenImage ? [
+                'id' => (string) $activeGardenImage->id,
+                'title' => $activeGardenImage->title,
+                'image_path' => $activeGardenImage->image_path,
+                'image_url' => $activeGardenImage->image_url,
+                'created_at' => $activeGardenImage->created_at,
+            ] : null,
             'image_path' => $card->image_path,
             'image_url' => $card->image_url,
-            'person_type_id' => $card->person_type_id,
+            'person_type' => $card->personType ? [
+                'id' => (string) $card->personType->id,
+                'name' => $card->personType->name,
+                'description' => $card->personType->description,
+            ] : null,
             // No full card data to stay under Expo limits
         ];
 
