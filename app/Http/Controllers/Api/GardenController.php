@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Garden;
 use App\Models\User;
 use App\Models\Payment;
+use App\Models\GardenOtp;
+use App\Services\SmsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Exports\GardensExport;
@@ -1018,5 +1020,151 @@ class GardenController extends Controller
             'balance_change' => $validated['balance'],
             'old_balance' => $oldBalance
         ], 200);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/gardens/send-otp",
+     *     operationId="sendGardenOtp",
+     *     tags={"Gardens"},
+     *     summary="Send OTP to garden email",
+     *     description="Send a 6-digit OTP code to the garden's email address for verification",
+     *     security={},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email"},
+     *             @OA\Property(property="email", type="string", format="email", example="garden@example.com", description="Garden email address")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="OTP sent successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="OTP sent to email"),
+     *             @OA\Property(property="email", type="string", example="garden@example.com")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="email", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function sendOtp(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|max:255',
+        ]);
+
+        $email = $validated['email'];
+
+        // Create OTP
+        $otp = GardenOtp::createOtp($email);
+
+        // Send OTP via SMS service (using email as phone for now)
+        $smsService = new SmsService();
+        
+        try {
+            $smsService->sendOtp($email, $otp->otp);
+        } catch (\Exception $e) {
+            // Log error but don't fail the request
+            \Log::error('Failed to send garden OTP SMS: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'message' => 'OTP sent to email',
+            'email' => $email
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/gardens/verify-otp",
+     *     operationId="verifyGardenOtp",
+     *     tags={"Gardens"},
+     *     summary="Verify garden OTP",
+     *     description="Verify the OTP code sent to garden email and mark email as verified",
+     *     security={},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email", "otp"},
+     *             @OA\Property(property="email", type="string", format="email", example="garden@example.com", description="Garden email address"),
+     *             @OA\Property(property="otp", type="string", example="123456", description="6-digit OTP code")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="OTP verified successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Email verified successfully"),
+     *             @OA\Property(property="email", type="string", example="garden@example.com"),
+     *             @OA\Property(property="verified", type="boolean", example=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid OTP",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Invalid or expired OTP"),
+     *             @OA\Property(property="verified", type="boolean", example=false)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="email", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="otp", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function verifyOtp(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|max:255',
+            'otp' => 'required|string|size:6',
+        ]);
+
+        $email = $validated['email'];
+        $otpCode = $validated['otp'];
+
+        // Find valid OTP
+        $otp = GardenOtp::where('email', $email)
+            ->where('otp', $otpCode)
+            ->where('used', false)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$otp) {
+            return response()->json([
+                'message' => 'Invalid or expired OTP',
+                'verified' => false
+            ], 400);
+        }
+
+        // Mark OTP as used
+        $otp->update(['used' => true]);
+
+        return response()->json([
+            'message' => 'Email verified successfully',
+            'email' => $email,
+            'verified' => true
+        ]);
     }
 }

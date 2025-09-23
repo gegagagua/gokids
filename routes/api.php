@@ -153,4 +153,8 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/bog-payments/subscription', [BogPaymentController::class, 'createSubscription']);
     Route::get('/bog-payments/status/{orderId}', [BogPaymentController::class, 'getPaymentStatus']);
     Route::post('/bog-payments/callback', [BogPaymentController::class, 'handleCallback']);
+    
+    // Garden OTP routes (no authentication required)
+    Route::post('/gardens/send-otp', [GardenController::class, 'sendOtp']);
+    Route::post('/gardens/verify-otp', [GardenController::class, 'verifyOtp']);
 });
