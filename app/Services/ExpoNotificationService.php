@@ -84,7 +84,7 @@ class ExpoNotificationService
     }
 
     /**
-     * Send card information notification
+     * Send card information notification (without full card data to avoid Expo limits)
      */
     public function sendCardInfo(Device $device, Card $card, string $action = 'updated')
     {
@@ -98,7 +98,9 @@ class ExpoNotificationService
             'card_phone' => $card->phone,
             'card_status' => $card->status,
             'garden_name' => $card->group?->garden?->name ?? 'Unknown Garden',
-            'cards' => $this->getFullCardData($card),
+            'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+            'parent_name' => $card->parent_name,
+            // No full card data to stay under Expo limits
         ];
 
         return $this->sendToDevice($device, $title, $body, $data, $card);
