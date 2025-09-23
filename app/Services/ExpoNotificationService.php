@@ -124,7 +124,6 @@ class ExpoNotificationService
                 'image_url' => $activeGardenImage->image_url,
                 'created_at' => $activeGardenImage->created_at,
             ] : null,
-            'image_path' => $card->image_path,
             'person_type' => $card->personType ? [
                 'id' => (string) $card->personType->id,
                 'name' => $card->personType->name,
