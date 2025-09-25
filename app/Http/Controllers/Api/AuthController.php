@@ -1009,4 +1009,119 @@ class AuthController extends Controller
             ]
         ], 200);
     }
+
+    /**
+     * @OA\Patch(
+     *     path="/api/staff-users/{id}/change-password",
+     *     operationId="changeStaffUserPassword",
+     *     tags={"Authentication"},
+     *     summary="Change staff user password (Admin only)",
+     *     description="Allow admin users to change the password of staff users (accountant, technical, etc.)",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Staff user ID to change password for",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"password"},
+     *             @OA\Property(property="password", type="string", minLength=6, example="newpassword123", description="New password for the staff user"),
+     *             @OA\Property(property="password_confirmation", type="string", minLength=6, example="newpassword123", description="Password confirmation")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Password changed successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Staff user password changed successfully"),
+     *             @OA\Property(property="user", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="John Doe"),
+     *                 @OA\Property(property="email", type="string", example="john@example.com"),
+     *                 @OA\Property(property="type", type="string", example="accountant"),
+     *                 @OA\Property(property="type_display", type="string", example="ბუღალტერი"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2023-12-01T12:00:00.000000Z")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Access denied",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Access denied. Admin privileges required.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Staff user not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Staff user not found.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(property="errors", type="object",
+     *                 @OA\Property(property="password", type="array", @OA\Items(type="string", example="The password field is required."))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function changeStaffUserPassword(Request $request, $id)
+    {
+        // Check if user is admin
+        $currentUser = $request->user();
+        if ($currentUser->type !== 'admin') {
+            return response()->json([
+                'message' => 'Access denied. Admin privileges required.'
+            ], 403);
+        }
+
+        // Find the staff user
+        $user = User::find($id);
+        if (!$user) {
+            return response()->json([
+                'message' => 'Staff user not found.'
+            ], 404);
+        }
+
+        // Validate that the target user is a staff user (not admin or garden)
+        $staffTypes = ['accountant', 'technical'];
+        if (!in_array($user->type, $staffTypes)) {
+            return response()->json([
+                'message' => 'Can only change password for staff users (accountant, technical).'
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        // Update the password
+        $user->password = bcrypt($validated['password']);
+        $user->save();
+
+        return response()->json([
+            'message' => 'Staff user password changed successfully',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'type' => $user->type,
+                'type_display' => $user->type_display,
+                'updated_at' => $user->updated_at,
+            ]
+        ], 200);
+    }
 }

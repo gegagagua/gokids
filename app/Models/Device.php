@@ -14,11 +14,18 @@ class Device extends Model
         'garden_id',
         'garden_groups',
         'active_garden_groups',
+        'is_logged_in',
+        'last_login_at',
+        'session_token',
+        'session_expires_at',
     ];
 
     protected $casts = [
         'garden_groups' => 'array',
         'active_garden_groups' => 'array',
+        'is_logged_in' => 'boolean',
+        'last_login_at' => 'datetime',
+        'session_expires_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -71,5 +78,63 @@ class Device extends Model
         }
         
         return \App\Models\GardenGroup::whereIn('id', $this->active_garden_groups);
+    }
+
+    /**
+     * Check if device is currently logged in
+     */
+    public function isLoggedIn()
+    {
+        return $this->is_logged_in && 
+               $this->session_expires_at && 
+               $this->session_expires_at->isFuture();
+    }
+
+    /**
+     * Start a new session for the device
+     */
+    public function startSession($sessionDurationMinutes = 60)
+    {
+        $this->update([
+            'is_logged_in' => true,
+            'last_login_at' => now(),
+            'session_token' => \Str::random(32),
+            'session_expires_at' => now()->addMinutes($sessionDurationMinutes),
+        ]);
+    }
+
+    /**
+     * End the current session for the device
+     */
+    public function endSession()
+    {
+        $this->update([
+            'is_logged_in' => false,
+            'session_token' => null,
+            'session_expires_at' => null,
+        ]);
+        
+        // Refresh the model to ensure the changes are reflected
+        $this->refresh();
+    }
+
+    /**
+     * Extend the current session
+     */
+    public function extendSession($sessionDurationMinutes = 60)
+    {
+        if ($this->isLoggedIn()) {
+            $this->update([
+                'session_expires_at' => now()->addMinutes($sessionDurationMinutes),
+            ]);
+        }
+    }
+
+    /**
+     * Check if session is expired
+     */
+    public function isSessionExpired()
+    {
+        return $this->session_expires_at && $this->session_expires_at->isPast();
     }
 }

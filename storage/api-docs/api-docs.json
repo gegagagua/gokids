@@ -709,6 +709,192 @@
                 ]
             }
         },
+        "/api/staff-users/{id}/profile": {
+            "put": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Update staff user profile by ID",
+                "description": "Update a staff user's profile information (name, email, phone, type) by their ID. Only accessible by admins.",
+                "operationId": "updateStaffUserProfile",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Staff user ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "description": "User's full name",
+                                        "type": "string",
+                                        "maxLength": 255,
+                                        "example": "Updated Name"
+                                    },
+                                    "email": {
+                                        "description": "User's email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "updated@example.com"
+                                    },
+                                    "phone": {
+                                        "description": "User's phone number",
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "example": "+995599123456",
+                                        "nullable": true
+                                    },
+                                    "type": {
+                                        "description": "User type - accountant or technical",
+                                        "type": "string",
+                                        "enum": [
+                                            "accountant",
+                                            "technical"
+                                        ],
+                                        "example": "accountant"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Profile updated successfully"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Updated Name"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "updated@example.com"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599123456",
+                                                    "nullable": true
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "user"
+                                                },
+                                                "type_display": {
+                                                    "type": "string",
+                                                    "example": "მომხმარებელი"
+                                                },
+                                                "balance": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Admin access required",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Access denied. Admin privileges required."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/staff-users": {
             "get": {
                 "tags": [
@@ -1260,6 +1446,168 @@
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/staff-users/{id}/change-password": {
+            "patch": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Change staff user password (Admin only)",
+                "description": "Allow admin users to change the password of staff users (accountant, technical, etc.)",
+                "operationId": "changeStaffUserPassword",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Staff user ID to change password for",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "password"
+                                ],
+                                "properties": {
+                                    "password": {
+                                        "description": "New password for the staff user",
+                                        "type": "string",
+                                        "minLength": 6,
+                                        "example": "newpassword123"
+                                    },
+                                    "password_confirmation": {
+                                        "description": "Password confirmation",
+                                        "type": "string",
+                                        "minLength": 6,
+                                        "example": "newpassword123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password changed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Staff user password changed successfully"
+                                        },
+                                        "user": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@example.com"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "accountant"
+                                                },
+                                                "type_display": {
+                                                    "type": "string",
+                                                    "example": "ბუღალტერი"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2023-12-01T12:00:00.000000Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Access denied",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Access denied. Admin privileges required."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Staff user not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Staff user not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "password": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The password field is required."
                                                     }
                                                 }
                                             },
@@ -3184,7 +3532,7 @@
                     "Cards"
                 ],
                 "summary": "Delete multiple cards",
-                "description": "Permanently delete multiple child cards by their IDs",
+                "description": "Soft delete multiple child cards by their IDs. Cards will be visible for 20 days with restore option.",
                 "operationId": "bulkDeleteCards",
                 "requestBody": {
                     "required": true,
@@ -3221,11 +3569,20 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Cards deleted"
+                                            "example": "Cards deleted successfully"
                                         },
                                         "deleted_count": {
                                             "type": "integer",
                                             "example": 3
+                                        },
+                                        "can_restore": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "restore_until": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-10-07T22:55:44.000000Z"
                                         }
                                     },
                                     "type": "object"
@@ -6478,6 +6835,25 @@
                                                             3
                                                         ]
                                                     },
+                                                    "is_logged_in_status": {
+                                                        "description": "Whether the device is currently logged in",
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "last_login_at": {
+                                                        "description": "Last login timestamp",
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2023-12-01T12:00:00.000000Z",
+                                                        "nullable": true
+                                                    },
+                                                    "session_expires_at": {
+                                                        "description": "Session expiration timestamp",
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2023-12-01T13:00:00.000000Z",
+                                                        "nullable": true
+                                                    },
                                                     "created_at": {
                                                         "type": "string",
                                                         "format": "date-time"
@@ -8304,6 +8680,97 @@
                 ]
             }
         },
+        "/api/devices/logout": {
+            "post": {
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Device logout",
+                "description": "Logout a device and end its current session",
+                "operationId": "deviceLogout",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "code"
+                                ],
+                                "properties": {
+                                    "code": {
+                                        "description": "6-character unique device code",
+                                        "type": "string",
+                                        "example": "X7K9M2"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Logout successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Device logout successful"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid device code or device not logged in",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid device code or device is not logged in"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "code": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/disters": {
             "get": {
                 "tags": [
@@ -8504,6 +8971,57 @@
                                                             }
                                                         },
                                                         "type": "object"
+                                                    },
+                                                    "parent_dister": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 2
+                                                            },
+                                                            "first_name": {
+                                                                "type": "string",
+                                                                "example": "Parent"
+                                                            },
+                                                            "last_name": {
+                                                                "type": "string",
+                                                                "example": "Dister"
+                                                            },
+                                                            "email": {
+                                                                "type": "string",
+                                                                "example": "parent@example.com"
+                                                            },
+                                                            "phone": {
+                                                                "type": "string",
+                                                                "example": "+995599123457"
+                                                            },
+                                                            "country_id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "active"
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date-time"
+                                                            },
+                                                            "country": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string",
+                                                                        "example": "Georgia"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
                                                     }
                                                 },
                                                 "type": "object"
@@ -8934,6 +9452,57 @@
                                                 }
                                             },
                                             "type": "object"
+                                        },
+                                        "parent_dister": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "first_name": {
+                                                    "type": "string",
+                                                    "example": "Parent"
+                                                },
+                                                "last_name": {
+                                                    "type": "string",
+                                                    "example": "Dister"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "parent@example.com"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599123457"
+                                                },
+                                                "country_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "active"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "country": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Georgia"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object",
+                                            "nullable": true
                                         }
                                     },
                                     "type": "object"
@@ -11952,6 +12521,204 @@
                 ]
             }
         },
+        "/api/gardens/send-otp": {
+            "post": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Send OTP to garden email",
+                "description": "Send a 6-digit OTP code to the garden's email address for verification",
+                "operationId": "sendGardenOtp",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "description": "Garden email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "garden@example.com"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OTP sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "OTP sent to email"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "garden@example.com"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/api/gardens/verify-otp": {
+            "post": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Verify garden OTP",
+                "description": "Verify the OTP code sent to garden email and mark email as verified",
+                "operationId": "verifyGardenOtp",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "otp"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "description": "Garden email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "garden@example.com"
+                                    },
+                                    "otp": {
+                                        "description": "6-digit OTP code",
+                                        "type": "string",
+                                        "example": "123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OTP verified successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Email verified successfully"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "garden@example.com"
+                                        },
+                                        "verified": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid OTP",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid or expired OTP"
+                                        },
+                                        "verified": {
+                                            "type": "boolean",
+                                            "example": false
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "otp": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
         "/api/garden-groups": {
             "get": {
                 "tags": [
@@ -13314,6 +14081,179 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/notifications/device/{deviceId}/child-calls": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Get child call notifications for a specific device",
+                "description": "Retrieve the last 10 child call notifications sent to a specific device",
+                "operationId": "getDeviceChildCallNotifications",
+                "parameters": [
+                    {
+                        "name": "deviceId",
+                        "in": "path",
+                        "description": "Device ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "device_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "device_name": {
+                                            "type": "string",
+                                            "example": "Device Name"
+                                        },
+                                        "notifications": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "type": "string",
+                                                        "example": "Child Call Notification"
+                                                    },
+                                                    "body": {
+                                                        "type": "string",
+                                                        "example": "Child called from device"
+                                                    },
+                                                    "data": {
+                                                        "description": "Notification data with card information",
+                                                        "type": "object"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "sent"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "sent_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total_count": {
+                                            "type": "integer",
+                                            "example": 10
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Device not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/notifications/{notificationId}/accept": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Accept a notification",
+                "description": "Mark a notification as accepted when device button is pressed",
+                "operationId": "acceptNotification",
+                "parameters": [
+                    {
+                        "name": "notificationId",
+                        "in": "path",
+                        "description": "Notification ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Notification accepted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Notification accepted successfully"
+                                        },
+                                        "notification": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "title": {
+                                                    "type": "string",
+                                                    "example": "Card Info"
+                                                },
+                                                "body": {
+                                                    "type": "string",
+                                                    "example": "Card information sent"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "accepted"
+                                                },
+                                                "accepted_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "card": {
+                                                    "description": "Card information",
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Notification not found"
+                    },
+                    "400": {
+                        "description": "Notification already accepted or invalid status"
                     }
                 },
                 "security": [

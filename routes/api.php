@@ -64,6 +64,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::get('/staff-users', [AuthController::class, 'getStaffUsers']);
         Route::get('/staff-users/{id}', [AuthController::class, 'getStaffUser']);
         Route::put('/staff-users/{id}/profile', [AuthController::class, 'updateStaffUserProfile']);
+        Route::patch('/staff-users/{id}/change-password', [AuthController::class, 'changeStaffUserPassword']);
         Route::patch('/users/{id}/change-type', [AuthController::class, 'changeUserType']);
         Route::patch('/users/{id}/change-status', [AuthController::class, 'changeUserStatus']);
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -137,6 +138,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     
     // Device login route (no authentication required)
     Route::post('/devices/login', [DeviceController::class, 'deviceLogin']);
+    Route::post('/devices/logout', [DeviceController::class, 'deviceLogout']);
     Route::post('/devices/update-expo-token', [DeviceController::class, 'updateExpoToken']);
 
     Route::get('/get-spam-cards', [CardController::class, 'getAllSpamCards']);

@@ -43,6 +43,9 @@ class DeviceController extends Controller
      *                     @OA\Property(property="status", type="string", enum={"active","inactive"}, example="active"),
      *                     @OA\Property(property="garden_id", type="integer", example=1),
      *                     @OA\Property(property="garden_groups", type="array", @OA\Items(type="integer"), example={1,2,3}),
+     *                     @OA\Property(property="is_logged_in_status", type="boolean", example=true, description="Whether the device is currently logged in"),
+     *                     @OA\Property(property="last_login_at", type="string", format="date-time", example="2023-12-01T12:00:00.000000Z", nullable=true, description="Last login timestamp"),
+     *                     @OA\Property(property="session_expires_at", type="string", format="date-time", example="2023-12-01T13:00:00.000000Z", nullable=true, description="Session expiration timestamp"),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time")
      *                 )
@@ -99,7 +102,18 @@ class DeviceController extends Controller
         }
         $perPage = $request->query('per_page', 15);
         $page = $request->query('page', 1);
-        return $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
+        
+        $devices = $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
+        
+        // Add login status to each device
+        $devices->getCollection()->transform(function ($device) {
+            $device->is_logged_in_status = $device->isLoggedIn();
+            $device->last_login_at = $device->last_login_at;
+            $device->session_expires_at = $device->session_expires_at;
+            return $device;
+        });
+        
+        return $devices;
     }
 
     /**
@@ -1099,6 +1113,21 @@ class DeviceController extends Controller
             ], 401);
         }
 
+        // Check if device is already logged in with an active session
+        if ($device->isLoggedIn()) {
+            return response()->json([
+                'message' => 'Device is already logged in. Please logout from the current session first.'
+            ], 409); // 409 Conflict
+        }
+
+        // Check if session is expired and clean it up
+        if ($device->isSessionExpired()) {
+            $device->endSession();
+        }
+
+        // Start a new session
+        $device->startSession(60); // 60 minutes session duration
+
         // Load garden groups data
         $gardenGroups = $device->gardenGroups()->get();
         $activeGardenGroups = $device->activeGardenGroups()->get();
@@ -1110,7 +1139,9 @@ class DeviceController extends Controller
 
         return response()->json([
             'message' => 'Device login successful',
-            'device' => $deviceData
+            'device' => $deviceData,
+            'session_token' => $device->session_token,
+            'session_expires_at' => $device->session_expires_at
         ]);
     }
 
@@ -1184,6 +1215,84 @@ class DeviceController extends Controller
                 'expo_token' => $device->expo_token,
                 'updated_at' => $device->updated_at,
             ]
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/devices/logout",
+     *     operationId="deviceLogout",
+     *     tags={"Devices"},
+     *     summary="Device logout",
+     *     description="Logout a device and end its current session",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"code"},
+     *             @OA\Property(property="code", type="string", example="X7K9M2", description="6-character unique device code")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Logout successful",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Device logout successful")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid device code or device not logged in",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Invalid device code or device is not logged in")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="code", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function deviceLogout(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|size:6',
+        ]);
+
+        $device = Device::where('code', $request->code)
+            ->where('status', 'active')
+            ->first();
+
+        if (!$device) {
+            return response()->json([
+                'message' => 'Invalid device code or device is inactive'
+            ], 401);
+        }
+
+        if (!$device->isLoggedIn()) {
+            return response()->json([
+                'message' => 'Device is not currently logged in'
+            ], 401);
+        }
+
+        // End the session
+        $device->endSession();
+        
+        // Refresh the device to ensure the session is cleared
+        $device->refresh();
+
+        return response()->json([
+            'message' => 'Device logout successful'
         ]);
     }
 }

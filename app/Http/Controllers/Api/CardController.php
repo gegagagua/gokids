@@ -460,9 +460,40 @@ class CardController extends Controller
             $validated['status'] = 'pending';
         }
 
+        // Check if phone number has been verified before
+        $phoneVerified = false;
+        
+        // Check if there are any cards with this phone number that are already verified
+        $existingVerifiedCard = Card::where('phone', $validated['phone'])
+            ->where('parent_verification', true)
+            ->where('spam', '!=', 1)
+            ->first();
+            
+        if ($existingVerifiedCard) {
+            $phoneVerified = true;
+        } else {
+            // Check if there are any used OTPs for this phone number (indicating previous verification)
+            $usedOtp = CardOtp::where('phone', $validated['phone'])
+                ->where('used', true)
+                ->first();
+                
+            if (!$usedOtp) {
+                // Also check PeopleOtp table
+                $usedPeopleOtp = \App\Models\PeopleOtp::where('phone', $validated['phone'])
+                    ->where('used', true)
+                    ->first();
+                    
+                if ($usedPeopleOtp) {
+                    $phoneVerified = true;
+                }
+            } else {
+                $phoneVerified = true;
+            }
+        }
+
         // Set default values for parent_verification and license
         if (!isset($validated['parent_verification'])) {
-            $validated['parent_verification'] = false;
+            $validated['parent_verification'] = $phoneVerified;
         }
         
         if (!isset($validated['license'])) {
