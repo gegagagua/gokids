@@ -298,7 +298,7 @@ class CardNotificationService
     }
 
     /**
-     * Get all devices for a specific garden
+     * Get devices for a specific garden that have the card's group in their active_garden_groups
      */
     protected function getGardenDevices(Card $card)
     {
@@ -307,9 +307,11 @@ class CardNotificationService
             return collect();
         }
 
+        // Get devices that have the card's group in their active_garden_groups
         return Device::where('garden_id', $card->group->garden->id)
             ->where('status', 'active')
             ->whereNotNull('expo_token')
+            ->whereJsonContains('active_garden_groups', $card->group_id)
             ->get();
     }
 
