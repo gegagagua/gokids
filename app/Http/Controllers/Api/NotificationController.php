@@ -337,7 +337,7 @@ class NotificationController extends Controller
      *     operationId="getDeviceNotifications",
      *     tags={"Notifications"},
      *     summary="Get notifications for a specific device",
-     *     description="Retrieve notifications sent to a specific device",
+     *     description="Retrieve notifications sent to a specific device from the last 24 hours (max 50 notifications)",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="deviceId",
@@ -349,9 +349,9 @@ class NotificationController extends Controller
      *     @OA\Parameter(
      *         name="limit",
      *         in="query",
-     *         description="Number of notifications to retrieve",
+     *         description="Number of notifications to retrieve (max 50, from last 24 hours)",
      *         required=false,
-     *         @OA\Schema(type="integer", default=50)
+     *         @OA\Schema(type="integer", default=50, maximum=50)
      *     ),
      *     @OA\Response(
      *         response=200,
@@ -372,7 +372,7 @@ class NotificationController extends Controller
      */
     public function getDeviceNotifications(string $deviceId, Request $request)
     {
-        $limit = $request->query('limit', 50);
+        $limit = min($request->query('limit', 50), 50); // Cap at 50 maximum
         
         $expoService = new ExpoNotificationService();
         $notifications = $expoService->getDeviceNotifications((int) $deviceId, $limit);
@@ -415,7 +415,7 @@ class NotificationController extends Controller
      *     operationId="getDeviceChildCallNotifications",
      *     tags={"Notifications"},
      *     summary="Get child call notifications for a specific device",
-     *     description="Retrieve the last 10 child call notifications sent to a specific device",
+     *     description="Retrieve the last 10 child call notifications sent to a specific device from the last 24 hours",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="deviceId",
@@ -456,9 +456,10 @@ class NotificationController extends Controller
     {
         $device = Device::findOrFail($deviceId);
         
-        // Get the last 10 child call notifications for this device
+        // Get the last 10 child call notifications for this device from the last 24 hours
         $notifications = Notification::where('device_id', $deviceId)
             ->where('data', 'like', '%child_call%')
+            ->where('created_at', '>=', now()->subHours(24))
             ->with(['card:id,child_first_name,child_last_name,phone,status'])
             ->orderBy('created_at', 'desc')
             ->limit(10)

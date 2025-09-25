@@ -34,9 +34,10 @@ class CountryController extends Controller
      *             @OA\Property(property="data", type="array",
      *                 @OA\Items(
      *                     type="object",
-      *                     @OA\Property(property="id", type="integer", example=1),
- *                     @OA\Property(property="name", type="string", example="საქართველო"),
- *                     @OA\Property(property="currency", type="string", example="GEL", description="Country currency code"),
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="საქართველო"),
+     *                     @OA\Property(property="phone_index", type="string", example="+995", description="Country phone index"),
+     *                     @OA\Property(property="currency", type="string", example="GEL", description="Country currency code"),
  *                     @OA\Property(property="garden_percent", type="number", format="float", example=15.00, description="Garden percentage for this country"),
  *                     @OA\Property(property="tariff", type="number", format="float", example=0.00),
      *                     @OA\Property(property="formatted_tariff", type="string", example="უფასო"),
@@ -105,7 +106,8 @@ class CountryController extends Controller
      *             type="object",
      *             @OA\Property(property="id", type="integer", example=1),
      *             @OA\Property(property="name", type="string", example="საქართველო"),
-      *             @OA\Property(property="currency", type="string", example="GEL", description="Country currency code"),
+     *             @OA\Property(property="phone_index", type="string", example="+995", description="Country phone index"),
+     *             @OA\Property(property="currency", type="string", example="GEL", description="Country currency code"),
      *             @OA\Property(property="garden_percent", type="number", format="float", example=15.00, description="Garden percentage for this country"),
      *             @OA\Property(property="tariff", type="number", format="float", example=0.00),
      *             @OA\Property(property="formatted_tariff", type="string", example="უფასო"),
@@ -147,8 +149,9 @@ class CountryController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             required={"name","tariff","price"},
-      *             @OA\Property(property="name", type="string", maxLength=255, example="საქართველო", description="Country name"),
- *             @OA\Property(property="currency", type="string", maxLength=10, example="GEL", description="Country currency code (defaults to GEL)"),
+     *             @OA\Property(property="name", type="string", maxLength=255, example="საქართველო", description="Country name"),
+     *             @OA\Property(property="phone_index", type="string", maxLength=10, example="+995", description="Country phone index"),
+     *             @OA\Property(property="currency", type="string", maxLength=10, example="GEL", description="Country currency code (defaults to GEL)"),
      *             @OA\Property(property="garden_percent", type="number", format="float", example=15.00, description="Garden percentage for this country (0-100)"),
      *             @OA\Property(property="tariff", type="number", format="float", example=0.00, description="Tariff amount (0 for free)"),
      *             @OA\Property(property="price", type="number", format="float", example=10.00, description="Price amount"),
@@ -164,9 +167,10 @@ class CountryController extends Controller
      *         description="Country created successfully",
      *         @OA\JsonContent(
      *             type="object",
-      *             @OA\Property(property="id", type="integer", example=1),
- *             @OA\Property(property="name", type="string", example="საქართველო"),
- *             @OA\Property(property="currency", type="string", example="GEL"),
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="name", type="string", example="საქართველო"),
+     *             @OA\Property(property="phone_index", type="string", example="+995"),
+     *             @OA\Property(property="currency", type="string", example="GEL"),
  *             @OA\Property(property="garden_percent", type="number", format="float", example=15.00),
  *             @OA\Property(property="tariff", type="number", format="float", example=0.00),
      *             @OA\Property(property="formatted_tariff", type="string", example="უფასო"),
@@ -213,6 +217,7 @@ class CountryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:countries,name',
+            'phone_index' => 'nullable|string|max:10',
             'currency' => 'nullable|string|max:10',
             'garden_percent' => 'nullable|numeric|min:0|max:100',
             'tariff' => 'required|numeric|min:0|max:999999.99',
@@ -318,6 +323,7 @@ class CountryController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255|unique:countries,name,' . $id,
+            'phone_index' => 'nullable|string|max:10',
             'currency' => 'nullable|string|max:10',
             'garden_percent' => 'nullable|numeric|min:0|max:100',
             'tariff' => 'sometimes|required|numeric|min:0|max:999999.99',

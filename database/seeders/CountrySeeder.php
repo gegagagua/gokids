@@ -17,6 +17,7 @@ class CountrySeeder extends Seeder
             // Additional Countries
             [
                 'name' => 'United States',
+                'phone_index' => '+1',
                 'currency' => 'USD',
                 'garden_percent' => 0.00,
                 'tariff' => 10.00,
@@ -31,6 +32,7 @@ class CountrySeeder extends Seeder
             ],
             [
                 'name' => 'United Kingdom',
+                'phone_index' => '+44',
                 'currency' => 'GBP',
                 'garden_percent' => 0.00,
                 'tariff' => 10.00,

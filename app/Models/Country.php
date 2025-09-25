@@ -8,6 +8,7 @@ class Country extends Model
 {
     protected $fillable = [
         'name',
+        'phone_index',
         'currency',
         'garden_percent',
         'tariff',

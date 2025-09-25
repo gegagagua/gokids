@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('cards', function (Blueprint $table) {
-            $table->boolean('spam')->default(0)->after('deleted');
+            $table->boolean('spam')->default(0)->after('parent_code');
         });
     }
 

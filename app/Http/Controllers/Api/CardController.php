@@ -201,6 +201,7 @@ class CardController extends Controller
                     'formatted_tariff' => $card->group->garden->countryData->formatted_tariff,
                     'currency' => $card->group->garden->countryData->currency,
                     'country_name' => $card->group->garden->countryData->name,
+                    'phone_index' => $card->group->garden->countryData->phone_index,
                 ];
             } else {
                 $card->country_tariff = null;
@@ -354,6 +355,7 @@ class CardController extends Controller
                 'formatted_tariff' => $card->group->garden->countryData->formatted_tariff,
                 'currency' => $card->group->garden->countryData->currency,
                 'country_name' => $card->group->garden->countryData->name,
+                'phone_index' => $card->group->garden->countryData->phone_index,
             ];
         } else {
             $card->country_tariff = null;
