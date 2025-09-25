@@ -532,6 +532,41 @@ class NotificationController extends Controller
         $notification->accepted_at = now();
         $notification->save();
 
+        // Send notification back to parent devices that card was accepted
+        if ($notification->card) {
+            $card = $notification->card;
+            $currentDevice = $notification->device;
+            
+            // Get parent devices (devices not in this garden)
+            $parentDevices = Device::where('garden_id', '!=', $currentDevice->garden_id)
+                ->whereNotNull('expo_token')
+                ->get();
+            
+            $expoService = new ExpoNotificationService();
+            
+            foreach ($parentDevices as $parentDevice) {
+                try {
+                    $acceptanceData = [
+                        'type' => 'card_accepted',
+                        'card_id' => (string) $card->id,
+                        'card_phone' => $card->phone,
+                        'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                        'garden_name' => $currentDevice->garden->name ?? 'Garden',
+                        'accepted_at' => now()->toISOString(),
+                    ];
+                    
+                    $expoService->sendToDevice(
+                        $parentDevice,
+                        'Card Accepted',
+                        "Card for {$card->child_first_name} was accepted at the garden",
+                        $acceptanceData
+                    );
+                } catch (\Exception $e) {
+                    // Silent fail for individual devices
+                }
+            }
+        }
+
         // Reload the notification to get updated data
         $notification->refresh();
 

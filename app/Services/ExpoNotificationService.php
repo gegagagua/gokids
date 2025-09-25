@@ -93,6 +93,19 @@ class ExpoNotificationService
      */
     public function sendCardInfo(Device $device, Card $card, string $action = 'updated')
     {
+        // Check for recent duplicate notification to prevent spam
+        $recentNotification = Notification::where('device_id', $device->id)
+            ->where('card_id', $card->id)
+            ->where('data', 'like', '%"type":"card_info"%')
+            ->where('data', 'like', '%"action":"' . $action . '"%')
+            ->where('created_at', '>=', now()->subMinutes(2)) // Within last 2 minutes
+            ->first();
+
+        if ($recentNotification) {
+            Log::info("Duplicate notification prevented for device {$device->id}, card {$card->id}");
+            return true; // Return success to avoid error handling
+        }
+
         $title = "Card {$action}";
         $body = "Card {$card->phone} has been {$action}";
         
