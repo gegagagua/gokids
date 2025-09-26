@@ -75,7 +75,7 @@ class GardensExport implements FromCollection, WithHeadings, WithMapping
     public function headings(): array
     {
         return [
-            'ID', 'Name', 'Address', 'Tax ID', 'City ID', 'City Name', 'Country ID', 'Country Name', 'Country Phone Index', 'Phone', 'Email', 'Status', 'Balance', 'Balance Comment', 'Percents', 'Created At', 'Updated At', 'Images'
+            'ID', 'Name', 'Address', 'Tax ID', 'City ID', 'City Name', 'Country ID', 'Country Name', 'Country Phone Index', 'Country SMS Gateway ID', 'Phone', 'Email', 'Status', 'Balance', 'Balance Comment', 'Percents', 'Created At', 'Updated At', 'Images'
         ];
     }
 

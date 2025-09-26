@@ -29,5 +29,6 @@ class UpdateCountriesDefaultValuesSeeder extends Seeder
         echo "- Language: en\n";
         echo "- Tariff: 10\n";
         echo "- Exchange rate: 1.00\n";
+        echo "- SMS Gateway ID: 1\n";
     }
 }
