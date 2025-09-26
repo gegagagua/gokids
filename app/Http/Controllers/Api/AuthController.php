@@ -149,21 +149,23 @@ class AuthController extends Controller
 
         if ($user->type === 'garden') {
             $garden = \App\Models\Garden::with(['city', 'countryData', 'images'])->where('email', $user->email)->first();
-            if ($garden) {
-                $response['garden'] = $garden;
-                
-                // First, try to find dister who has direct access to this garden
-                $dister = \App\Models\Dister::whereJsonContains('gardens', $garden->id)->first();
-                
-                // If no direct dister found, try to find dister who owns the country where the garden is located
-                if (!$dister && $garden->countryData) {
-                    $dister = \App\Models\Dister::where('country_id', $garden->countryData->id)->first();
-                }
-                
-                if ($dister) {
-                    $dister->load(['country']);
-                    $response['dister'] = $dister;
-                }
+            if (!$garden) {
+                return response()->json(['message' => 'Garden not found for this user'], 404);
+            }
+            
+            $response['garden'] = $garden;
+            
+            // First, try to find dister who has direct access to this garden
+            $dister = \App\Models\Dister::whereJsonContains('gardens', $garden->id)->first();
+            
+            // If no direct dister found, try to find dister who owns the country where the garden is located
+            if (!$dister && $garden->countryData) {
+                $dister = \App\Models\Dister::where('country_id', $garden->countryData->id)->first();
+            }
+            
+            if ($dister) {
+                $dister->load(['country']);
+                $response['dister'] = $dister;
             }
         } elseif ($user->type === 'dister') {
             $dister = \App\Models\Dister::with(['country'])->where('email', $user->email)->first();
@@ -450,21 +452,23 @@ class AuthController extends Controller
 
         if ($user->type === 'garden') {
             $garden = \App\Models\Garden::with(['city', 'countryData', 'images'])->where('email', $user->email)->first();
-            if ($garden) {
-                $response['garden'] = $garden;
-                
-                // First, try to find dister who has direct access to this garden
-                $dister = \App\Models\Dister::whereJsonContains('gardens', $garden->id)->first();
-                
-                // If no direct dister found, try to find dister who owns the country where the garden is located
-                if (!$dister && $garden->countryData) {
-                    $dister = \App\Models\Dister::where('country_id', $garden->countryData->id)->first();
-                }
-                
-                if ($dister) {
-                    $dister->load(['country']);
-                    $response['dister'] = $dister;
-                }
+            if (!$garden) {
+                return response()->json(['message' => 'Garden not found for this user'], 404);
+            }
+            
+            $response['garden'] = $garden;
+            
+            // First, try to find dister who has direct access to this garden
+            $dister = \App\Models\Dister::whereJsonContains('gardens', $garden->id)->first();
+            
+            // If no direct dister found, try to find dister who owns the country where the garden is located
+            if (!$dister && $garden->countryData) {
+                $dister = \App\Models\Dister::where('country_id', $garden->countryData->id)->first();
+            }
+            
+            if ($dister) {
+                $dister->load(['country']);
+                $response['dister'] = $dister;
             }
         } elseif ($user->type === 'dister') {
             $dister = \App\Models\Dister::with(['country'])->where('email', $user->email)->first();

@@ -643,9 +643,16 @@ class GardenController extends Controller
     public function destroy($garden)
     {
         $garden = Garden::findOrFail($garden);
+        
+        // Find and delete the associated user
+        $user = \App\Models\User::where('email', $garden->email)->where('type', 'garden')->first();
+        if ($user) {
+            $user->delete();
+        }
+        
         $garden->delete();
 
-        return response()->json(['message' => 'Garden deleted']);
+        return response()->json(['message' => 'Garden and associated user deleted']);
     }
 
     /**
