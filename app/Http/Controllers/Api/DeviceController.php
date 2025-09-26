@@ -513,7 +513,7 @@ class DeviceController extends Controller
      *         )
      *     ),
      *     @OA\Response(
-     *         response=400,
+     *         response=422,
      *         description="Cannot remove groups active on other devices",
      *         @OA\JsonContent(
      *             @OA\Property(property="message", type="string", example="Cannot remove groups that are still active on other devices in the same garden")
@@ -581,7 +581,7 @@ class DeviceController extends Controller
             if ($otherDevicesWithActiveGroups) {
                 return response()->json([
                     'message' => 'Cannot remove groups that are still active on other devices in the same garden'
-                ], 400);
+                ], 422);
             }
         }
         

@@ -5961,6 +5961,11 @@
                                                         "type": "string",
                                                         "example": "საქართველო"
                                                     },
+                                                    "phone_index": {
+                                                        "description": "Country phone index",
+                                                        "type": "string",
+                                                        "example": "+995"
+                                                    },
                                                     "currency": {
                                                         "description": "Country currency code",
                                                         "type": "string",
@@ -6104,6 +6109,12 @@
                                         "maxLength": 255,
                                         "example": "საქართველო"
                                     },
+                                    "phone_index": {
+                                        "description": "Country phone index",
+                                        "type": "string",
+                                        "maxLength": 10,
+                                        "example": "+995"
+                                    },
                                     "currency": {
                                         "description": "Country currency code (defaults to GEL)",
                                         "type": "string",
@@ -6179,6 +6190,10 @@
                                         "name": {
                                             "type": "string",
                                             "example": "საქართველო"
+                                        },
+                                        "phone_index": {
+                                            "type": "string",
+                                            "example": "+995"
                                         },
                                         "currency": {
                                             "type": "string",
@@ -6341,6 +6356,11 @@
                                         "name": {
                                             "type": "string",
                                             "example": "საქართველო"
+                                        },
+                                        "phone_index": {
+                                            "description": "Country phone index",
+                                            "type": "string",
+                                            "example": "+995"
                                         },
                                         "currency": {
                                             "description": "Country currency code",
@@ -7528,7 +7548,7 @@
                     "Devices"
                 ],
                 "summary": "Update device active garden groups",
-                "description": "Update the active garden groups for a specific device. Active garden groups must be a subset of the device's assigned garden groups.",
+                "description": "Update the active garden groups for a specific device. Active garden groups must be a subset of the device's assigned garden groups. Groups cannot be removed if they are still active on other devices in the same garden.",
                 "operationId": "updateDeviceActiveGardenGroups",
                 "parameters": [
                     {
@@ -7662,6 +7682,22 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Active garden groups must be a subset of assigned garden groups"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Cannot remove groups active on other devices",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cannot remove groups that are still active on other devices in the same garden"
                                         }
                                     },
                                     "type": "object"
@@ -13981,7 +14017,7 @@
                     "Notifications"
                 ],
                 "summary": "Get notifications for a specific device",
-                "description": "Retrieve notifications sent to a specific device",
+                "description": "Retrieve notifications sent to a specific device from the last 24 hours (max 50 notifications)",
                 "operationId": "getDeviceNotifications",
                 "parameters": [
                     {
@@ -13997,11 +14033,12 @@
                     {
                         "name": "limit",
                         "in": "query",
-                        "description": "Number of notifications to retrieve",
+                        "description": "Number of notifications to retrieve (max 50, from last 24 hours)",
                         "required": false,
                         "schema": {
                             "type": "integer",
-                            "default": 50
+                            "default": 50,
+                            "maximum": 50
                         }
                     }
                 ],
@@ -14096,7 +14133,7 @@
                     "Notifications"
                 ],
                 "summary": "Get child call notifications for a specific device",
-                "description": "Retrieve the last 10 child call notifications sent to a specific device",
+                "description": "Retrieve the last 10 child call notifications sent to a specific device from the last 24 hours",
                 "operationId": "getDeviceChildCallNotifications",
                 "parameters": [
                     {
