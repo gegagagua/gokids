@@ -19,6 +19,33 @@ class PaymentGatewaySeeder extends Seeder
                 [
                     'id' => 1,
                     'name' => 'BOG',
+                    'currency' => 'GEL',
+                    'base_url' => 'https://api.bog.ge/v1/payment',
+                    'config' => json_encode([
+                        'merchant_id' => '',
+                        'api_key' => ''
+                    ]),
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'id' => 2,
+                    'name' => 'BOG - USD',
+                    'currency' => 'USD',
+                    'base_url' => 'https://api.bog.ge/v1/payment',
+                    'config' => json_encode([
+                        'merchant_id' => '',
+                        'api_key' => ''
+                    ]),
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ],
+                [
+                    'id' => 3,
+                    'name' => 'BOG - EUR',
+                    'currency' => 'EUR',
                     'base_url' => 'https://api.bog.ge/v1/payment',
                     'config' => json_encode([
                         'merchant_id' => '',
