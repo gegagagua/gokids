@@ -1086,7 +1086,7 @@ class AuthController extends Controller
     {
         // Check if user is admin
         $currentUser = $request->user();
-        if ($currentUser->type !== 'admin') {
+        if ($currentUser->type !== 'admin' && $currentUser->type !== 'user') {
             return response()->json([
                 'message' => 'Access denied. Admin privileges required.'
             ], 403);
