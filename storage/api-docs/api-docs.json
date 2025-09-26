@@ -5971,6 +5971,11 @@
                                                         "type": "string",
                                                         "example": "GEL"
                                                     },
+                                                    "sms_gateway_id": {
+                                                        "description": "SMS Gateway ID for this country",
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
                                                     "garden_percent": {
                                                         "description": "Garden percentage for this country",
                                                         "type": "number",
@@ -6121,6 +6126,11 @@
                                         "maxLength": 10,
                                         "example": "GEL"
                                     },
+                                    "sms_gateway_id": {
+                                        "description": "SMS Gateway ID for this country",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "garden_percent": {
                                         "description": "Garden percentage for this country (0-100)",
                                         "type": "number",
@@ -6149,12 +6159,6 @@
                                         "description": "Optional dister referral code",
                                         "type": "string",
                                         "example": "REF123ABC",
-                                        "nullable": true
-                                    },
-                                    "sms_gateway_id": {
-                                        "description": "Optional SMS gateway ID",
-                                        "type": "integer",
-                                        "example": 1,
                                         "nullable": true
                                     },
                                     "payment_gateway_id": {
@@ -6198,6 +6202,10 @@
                                         "currency": {
                                             "type": "string",
                                             "example": "GEL"
+                                        },
+                                        "sms_gateway_id": {
+                                            "type": "integer",
+                                            "example": 1
                                         },
                                         "garden_percent": {
                                             "type": "number",
@@ -6366,6 +6374,11 @@
                                             "description": "Country currency code",
                                             "type": "string",
                                             "example": "GEL"
+                                        },
+                                        "sms_gateway_id": {
+                                            "description": "SMS Gateway ID for this country",
+                                            "type": "integer",
+                                            "example": 1
                                         },
                                         "garden_percent": {
                                             "description": "Garden percentage for this country",

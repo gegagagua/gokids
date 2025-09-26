@@ -160,7 +160,6 @@ class CountryController extends Controller
      *             @OA\Property(property="price", type="number", format="float", example=10.00, description="Price amount"),
      *             @OA\Property(property="exchange_rate", type="number", format="float", example=2.7500, description="Exchange rate for this country"),
      *             @OA\Property(property="dister", type="string", example="REF123ABC", nullable=true, description="Optional dister referral code"),
-     *             @OA\Property(property="sms_gateway_id", type="integer", example=1, nullable=true, description="Optional SMS gateway ID"),
      *             @OA\Property(property="payment_gateway_id", type="integer", example=1, nullable=true, description="Optional payment gateway ID"),
              @OA\Property(property="language", type="string", maxLength=10, example="ka", nullable=true, description="Optional language code (e.g., ka, en, ru)")
      *         )
