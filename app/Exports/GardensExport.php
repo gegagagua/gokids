@@ -92,6 +92,7 @@ class GardensExport implements FromCollection, WithHeadings, WithMapping
             $garden->country_id,
             optional($garden->countryData)->name,
             optional($garden->countryData)->phone_index,
+            optional($garden->countryData)->sms_gateway_id,
             $garden->phone,
             $garden->email,
             $garden->status,
