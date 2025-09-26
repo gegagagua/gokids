@@ -20,6 +20,7 @@ class UpdateCountriesDefaultValuesSeeder extends Seeder
             'language' => 'en',
             'tariff' => 10.00,
             'exchange_rate' => 1.00,
+            'sms_gateway_id' => 1, // Default SMS gateway
         ]);
 
         echo "Updated all countries with default values:\n";
