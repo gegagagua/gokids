@@ -1173,4 +1173,93 @@ class GardenController extends Controller
             'verified' => true
         ]);
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/gardens/{id}/referred",
+     *     operationId="getReferredGardens",
+     *     tags={"Gardens"},
+     *     summary="Get gardens referred by a specific garden",
+     *     description="Retrieve all gardens that have been referred by the specified garden ID",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Garden ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Parameter(name="per_page", in="query", required=false, description="Items per page (pagination)", @OA\Schema(type="integer", default=15)),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="current_page", type="integer", example=1),
+     *             @OA\Property(property="data", type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Referred Garden"),
+     *                     @OA\Property(property="email", type="string", example="referred@example.com"),
+     *                     @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                     @OA\Property(property="address", type="string", example="123 Main St"),
+     *                     @OA\Property(property="tax_id", type="string", example="123456789"),
+     *                     @OA\Property(property="status", type="string", example="active"),
+     *                     @OA\Property(property="balance", type="number", format="float", example=100.50),
+     *                     @OA\Property(property="percents", type="number", format="float", example=15.00),
+     *                     @OA\Property(property="referral_code", type="string", example="REF123ABC"),
+     *                     @OA\Property(property="referral", type="string", example="REF456DEF"),
+     *                     @OA\Property(property="city", type="object", nullable=true,
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Tbilisi")
+     *                     ),
+     *                     @OA\Property(property="countryData", type="object", nullable=true,
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Georgia"),
+     *                         @OA\Property(property="phone_index", type="string", example="+995")
+     *                     ),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )
+     *             ),
+     *             @OA\Property(property="last_page", type="integer", example=5),
+     *             @OA\Property(property="per_page", type="integer", example=15),
+     *             @OA\Property(property="total", type="integer", example=50)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Garden not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No query results for model [App\\Models\\Garden]")
+     *         )
+     *     )
+     * )
+     */
+    public function getReferredGardens(Request $request, $id)
+    {
+        // Verify the garden exists
+        $referringGarden = Garden::findOrFail($id);
+        
+        // Get the referral code of the referring garden
+        $referralCode = $referringGarden->referral_code;
+        
+        if (!$referralCode) {
+            return response()->json([
+                'message' => 'This garden does not have a referral code',
+                'data' => [],
+                'total' => 0
+            ]);
+        }
+        
+        // Find all gardens that have this garden's referral code
+        $query = Garden::with(['city', 'countryData'])
+            ->where('referral', $referralCode);
+        
+        $perPage = $request->query('per_page', 15);
+        $referredGardens = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        
+        return $referredGardens;
+    }
 }

@@ -75,6 +75,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::patch('/gardens/{id}/status', [GardenController::class, 'updateStatus']);
         Route::patch('/gardens/{id}/dister', [GardenController::class, 'updateDister']);
         Route::patch('/gardens/{id}/balance', [GardenController::class, 'updateBalance']);
+        Route::get('/gardens/{id}/referred', [GardenController::class, 'getReferredGardens']);
         
         // Dister routes (authenticated)
         
