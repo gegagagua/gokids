@@ -21,3 +21,8 @@ Route::get('/bog-payment/cancel', function () {
 Route::get('/api-docs.json', function () {
     return response()->file(storage_path('api-docs/api-docs.json'));
 });
+
+// Swagger UI route
+Route::get('/docs', function () {
+    return view('l5-swagger::index');
+});
