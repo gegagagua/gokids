@@ -11,6 +11,10 @@ class SmsService
 
     public function sendOtp($phone, $otp)
     {
+        // Clean phone number and remove null bytes
+        $phone = str_replace("\0", '', $phone); // Remove null bytes
+        $phone = trim($phone); // Remove whitespace
+        
         // Remove any non-digit characters from phone number
         $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
         

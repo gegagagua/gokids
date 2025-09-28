@@ -1159,6 +1159,12 @@ class DeviceController extends Controller
         // Start a new session
         $device->startSession(60); // 60 minutes session duration
 
+        // If device has no active garden groups, set all garden groups as active by default
+        if (empty($device->active_garden_groups)) {
+            $device->active_garden_groups = $device->garden_groups;
+            $device->save();
+        }
+
         // Load garden groups data
         $gardenGroups = $device->gardenGroups()->get();
         $activeGardenGroups = $device->activeGardenGroups()->get();

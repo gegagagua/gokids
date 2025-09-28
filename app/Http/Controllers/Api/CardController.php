@@ -2278,6 +2278,35 @@ class CardController extends Controller
             'active_garden_image' => $request->garden_image_id
         ]);
 
+        // Clean up empty values in active_garden_groups for all devices in this garden
+        if ($card->group && $card->group->garden) {
+            $devices = \App\Models\Device::where('garden_id', $card->group->garden->id)->get();
+            
+            foreach ($devices as $device) {
+                if (!empty($device->active_garden_groups)) {
+                    // Get valid group IDs for this garden
+                    $validGroupIds = \App\Models\GardenGroup::where('garden_id', $card->group->garden->id)
+                        ->pluck('id')
+                        ->toArray();
+                    
+                    // Remove null, empty, or invalid values, keeping only valid group IDs
+                    $cleanedGroups = array_filter($device->active_garden_groups, function($groupId) use ($validGroupIds) {
+                        return !is_null($groupId) && 
+                               $groupId !== '' && 
+                               is_numeric($groupId) && 
+                               in_array((int)$groupId, $validGroupIds);
+                    });
+                    
+                    // Re-index the array to remove gaps
+                    $cleanedGroups = array_values($cleanedGroups);
+                    
+                    if ($cleanedGroups !== $device->active_garden_groups) {
+                        $device->update(['active_garden_groups' => $cleanedGroups]);
+                    }
+                }
+            }
+        }
+
         return response()->json([
             'message' => 'Main garden image updated successfully',
             'card' => [
