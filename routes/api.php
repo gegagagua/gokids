@@ -146,6 +146,8 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     
     // Additional notification routes
     Route::post('/notifications/send-card-info', [NotificationController::class, 'sendCardInfo']);
+    Route::post('/notifications/device-to-card', [NotificationController::class, 'sendDeviceToCard']);
+    Route::post('/notifications/card-to-device', [NotificationController::class, 'sendCardToDevice']);
     Route::get('/notifications/device/{deviceId}', [NotificationController::class, 'getDeviceNotifications']);
     Route::get('/notifications/device/{deviceId}/child-calls', [NotificationController::class, 'getDeviceChildCallNotifications']);
     Route::post('/notifications/{notificationId}/accept', [NotificationController::class, 'acceptNotification']);

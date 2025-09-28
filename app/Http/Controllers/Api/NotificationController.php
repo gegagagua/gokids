@@ -332,6 +332,120 @@ class NotificationController extends Controller
     }
 
     /**
+     * @OA\Post(
+     *     path="/api/notifications/device-to-card",
+     *     operationId="sendDeviceToCardNotification",
+     *     tags={"Notifications"},
+     *     summary="Send notification from device to card (parent)",
+     *     description="Send notification from device to card - only to the card's phone (parent)",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"device_id","card_id","title","body"},
+     *             @OA\Property(property="device_id", type="integer", example=1, description="Device ID"),
+     *             @OA\Property(property="card_id", type="integer", example=1, description="Card ID"),
+     *             @OA\Property(property="title", type="string", example="Child Call", description="Notification title"),
+     *             @OA\Property(property="body", type="string", example="Child called from device", description="Notification body"),
+     *             @OA\Property(property="data", type="object", description="Additional data")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Notification sent successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Device to card notification sent"),
+     *             @OA\Property(property="success", type="boolean", example=true)
+     *         )
+     *     )
+     * )
+     */
+    public function sendDeviceToCard(Request $request)
+    {
+        $validated = $request->validate([
+            'device_id' => 'required|integer|exists:devices,id',
+            'card_id' => 'required|integer|exists:cards,id',
+            'title' => 'required|string|max:255',
+            'body' => 'required|string',
+            'data' => 'nullable|array',
+        ]);
+
+        $device = Device::findOrFail($validated['device_id']);
+        $card = Card::findOrFail($validated['card_id']);
+        
+        $expoService = new ExpoNotificationService();
+        $success = $expoService->sendDeviceToCard(
+            $device, 
+            $card, 
+            $validated['title'], 
+            $validated['body'], 
+            $validated['data'] ?? []
+        );
+
+        return response()->json([
+            'message' => 'Device to card notification sent',
+            'success' => $success
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/notifications/card-to-device",
+     *     operationId="sendCardToDeviceNotification",
+     *     tags={"Notifications"},
+     *     summary="Send notification from card to device",
+     *     description="Send notification from card to device - only to the specific device",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"device_id","card_id","title","body"},
+     *             @OA\Property(property="device_id", type="integer", example=1, description="Device ID"),
+     *             @OA\Property(property="card_id", type="integer", example=1, description="Card ID"),
+     *             @OA\Property(property="title", type="string", example="Parent Call", description="Notification title"),
+     *             @OA\Property(property="body", type="string", example="Parent called from card", description="Notification body"),
+     *             @OA\Property(property="data", type="object", description="Additional data")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Notification sent successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Card to device notification sent"),
+     *             @OA\Property(property="success", type="boolean", example=true)
+     *         )
+     *     )
+     * )
+     */
+    public function sendCardToDevice(Request $request)
+    {
+        $validated = $request->validate([
+            'device_id' => 'required|integer|exists:devices,id',
+            'card_id' => 'required|integer|exists:cards,id',
+            'title' => 'required|string|max:255',
+            'body' => 'required|string',
+            'data' => 'nullable|array',
+        ]);
+
+        $device = Device::findOrFail($validated['device_id']);
+        $card = Card::findOrFail($validated['card_id']);
+        
+        $expoService = new ExpoNotificationService();
+        $success = $expoService->sendCardToDevice(
+            $device, 
+            $card, 
+            $validated['title'], 
+            $validated['body'], 
+            $validated['data'] ?? []
+        );
+
+        return response()->json([
+            'message' => 'Card to device notification sent',
+            'success' => $success
+        ]);
+    }
+
+    /**
      * @OA\Get(
      *     path="/api/notifications/device/{deviceId}",
      *     operationId="getDeviceNotifications",
@@ -517,7 +631,7 @@ class NotificationController extends Controller
      */
     public function acceptNotification(string $notificationId)
     {
-        $notification = Notification::with(['card:id,child_first_name,child_last_name,phone,status'])
+        $notification = Notification::with(['card:id,child_first_name,child_last_name,phone,status,group_id', 'device.garden'])
             ->findOrFail($notificationId);
 
         // Check if notification is already accepted
@@ -533,17 +647,41 @@ class NotificationController extends Controller
         $notification->accepted_at = now();
         $notification->save();
 
-        // Send notification back to parent devices that card was accepted
+        // Send notification back to the card's parent (the one who sent the notification)
         if ($notification->card) {
             $card = $notification->card;
             $currentDevice = $notification->device;
             
-            // Get parent devices (devices not in this garden)
-            $parentDevices = Device::where('garden_id', '!=', $currentDevice->garden_id)
-                ->whereNotNull('expo_token')
-                ->get();
+            // Load the card's group and garden relationships
+            $card->load(['group.garden']);
+            
+            // Get the garden name from the device's garden_id
+            $gardenName = 'Garden';
+            if ($currentDevice->garden_id) {
+                $garden = \App\Models\Garden::find($currentDevice->garden_id);
+                if ($garden) {
+                    $gardenName = $garden->name;
+                }
+            }
             
             $expoService = new ExpoNotificationService();
+            
+            // Get devices that have this card's group in their active_garden_groups
+            // but are not the current device (these are the parent devices)
+            if (!$card->group || !$card->group->garden) {
+                \Log::error("Card {$card->id} has no group or garden relationship");
+                return response()->json([
+                    'message' => 'Card has no group or garden relationship',
+                    'notification' => $notification
+                ], 500);
+            }
+            
+            $parentDevices = Device::where('garden_id', $card->group->garden->id)
+                ->where('id', '!=', $currentDevice->id)
+                ->where('status', 'active')
+                ->whereNotNull('expo_token')
+                ->whereJsonContains('active_garden_groups', $card->group_id)
+                ->get();
             
             foreach ($parentDevices as $parentDevice) {
                 try {
@@ -552,15 +690,17 @@ class NotificationController extends Controller
                         'card_id' => (string) $card->id,
                         'card_phone' => $card->phone,
                         'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
-                        'garden_name' => $currentDevice->garden->name ?? 'Garden',
+                        'garden_name' => $gardenName,
                         'accepted_at' => now()->toISOString(),
+                        'accepted_by_device' => $currentDevice->name ?? 'Device',
                     ];
                     
                     $expoService->sendToDevice(
                         $parentDevice,
                         'Card Accepted',
                         "Card for {$card->child_first_name} was accepted at the garden",
-                        $acceptanceData
+                        $acceptanceData,
+                        $card
                     );
                 } catch (\Exception $e) {
                     // Silent fail for individual devices

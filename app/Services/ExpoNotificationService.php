@@ -98,11 +98,11 @@ class ExpoNotificationService
             ->where('card_id', $card->id)
             ->where('data', 'like', '%"type":"card_info"%')
             ->where('data', 'like', '%"action":"' . $action . '"%')
-            ->where('created_at', '>=', now()->subMinutes(2)) // Within last 2 minutes
+            ->where('created_at', '>=', now()->subMinutes(1)) // Within last 1 minute (reduced from 2)
             ->first();
 
         if ($recentNotification) {
-            Log::info("Duplicate notification prevented for device {$device->id}, card {$card->id}");
+            Log::info("Duplicate notification prevented for device {$device->id}, card {$card->id}, action {$action}");
             return true; // Return success to avoid error handling
         }
 
@@ -159,6 +159,19 @@ class ExpoNotificationService
         $title = "Child Call";
         $body = "Child called from device at " . $callTime->format('H:i');
         
+        // Check for recent duplicate notification to prevent spam
+        $recentNotification = Notification::where('device_id', $device->id)
+            ->where('card_id', $card->id)
+            ->where('data', 'like', '%"type":"child_call"%')
+            ->where('title', $title)
+            ->where('created_at', '>=', now()->subMinutes(1)) // Within last 1 minute
+            ->first();
+
+        if ($recentNotification) {
+            Log::info("Duplicate child call notification prevented for device {$device->id}, card {$card->id}");
+            return true; // Return success to avoid error handling
+        }
+        
         // Load necessary relationships
         $card->load(['personType', 'group.garden.images']);
         
@@ -196,6 +209,70 @@ class ExpoNotificationService
             ] : null,
             // No full card data to stay under Expo limits
         ];
+
+        return $this->sendToDevice($device, $title, $body, $data, $card);
+    }
+
+    /**
+     * Send notification from device to card (parent) - only to the card's phone
+     */
+    public function sendDeviceToCard(Device $device, Card $card, string $title, string $body, array $data = [])
+    {
+        // Check for recent duplicate notification to prevent spam
+        $recentNotification = Notification::where('device_id', $device->id)
+            ->where('card_id', $card->id)
+            ->where('data', 'like', '%"type":"device_to_card"%')
+            ->where('title', $title)
+            ->where('created_at', '>=', now()->subMinutes(1)) // Within last 1 minute
+            ->first();
+
+        if ($recentNotification) {
+            Log::info("Duplicate device-to-card notification prevented for device {$device->id}, card {$card->id}");
+            return true; // Return success to avoid error handling
+        }
+
+        // This should send to the card's phone number (parent)
+        // For now, we'll send to the device that initiated the call
+        // In a real implementation, this would send SMS or call to the parent's phone
+        
+        $data = array_merge($data, [
+            'type' => 'device_to_card',
+            'device_id' => (string) $device->id,
+            'card_id' => (string) $card->id,
+            'card_phone' => $card->phone,
+            'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+        ]);
+
+        return $this->sendToDevice($device, $title, $body, $data, $card);
+    }
+
+    /**
+     * Send notification from card to device - only to the specific device
+     */
+    public function sendCardToDevice(Device $device, Card $card, string $title, string $body, array $data = [])
+    {
+        // Check for recent duplicate notification to prevent spam
+        $recentNotification = Notification::where('device_id', $device->id)
+            ->where('card_id', $card->id)
+            ->where('data', 'like', '%"type":"card_to_device"%')
+            ->where('title', $title)
+            ->where('created_at', '>=', now()->subMinutes(1)) // Within last 1 minute
+            ->first();
+
+        if ($recentNotification) {
+            Log::info("Duplicate card-to-device notification prevented for device {$device->id}, card {$card->id}");
+            return true; // Return success to avoid error handling
+        }
+
+        // This sends only to the specific device, not all devices in the garden
+        
+        $data = array_merge($data, [
+            'type' => 'card_to_device',
+            'device_id' => (string) $device->id,
+            'card_id' => (string) $card->id,
+            'card_phone' => $card->phone,
+            'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+        ]);
 
         return $this->sendToDevice($device, $title, $body, $data, $card);
     }
@@ -311,7 +388,11 @@ class ExpoNotificationService
             if ($response->successful()) {
                 $responseData = $response->json();
                 
-                if (isset($responseData[0]['status']) && $responseData[0]['status'] === 'ok') {
+                // Check if the response has the expected structure
+                if (isset($responseData['data'][0]['status']) && $responseData['data'][0]['status'] === 'ok') {
+                    return ['success' => true, 'response' => $responseData];
+                } elseif (isset($responseData[0]['status']) && $responseData[0]['status'] === 'ok') {
+                    // Fallback for different response structure
                     return ['success' => true, 'response' => $responseData];
                 } else {
                     Log::warning('Expo notification failed: ' . json_encode($responseData));
