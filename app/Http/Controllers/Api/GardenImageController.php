@@ -69,26 +69,38 @@ class GardenImageController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'garden_id' => 'required|exists:gardens,id',
-            'image' => 'required|image|max:2048',
-            'index' => 'nullable|integer|min:0',
-        ]);
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'garden_id' => 'required|exists:gardens,id',
+                'image' => 'required|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'index' => 'nullable|integer|min:0',
+            ]);
 
-        $path = $request->file('image')->store('garden_images', 'public');
+            $path = $request->file('image')->store('garden_images', 'public');
 
-        $gardenImage = GardenImage::create([
-            'title' => $validated['title'],
-            'garden_id' => $validated['garden_id'],
-            'image' => $path,
-            'index' => $validated['index'] ?? 0,
-        ]);
+            $gardenImage = GardenImage::create([
+                'title' => $validated['title'],
+                'garden_id' => $validated['garden_id'],
+                'image' => $path,
+                'index' => $validated['index'] ?? 0,
+            ]);
 
-        $response = $gardenImage->toArray();
-        $response['image_url'] = $gardenImage->image_url;
+            $response = $gardenImage->toArray();
+            $response['image_url'] = $gardenImage->image_url;
 
-        return response()->json($response, 201);
+            return response()->json($response, 201);
+            
+        } catch (\Exception $e) {
+            \Log::error("Error creating garden image: " . $e->getMessage(), [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'message' => 'Error creating garden image: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -201,15 +213,30 @@ class GardenImageController extends Controller
      */
     public function destroy(string $id)
     {
-        $gardenImage = GardenImage::find($id);
-        if (!$gardenImage) {
-            return response()->json(['message' => 'Garden image not found.'], 404);
+        try {
+            $gardenImage = GardenImage::find($id);
+            if (!$gardenImage) {
+                return response()->json(['message' => 'Garden image not found.'], 404);
+            }
+            
+            // Remove image file from storage
+            if ($gardenImage->image && Storage::disk('public')->exists($gardenImage->image)) {
+                Storage::disk('public')->delete($gardenImage->image);
+            }
+            
+            $gardenImage->delete();
+            return response()->noContent();
+            
+        } catch (\Exception $e) {
+            \Log::error("Error deleting garden image: " . $e->getMessage(), [
+                'garden_image_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'message' => 'Error deleting garden image: ' . $e->getMessage()
+            ], 500);
         }
-        // Remove image file from storage
-        if ($gardenImage->image && Storage::disk('public')->exists($gardenImage->image)) {
-            Storage::disk('public')->delete($gardenImage->image);
-        }
-        $gardenImage->delete();
-        return response()->noContent();
     }
 }
