@@ -834,6 +834,45 @@ class NotificationController extends Controller
             
             $expoService = new ExpoNotificationService();
             
+            // Send notification to the specific card that created this notification
+            // Find the device that sent the original notification (the card's device)
+            // This is the device that has this card's group in their active_garden_groups
+            $cardDevice = Device::where('garden_id', $card->group->garden->id)
+                ->where('status', 'active')
+                ->whereNotNull('expo_token')
+                ->whereJsonContains('active_garden_groups', $card->group_id)
+                ->first();
+            
+            // Send notification only to the specific card's device
+            if ($cardDevice) {
+                try {
+                    $cardNotificationData = [
+                        'type' => 'notification_accepted',
+                        'notification_id' => (string) $notification->id,
+                        'card_id' => (string) $card->id,
+                        'card_phone' => $card->phone,
+                        'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                        'garden_name' => $gardenName,
+                        'accepted_at' => now()->toISOString(),
+                        'accepted_by_device' => $currentDevice->name ?? 'Device',
+                    ];
+                    
+                    $expoService->sendToDevice(
+                        $cardDevice,
+                        'Notification Accepted',
+                        "Your notification for {$card->child_first_name} was accepted at {$gardenName}",
+                        $cardNotificationData,
+                        $card
+                    );
+                    
+                    \Log::info("Notification acceptance sent to card device {$cardDevice->id} for card {$card->id}");
+                } catch (\Exception $e) {
+                    \Log::error("Failed to send notification to card device {$cardDevice->id}: " . $e->getMessage());
+                }
+            } else {
+                \Log::warning("No active device found for card {$card->id} group {$card->group_id}");
+            }
+            
             // Get devices that have this card's group in their active_garden_groups
             // but are not the current device (these are the parent devices)
             if (!$card->group || !$card->group->garden) {
