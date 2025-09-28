@@ -1590,6 +1590,7 @@ class CardController extends Controller
      *                     @OA\Property(property="title", type="string", example="Main Entrance"),
      *                     @OA\Property(property="image", type="string", example="garden_images/abc123.jpg"),
      *                     @OA\Property(property="image_url", type="string", example="http://localhost/storage/garden_images/abc123.jpg"),
+     *                     @OA\Property(property="index", type="integer", example=1),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time")
      *                 )),
@@ -1969,6 +1970,7 @@ class CardController extends Controller
      *                     @OA\Property(property="title", type="string", example="Main Entrance"),
      *                     @OA\Property(property="image", type="string", example="garden_images/abc123.jpg"),
      *                     @OA\Property(property="image_url", type="string", example="http://localhost/storage/garden_images/abc123.jpg"),
+     *                     @OA\Property(property="index", type="integer", example=1),
      *                     @OA\Property(property="created_at", type="string", format="date-time"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time")
      *                 )),

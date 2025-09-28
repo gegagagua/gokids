@@ -154,12 +154,13 @@ class Card extends Model
     public function getGardenImagesAttribute()
     {
         if ($this->group && $this->group->garden) {
-            return $this->group->garden->images->map(function ($image) {
+            return $this->group->garden->images->sortBy('index')->map(function ($image) {
                 return [
                     'id' => $image->id,
                     'title' => $image->title,
                     'image' => $image->image,
                     'image_url' => $image->image_url,
+                    'index' => $image->index,
                     'created_at' => $image->created_at,
                     'updated_at' => $image->updated_at,
                 ];

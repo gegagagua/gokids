@@ -10,6 +10,7 @@ class GardenImage extends Model
         'title',
         'garden_id',
         'image',
+        'index',
     ];
 
     public function garden()

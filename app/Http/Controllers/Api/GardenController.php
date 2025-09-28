@@ -81,7 +81,8 @@ class GardenController extends Controller
      *                             type="object",
      *                             @OA\Property(property="id", type="integer", example=1),
      *                             @OA\Property(property="title", type="string", example="Main Entrance"),
-     *                             @OA\Property(property="image", type="string", example="garden_images/abc123.jpg")
+     *                             @OA\Property(property="image", type="string", example="garden_images/abc123.jpg"),
+     *                             @OA\Property(property="index", type="integer", example=1)
      *                         )
      *                     )
      *                 )
@@ -213,7 +214,8 @@ class GardenController extends Controller
      *                     type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
      *                     @OA\Property(property="title", type="string", example="Main Entrance"),
-     *                     @OA\Property(property="image", type="string", example="garden_images/abc123.jpg")
+     *                     @OA\Property(property="image", type="string", example="garden_images/abc123.jpg"),
+     *                     @OA\Property(property="index", type="integer", example=1)
      *                 )
      *             )
      *         )
@@ -537,7 +539,8 @@ class GardenController extends Controller
      *                     type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
      *                     @OA\Property(property="title", type="string", example="Main Entrance"),
-     *                     @OA\Property(property="image", type="string", example="garden_images/abc123.jpg")
+     *                     @OA\Property(property="image", type="string", example="garden_images/abc123.jpg"),
+     *                     @OA\Property(property="index", type="integer", example=1)
      *                 )
      *             )
      *         )
