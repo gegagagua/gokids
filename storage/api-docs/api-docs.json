@@ -7702,22 +7702,6 @@
                             }
                         }
                     },
-                    "422": {
-                        "description": "Cannot remove groups active on other devices",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Cannot remove groups that are still active on other devices in the same garden"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
                     "404": {
                         "description": "Device not found",
                         "content": {
