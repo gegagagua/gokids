@@ -530,9 +530,10 @@ class NotificationController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
+     *             required={"card_id","title"},
      *             @OA\Property(property="card_id", type="integer", example=1, description="Card ID"),
      *             @OA\Property(property="title", type="string", example="Parent Call", description="Notification title"),
-     *             @OA\Property(property="body", type="string", example="Parent called from card", description="Notification body"),
+     *             @OA\Property(property="body", type="string", example="Parent called from card", description="Notification body (optional)"),
      *             @OA\Property(property="data", type="object", description="Additional data")
      *         )
      *     ),
@@ -570,7 +571,7 @@ class NotificationController extends Controller
         $validated = $request->validate([
             'card_id' => 'required|integer|exists:cards,id',
             'title' => 'required|string|max:255',
-            'body' => 'required|string',
+            'body' => 'nullable|string',
             'data' => 'nullable|array',
         ]);
 
@@ -580,7 +581,7 @@ class NotificationController extends Controller
         $results = $expoService->sendCardToAllDevices(
             $card, 
             $validated['title'], 
-            $validated['body'], 
+            $validated['body'] ?? '', 
             $validated['data'] ?? []
         );
 

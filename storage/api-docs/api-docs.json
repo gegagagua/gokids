@@ -14506,6 +14506,10 @@
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "card_id",
+                                    "title"
+                                ],
                                 "properties": {
                                     "card_id": {
                                         "description": "Card ID",
@@ -14518,7 +14522,7 @@
                                         "example": "Parent Call"
                                     },
                                     "body": {
-                                        "description": "Notification body",
+                                        "description": "Notification body (optional)",
                                         "type": "string",
                                         "example": "Parent called from card"
                                     },
