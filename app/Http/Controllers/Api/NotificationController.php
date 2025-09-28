@@ -887,9 +887,7 @@ class NotificationController extends Controller
                     })
                     ->get();
                     
-                \Log::info("Fallback found {$parentDevices->count()} parent devices", [
-                    'devices' => $parentDevices->pluck('name', 'id')->toArray()
-                ]);
+        
             }
             
             foreach ($parentDevices as $parentDevice) {
