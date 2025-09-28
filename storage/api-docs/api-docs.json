@@ -14201,6 +14201,437 @@
                 ]
             }
         },
+        "/api/notifications/device-to-card": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Send notification from device to card (parent)",
+                "description": "Send notification from device to card - only to the card's phone (parent)",
+                "operationId": "sendDeviceToCardNotification",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "device_id",
+                                    "card_id",
+                                    "title",
+                                    "body"
+                                ],
+                                "properties": {
+                                    "device_id": {
+                                        "description": "Device ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "card_id": {
+                                        "description": "Card ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "title": {
+                                        "description": "Notification title",
+                                        "type": "string",
+                                        "example": "Child Call"
+                                    },
+                                    "body": {
+                                        "description": "Notification body",
+                                        "type": "string",
+                                        "example": "Child called from device"
+                                    },
+                                    "data": {
+                                        "description": "Additional data",
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Notification sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Device to card notification sent"
+                                        },
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "card": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "child_first_name": {
+                                                    "type": "string",
+                                                    "example": "Giorgi"
+                                                },
+                                                "child_last_name": {
+                                                    "type": "string",
+                                                    "example": "Davitashvili"
+                                                },
+                                                "parent_name": {
+                                                    "type": "string",
+                                                    "example": "Nino Davitashvili"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599654321"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "active"
+                                                },
+                                                "group_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "person_type_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "parent_code": {
+                                                    "type": "string",
+                                                    "example": "ABC123"
+                                                },
+                                                "image_path": {
+                                                    "type": "string",
+                                                    "example": "images/card1.jpg"
+                                                },
+                                                "active_garden_image": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "image_url": {
+                                                    "type": "string",
+                                                    "example": "https://example.com/images/card1.jpg"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "group": {
+                                                    "type": "object"
+                                                },
+                                                "personType": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/notifications/card-to-device": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Send notification from card to device",
+                "description": "Send notification from card to device - only to the specific device",
+                "operationId": "sendCardToDeviceNotification",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "device_id",
+                                    "card_id",
+                                    "title",
+                                    "body"
+                                ],
+                                "properties": {
+                                    "device_id": {
+                                        "description": "Device ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "card_id": {
+                                        "description": "Card ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "title": {
+                                        "description": "Notification title",
+                                        "type": "string",
+                                        "example": "Parent Call"
+                                    },
+                                    "body": {
+                                        "description": "Notification body",
+                                        "type": "string",
+                                        "example": "Parent called from card"
+                                    },
+                                    "data": {
+                                        "description": "Additional data",
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Notification sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card to device notification sent"
+                                        },
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "card": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "child_first_name": {
+                                                    "type": "string",
+                                                    "example": "Giorgi"
+                                                },
+                                                "child_last_name": {
+                                                    "type": "string",
+                                                    "example": "Davitashvili"
+                                                },
+                                                "parent_name": {
+                                                    "type": "string",
+                                                    "example": "Nino Davitashvili"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599654321"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "active"
+                                                },
+                                                "group_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "person_type_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "parent_code": {
+                                                    "type": "string",
+                                                    "example": "ABC123"
+                                                },
+                                                "image_path": {
+                                                    "type": "string",
+                                                    "example": "images/card1.jpg"
+                                                },
+                                                "active_garden_image": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "image_url": {
+                                                    "type": "string",
+                                                    "example": "https://example.com/images/card1.jpg"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "group": {
+                                                    "type": "object"
+                                                },
+                                                "personType": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/notifications/card-to-all-devices": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Send notification from card to all devices in the group",
+                "description": "Send notification from a card to all devices that have this card's group in their active_garden_groups",
+                "operationId": "sendCardToAllDevicesNotification",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "card_id": {
+                                        "description": "Card ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "title": {
+                                        "description": "Notification title",
+                                        "type": "string",
+                                        "example": "Parent Call"
+                                    },
+                                    "body": {
+                                        "description": "Notification body",
+                                        "type": "string",
+                                        "example": "Parent called from card"
+                                    },
+                                    "data": {
+                                        "description": "Additional data",
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Notification sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card to all devices notification sent"
+                                        },
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "devices_count": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "card": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "child_first_name": {
+                                                    "type": "string",
+                                                    "example": "Giorgi"
+                                                },
+                                                "child_last_name": {
+                                                    "type": "string",
+                                                    "example": "Davitashvili"
+                                                },
+                                                "parent_name": {
+                                                    "type": "string",
+                                                    "example": "Nino Davitashvili"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995599654321"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "active"
+                                                },
+                                                "group_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "person_type_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "parent_code": {
+                                                    "type": "string",
+                                                    "example": "ABC123"
+                                                },
+                                                "image_path": {
+                                                    "type": "string",
+                                                    "example": "images/card1.jpg"
+                                                },
+                                                "active_garden_image": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "image_url": {
+                                                    "type": "string",
+                                                    "example": "https://example.com/images/card1.jpg"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "group": {
+                                                    "type": "object"
+                                                },
+                                                "personType": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/notifications/device/{deviceId}": {
             "get": {
                 "tags": [

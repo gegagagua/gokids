@@ -278,6 +278,75 @@ class ExpoNotificationService
     }
 
     /**
+     * Send notification from card to all devices that have this card's group in their active_garden_groups
+     */
+    public function sendCardToAllDevices(Card $card, string $title, string $body, array $data = [])
+    {
+        if (!$card->group || !$card->group->garden) {
+            Log::warning("Card {$card->id} has no group or garden assigned");
+            return false;
+        }
+
+        // Get all devices that have this card's group in their active_garden_groups
+        $devices = Device::where('garden_id', $card->group->garden->id)
+            ->where('status', 'active')
+            ->whereNotNull('expo_token')
+            ->whereJsonContains('active_garden_groups', $card->group_id)
+            ->get();
+
+        if ($devices->isEmpty()) {
+            Log::info("No devices found for card {$card->id} group {$card->group_id}");
+            return false;
+        }
+
+        Log::info("Sending card notification to {$devices->count()} devices for card {$card->id}");
+
+        // Load necessary relationships for card data
+        $card->load(['personType', 'group.garden.images']);
+        
+        // Find the active garden image
+        $activeGardenImage = null;
+        if ($card->active_garden_image && $card->group?->garden?->images) {
+            $activeGardenImage = $card->group->garden->images->where('id', $card->active_garden_image)->first();
+        }
+
+        $results = [];
+        foreach ($devices as $device) {
+            // Create comprehensive card data like in sendCardInfo
+            $deviceData = array_merge($data, [
+                'type' => 'card_to_device',
+                'device_id' => (string) $device->id,
+                'card_id' => (string) $card->id,
+                'card_phone' => $card->phone,
+                'card_status' => $card->status,
+                'card_group_name' => $card->group?->name ?? 'Unknown Group',
+                'garden_name' => $card->group?->garden?->name ?? 'Unknown Garden',
+                'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                'parent_name' => $card->parent_name,
+                'image_url' => $card->image_url,
+                'is_deleted' => $card->is_deleted,
+                'deleted_at' => $card->deleted_at,
+                'active_garden_image' => $activeGardenImage ? [
+                    'id' => (string) $activeGardenImage->id,
+                    'title' => $activeGardenImage->title,
+                    'image_path' => $activeGardenImage->image_path,
+                    'image_url' => $activeGardenImage->image_url,
+                    'created_at' => $activeGardenImage->created_at,
+                ] : null,
+                'person_type' => $card->personType ? [
+                    'id' => (string) $card->personType->id,
+                    'name' => $card->personType->name,
+                    'description' => $card->personType->description,
+                ] : null,
+            ]);
+
+            $results[] = $this->sendToDevice($device, $title, $body, $deviceData, $card);
+        }
+
+        return $results;
+    }
+
+    /**
      * Get full card data with people information (same as cards/me and verifyOtp)
      */
     public function getFullCardData(Card $card)

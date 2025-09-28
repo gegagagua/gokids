@@ -355,7 +355,25 @@ class NotificationController extends Controller
      *         description="Notification sent successfully",
      *         @OA\JsonContent(
      *             @OA\Property(property="message", type="string", example="Device to card notification sent"),
-     *             @OA\Property(property="success", type="boolean", example=true)
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="card", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="child_first_name", type="string", example="Giorgi"),
+     *                 @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
+     *                 @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
+     *                 @OA\Property(property="phone", type="string", example="+995599654321"),
+     *                 @OA\Property(property="status", type="string", example="active"),
+     *                 @OA\Property(property="group_id", type="integer", example=1),
+     *                 @OA\Property(property="person_type_id", type="integer", example=1),
+     *                 @OA\Property(property="parent_code", type="string", example="ABC123"),
+     *                 @OA\Property(property="image_path", type="string", example="images/card1.jpg"),
+     *                 @OA\Property(property="active_garden_image", type="integer", example=1),
+     *                 @OA\Property(property="image_url", type="string", example="https://example.com/images/card1.jpg"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(property="group", type="object"),
+     *                 @OA\Property(property="personType", type="object")
+     *             )
      *         )
      *     )
      * )
@@ -371,7 +389,7 @@ class NotificationController extends Controller
         ]);
 
         $device = Device::findOrFail($validated['device_id']);
-        $card = Card::findOrFail($validated['card_id']);
+        $card = Card::with(['group.garden:id,name', 'personType', 'group.garden.images'])->findOrFail($validated['card_id']);
         
         $expoService = new ExpoNotificationService();
         $success = $expoService->sendDeviceToCard(
@@ -382,9 +400,28 @@ class NotificationController extends Controller
             $validated['data'] ?? []
         );
 
+        // Return the same structure as sendCardInfo
         return response()->json([
             'message' => 'Device to card notification sent',
-            'success' => $success
+            'success' => $success,
+            'card' => [
+                'id' => $card->id,
+                'child_first_name' => $card->child_first_name,
+                'child_last_name' => $card->child_last_name,
+                'parent_name' => $card->parent_name,
+                'phone' => $card->phone,
+                'status' => $card->status,
+                'group_id' => $card->group_id,
+                'person_type_id' => $card->person_type_id,
+                'parent_code' => $card->parent_code,
+                'image_path' => $card->image_path,
+                'active_garden_image' => $card->active_garden_image,
+                'image_url' => $card->image_url,
+                'created_at' => $card->created_at,
+                'updated_at' => $card->updated_at,
+                'group' => $card->group,
+                'personType' => $card->personType,
+            ]
         ]);
     }
 
@@ -412,7 +449,25 @@ class NotificationController extends Controller
      *         description="Notification sent successfully",
      *         @OA\JsonContent(
      *             @OA\Property(property="message", type="string", example="Card to device notification sent"),
-     *             @OA\Property(property="success", type="boolean", example=true)
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="card", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="child_first_name", type="string", example="Giorgi"),
+     *                 @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
+     *                 @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
+     *                 @OA\Property(property="phone", type="string", example="+995599654321"),
+     *                 @OA\Property(property="status", type="string", example="active"),
+     *                 @OA\Property(property="group_id", type="integer", example=1),
+     *                 @OA\Property(property="person_type_id", type="integer", example=1),
+     *                 @OA\Property(property="parent_code", type="string", example="ABC123"),
+     *                 @OA\Property(property="image_path", type="string", example="images/card1.jpg"),
+     *                 @OA\Property(property="active_garden_image", type="integer", example=1),
+     *                 @OA\Property(property="image_url", type="string", example="https://example.com/images/card1.jpg"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(property="group", type="object"),
+     *                 @OA\Property(property="personType", type="object")
+     *             )
      *         )
      *     )
      * )
@@ -428,7 +483,7 @@ class NotificationController extends Controller
         ]);
 
         $device = Device::findOrFail($validated['device_id']);
-        $card = Card::findOrFail($validated['card_id']);
+        $card = Card::with(['group.garden:id,name', 'personType', 'group.garden.images'])->findOrFail($validated['card_id']);
         
         $expoService = new ExpoNotificationService();
         $success = $expoService->sendCardToDevice(
@@ -439,9 +494,121 @@ class NotificationController extends Controller
             $validated['data'] ?? []
         );
 
+        // Return the same structure as sendCardInfo
         return response()->json([
             'message' => 'Card to device notification sent',
-            'success' => $success
+            'success' => $success,
+            'card' => [
+                'id' => $card->id,
+                'child_first_name' => $card->child_first_name,
+                'child_last_name' => $card->child_last_name,
+                'parent_name' => $card->parent_name,
+                'phone' => $card->phone,
+                'status' => $card->status,
+                'group_id' => $card->group_id,
+                'person_type_id' => $card->person_type_id,
+                'parent_code' => $card->parent_code,
+                'image_path' => $card->image_path,
+                'active_garden_image' => $card->active_garden_image,
+                'image_url' => $card->image_url,
+                'created_at' => $card->created_at,
+                'updated_at' => $card->updated_at,
+                'group' => $card->group,
+                'personType' => $card->personType,
+            ]
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/notifications/card-to-all-devices",
+     *     operationId="sendCardToAllDevicesNotification",
+     *     tags={"Notifications"},
+     *     summary="Send notification from card to all devices in the group",
+     *     description="Send notification from a card to all devices that have this card's group in their active_garden_groups",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="card_id", type="integer", example=1, description="Card ID"),
+     *             @OA\Property(property="title", type="string", example="Parent Call", description="Notification title"),
+     *             @OA\Property(property="body", type="string", example="Parent called from card", description="Notification body"),
+     *             @OA\Property(property="data", type="object", description="Additional data")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Notification sent successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Card to all devices notification sent"),
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="devices_count", type="integer", example=3),
+     *             @OA\Property(property="card", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="child_first_name", type="string", example="Giorgi"),
+     *                 @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
+     *                 @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
+     *                 @OA\Property(property="phone", type="string", example="+995599654321"),
+     *                 @OA\Property(property="status", type="string", example="active"),
+     *                 @OA\Property(property="group_id", type="integer", example=1),
+     *                 @OA\Property(property="person_type_id", type="integer", example=1),
+     *                 @OA\Property(property="parent_code", type="string", example="ABC123"),
+     *                 @OA\Property(property="image_path", type="string", example="images/card1.jpg"),
+     *                 @OA\Property(property="active_garden_image", type="integer", example=1),
+     *                 @OA\Property(property="image_url", type="string", example="https://example.com/images/card1.jpg"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(property="group", type="object"),
+     *                 @OA\Property(property="personType", type="object")
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function sendCardToAllDevices(Request $request)
+    {
+        $validated = $request->validate([
+            'card_id' => 'required|integer|exists:cards,id',
+            'title' => 'required|string|max:255',
+            'body' => 'required|string',
+            'data' => 'nullable|array',
+        ]);
+
+        $card = Card::with(['group.garden:id,name', 'personType', 'group.garden.images'])->findOrFail($validated['card_id']);
+        
+        $expoService = new ExpoNotificationService();
+        $results = $expoService->sendCardToAllDevices(
+            $card, 
+            $validated['title'], 
+            $validated['body'], 
+            $validated['data'] ?? []
+        );
+
+        // Count successful notifications
+        $successCount = is_array($results) ? count(array_filter($results)) : 0;
+
+        return response()->json([
+            'message' => 'Card to all devices notification sent',
+            'success' => $successCount > 0,
+            'devices_count' => $successCount,
+            'card' => [
+                'id' => $card->id,
+                'child_first_name' => $card->child_first_name,
+                'child_last_name' => $card->child_last_name,
+                'parent_name' => $card->parent_name,
+                'phone' => $card->phone,
+                'status' => $card->status,
+                'group_id' => $card->group_id,
+                'person_type_id' => $card->person_type_id,
+                'parent_code' => $card->parent_code,
+                'image_path' => $card->image_path,
+                'active_garden_image' => $card->active_garden_image,
+                'image_url' => $card->image_url,
+                'created_at' => $card->created_at,
+                'updated_at' => $card->updated_at,
+                'group' => $card->group,
+                'personType' => $card->personType,
+            ]
         ]);
     }
 
