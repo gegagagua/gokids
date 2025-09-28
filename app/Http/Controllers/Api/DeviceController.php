@@ -473,7 +473,6 @@ class DeviceController extends Controller
      *     tags={"Devices"},
      *     summary="Update device active garden groups",
      *     description="Update the active garden groups for a specific device. Active garden groups must be a subset of the device's assigned garden groups. Groups cannot be removed if they are still active on other devices in the same garden.",
-     *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, description="Device ID", @OA\Schema(type="integer")),
      *     @OA\RequestBody(
      *         required=true,
@@ -530,21 +529,7 @@ class DeviceController extends Controller
      */
     public function updateActiveGardenGroups(Request $request, $id)
     {
-        $query = Device::query();
-        
-        // Get garden_id from authenticated user if they are a garden user
-        $user = $request->user();
-        $userGardenId = null;
-        
-        if ($user->type === 'garden') {
-            $garden = \App\Models\Garden::where('email', $user->email)->first();
-            if ($garden) {
-                $userGardenId = $garden->id;
-                $query->where('garden_id', $userGardenId);
-            }
-        }
-        
-        $device = $query->findOrFail($id);
+        $device = Device::findOrFail($id);
         
         $validated = $request->validate([
             'active_garden_groups' => 'required|array',
@@ -1158,6 +1143,22 @@ class DeviceController extends Controller
 
         // Start a new session
         $device->startSession(60); // 60 minutes session duration
+        
+        // Refresh the device to ensure the session data is properly loaded
+        $device->refresh();
+        
+        // Verify the login status was properly set
+        if (!$device->is_logged_in) {
+            \Log::error("Device login status not properly set after session start", [
+                'device_id' => $device->id,
+                'device_code' => $device->code,
+                'is_logged_in' => $device->is_logged_in
+            ]);
+            
+            // Force update the status
+            $device->is_logged_in = true;
+            $device->save();
+        }
 
         // If device has no active garden groups, set all garden groups as active by default
         if (empty($device->active_garden_groups)) {
@@ -1178,7 +1179,9 @@ class DeviceController extends Controller
             'message' => 'Device login successful',
             'device' => $deviceData,
             'session_token' => $device->session_token,
-            'session_expires_at' => $device->session_expires_at
+            'session_expires_at' => $device->session_expires_at,
+            'is_logged_in' => $device->is_logged_in,
+            'login_status' => $device->isLoggedIn()
         ]);
     }
 

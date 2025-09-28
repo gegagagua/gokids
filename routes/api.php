@@ -87,7 +87,6 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         
         Route::apiResource('devices', DeviceController::class);
         Route::patch('/devices/{id}/status', [DeviceController::class, 'updateStatus']);
-        Route::patch('/devices/{id}/active-garden-groups', [DeviceController::class, 'updateActiveGardenGroups']);
         Route::post('/devices/{id}/regenerate-code', [DeviceController::class, 'regenerateCode']);
 
         Route::apiResource('garden-groups', GardenGroupController::class);
@@ -141,6 +140,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/devices/login', [DeviceController::class, 'deviceLogin']);
     Route::post('/devices/logout', [DeviceController::class, 'deviceLogout']);
     Route::post('/devices/update-expo-token', [DeviceController::class, 'updateExpoToken']);
+    Route::patch('/devices/{id}/active-garden-groups', [DeviceController::class, 'updateActiveGardenGroups']);
 
     Route::get('/get-spam-cards', [CardController::class, 'getAllSpamCards']);
     

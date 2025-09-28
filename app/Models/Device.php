@@ -95,12 +95,23 @@ class Device extends Model
      */
     public function startSession($sessionDurationMinutes = 60)
     {
-        $this->update([
+        $result = $this->update([
             'is_logged_in' => true,
             'last_login_at' => now(),
             'session_token' => \Str::random(32),
             'session_expires_at' => now()->addMinutes($sessionDurationMinutes),
         ]);
+        
+        // Log the session start for debugging
+        \Log::info("Device session started", [
+            'device_id' => $this->id,
+            'device_code' => $this->code,
+            'is_logged_in' => $this->is_logged_in,
+            'session_expires_at' => $this->session_expires_at,
+            'update_result' => $result
+        ]);
+        
+        return $result;
     }
 
     /**
