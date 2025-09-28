@@ -139,6 +139,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     // Device login route (no authentication required)
     Route::post('/devices/login', [DeviceController::class, 'deviceLogin']);
     Route::post('/devices/logout', [DeviceController::class, 'deviceLogout']);
+    Route::post('/devices/me', [DeviceController::class, 'deviceMe']);
     Route::post('/devices/update-expo-token', [DeviceController::class, 'updateExpoToken']);
     Route::patch('/devices/{id}/active-garden-groups', [DeviceController::class, 'updateActiveGardenGroups']);
 

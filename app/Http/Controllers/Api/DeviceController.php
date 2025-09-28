@@ -1336,6 +1336,117 @@ class DeviceController extends Controller
             'message' => 'Device logout successful'
         ]);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/devices/me",
+     *     operationId="getDeviceMe",
+     *     tags={"Devices"},
+     *     summary="Get device information by code",
+     *     description="Get device information using device code, returns similar data to login endpoint",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"code"},
+     *             @OA\Property(property="code", type="string", example="X7K9M2", description="Device code")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Device information retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Device information retrieved successfully"),
+     *             @OA\Property(property="device", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Device 1"),
+     *                 @OA\Property(property="code", type="string", example="X7K9M2"),
+     *                 @OA\Property(property="status", type="string", example="active"),
+     *                 @OA\Property(property="garden_id", type="integer", example=1),
+     *                 @OA\Property(property="garden_groups", type="array", @OA\Items(type="integer"), example={1,2,3}),
+     *                 @OA\Property(property="active_garden_groups", type="array", @OA\Items(type="integer"), example={1,2}),
+     *                 @OA\Property(property="expo_token", type="string", example="ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"),
+     *                 @OA\Property(property="is_logged_in", type="boolean", example=true),
+     *                 @OA\Property(property="last_login_at", type="string", format="date-time"),
+     *                 @OA\Property(property="session_token", type="string", example="abc123..."),
+     *                 @OA\Property(property="session_expires_at", type="string", format="date-time"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(property="garden_groups_data", type="array", @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Group 1"),
+     *                     @OA\Property(property="garden_id", type="integer", example=1),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )),
+     *                 @OA\Property(property="active_garden_groups_data", type="array", @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Group 1"),
+     *                     @OA\Property(property="garden_id", type="integer", example=1),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 ))
+     *             ),
+     *             @OA\Property(property="session_token", type="string", example="abc123..."),
+     *             @OA\Property(property="session_expires_at", type="string", format="date-time"),
+     *             @OA\Property(property="is_logged_in", type="boolean", example=true),
+     *             @OA\Property(property="login_status", type="boolean", example=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Invalid device code or device is inactive",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Invalid device code or device is inactive")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
+     */
+    public function deviceMe(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|size:6',
+        ]);
+
+        $device = Device::with(['garden'])
+            ->where('code', $request->code)
+            ->where('status', 'active')
+            ->first();
+
+        if (!$device) {
+            return response()->json([
+                'message' => 'Invalid device code or device is inactive'
+            ], 401);
+        }
+
+        // Load garden groups data
+        $gardenGroups = $device->gardenGroups()->get();
+        $activeGardenGroups = $device->activeGardenGroups()->get();
+        
+        // Add garden groups data to device response
+        $deviceData = $device->toArray();
+        $deviceData['garden_groups_data'] = $gardenGroups;
+        $deviceData['active_garden_groups_data'] = $activeGardenGroups;
+
+        return response()->json([
+            'message' => 'Device information retrieved successfully',
+            'device' => $deviceData,
+            'session_token' => $device->session_token,
+            'session_expires_at' => $device->session_expires_at,
+            'is_logged_in' => $device->is_logged_in,
+            'login_status' => $device->isLoggedIn()
+        ]);
+    }
 }
 
 /**
