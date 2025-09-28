@@ -16,6 +16,8 @@ class SmsService
         $phone = trim($phone); // Remove whitespace
         
         // Remove any non-digit characters from phone number
+        $phone = (string) $phone;
+        $phone = str_replace("\0", '', $phone);
         $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
         
         // Ensure it starts with 995
