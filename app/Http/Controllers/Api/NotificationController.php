@@ -834,45 +834,6 @@ class NotificationController extends Controller
             
             $expoService = new ExpoNotificationService();
             
-            // Send notification to the specific card that created this notification
-            // Find the device that sent the original notification (the card's device)
-            // This is the device that has this card's group in their active_garden_groups
-            $cardDevice = Device::where('garden_id', $card->group->garden->id)
-                ->where('status', 'active')
-                ->whereNotNull('expo_token')
-                ->whereJsonContains('active_garden_groups', $card->group_id)
-                ->first();
-            
-            // Send notification only to the specific card's device
-            if ($cardDevice) {
-                try {
-                    $cardNotificationData = [
-                        'type' => 'notification_accepted',
-                        'notification_id' => (string) $notification->id,
-                        'card_id' => (string) $card->id,
-                        'card_phone' => $card->phone,
-                        'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
-                        'garden_name' => $gardenName,
-                        'accepted_at' => now()->toISOString(),
-                        'accepted_by_device' => $currentDevice->name ?? 'Device',
-                    ];
-                    
-                    $expoService->sendToDevice(
-                        $cardDevice,
-                        'Notification Accepted',
-                        "Your notification for {$card->child_first_name} was accepted at {$gardenName}",
-                        $cardNotificationData,
-                        $card
-                    );
-                    
-                    \Log::info("Notification acceptance sent to card device {$cardDevice->id} for card {$card->id}");
-                } catch (\Exception $e) {
-                    \Log::error("Failed to send notification to card device {$cardDevice->id}: " . $e->getMessage());
-                }
-            } else {
-                \Log::warning("No active device found for card {$card->id} group {$card->group_id}");
-            }
-            
             // Get devices that have this card's group in their active_garden_groups
             // but are not the current device (these are the parent devices)
             if (!$card->group || !$card->group->garden) {
@@ -883,12 +844,53 @@ class NotificationController extends Controller
                 ], 500);
             }
             
+        
             $parentDevices = Device::where('garden_id', $card->group->garden->id)
                 ->where('id', '!=', $currentDevice->id)
                 ->where('status', 'active')
                 ->whereNotNull('expo_token')
-                ->whereJsonContains('active_garden_groups', $card->group_id)
+                ->where(function($query) use ($card) {
+                    // Find parent devices using multiple strategies:
+                    // 1. Devices with "Parent" in their name (most common)
+                    // 2. Devices that have this card's group in active_garden_groups
+                    // 3. Devices with null or empty active_garden_groups (default parent behavior)
+                    // 4. Devices that don't have "Garden" in their name (to exclude garden devices)
+                    $query->where('name', 'like', '%Parent%')
+                          ->orWhere(function($subQuery) use ($card) {
+                              $subQuery->where(function($groupQuery) use ($card) {
+                                  $groupQuery->whereJsonContains('active_garden_groups', $card->group_id)
+                                           ->orWhereNull('active_garden_groups')
+                                           ->orWhere('active_garden_groups', '[]')
+                                           ->orWhere('active_garden_groups', '');
+                              })
+                              ->where('name', 'not like', '%Garden%');
+                          });
+                })
                 ->get();
+            
+            // If no parent devices found with the primary strategy, try a fallback
+            if ($parentDevices->count() === 0) {
+                \Log::warning("No parent devices found with primary strategy, trying fallback for card {$card->id}");
+                
+                $parentDevices = Device::where('garden_id', $card->group->garden->id)
+                    ->where('id', '!=', $currentDevice->id)
+                    ->where('status', 'active')
+                    ->whereNotNull('expo_token')
+                    ->where(function($query) {
+                        // Fallback: any device that looks like a parent device
+                        $query->where('name', 'like', '%Parent%')
+                              ->orWhere('name', 'like', '%Mobile%')
+                              ->orWhere(function($subQuery) {
+                                  $subQuery->where('name', 'not like', '%Garden%')
+                                           ->where('name', 'not like', '%Device -%'); 
+                              });
+                    })
+                    ->get();
+                    
+                \Log::info("Fallback found {$parentDevices->count()} parent devices", [
+                    'devices' => $parentDevices->pluck('name', 'id')->toArray()
+                ]);
+            }
             
             foreach ($parentDevices as $parentDevice) {
                 try {
@@ -902,15 +904,16 @@ class NotificationController extends Controller
                         'accepted_by_device' => $currentDevice->name ?? 'Device',
                     ];
                     
-                    $expoService->sendToDevice(
+                 
+                    $result = $expoService->sendToDevice(
                         $parentDevice,
                         'Card Accepted',
                         "Card for {$card->child_first_name} was accepted at the garden",
                         $acceptanceData,
                         $card
                     );
-                } catch (\Exception $e) {
-                    // Silent fail for individual devices
+                    
+                } catch (\Exception $e) {                    // Silent fail for individual devices
                 }
             }
         }
