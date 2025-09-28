@@ -82,28 +82,28 @@ class Device extends Model
 
     /**
      * Check if device is currently logged in
+     * Sessions are unlimited until explicit logout
      */
     public function isLoggedIn()
     {
-        return $this->is_logged_in && 
-               $this->session_expires_at && 
-               $this->session_expires_at->isFuture();
+        return $this->is_logged_in;
     }
 
     /**
      * Start a new session for the device
+     * Sessions are unlimited until explicit logout
      */
-    public function startSession($sessionDurationMinutes = 60)
+    public function startSession($sessionDurationMinutes = null)
     {
         $result = $this->update([
             'is_logged_in' => true,
             'last_login_at' => now(),
             'session_token' => \Str::random(32),
-            'session_expires_at' => now()->addMinutes($sessionDurationMinutes),
+            'session_expires_at' => null, // No expiration - unlimited session
         ]);
         
         // Log the session start for debugging
-        \Log::info("Device session started", [
+        \Log::info("Device session started (unlimited)", [
             'device_id' => $this->id,
             'device_code' => $this->code,
             'is_logged_in' => $this->is_logged_in,
@@ -131,21 +131,36 @@ class Device extends Model
 
     /**
      * Extend the current session
+     * Not needed for unlimited sessions
      */
-    public function extendSession($sessionDurationMinutes = 60)
+    public function extendSession($sessionDurationMinutes = null)
     {
-        if ($this->isLoggedIn()) {
-            $this->update([
-                'session_expires_at' => now()->addMinutes($sessionDurationMinutes),
-            ]);
-        }
+        // Sessions are unlimited, no need to extend
+        return true;
     }
 
     /**
      * Check if session is expired
+     * Sessions are unlimited, so this always returns false
      */
     public function isSessionExpired()
     {
-        return $this->session_expires_at && $this->session_expires_at->isPast();
+        return false; // Sessions are unlimited until explicit logout
+    }
+
+    /**
+     * Clean up all expired sessions for all devices
+     */
+    public static function cleanupExpiredSessions()
+    {
+        $expiredDevices = self::where('is_logged_in', true)
+            ->where('session_expires_at', '<', now())
+            ->get();
+
+        foreach ($expiredDevices as $device) {
+            $device->endSession();
+        }
+
+        return $expiredDevices->count();
     }
 }

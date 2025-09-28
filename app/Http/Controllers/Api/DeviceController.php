@@ -1142,8 +1142,8 @@ class DeviceController extends Controller
             $device->endSession();
         }
 
-        // Start a new session
-        $device->startSession(60); // 60 minutes session duration
+        // Start a new session (unlimited duration)
+        $device->startSession();
         
         // Refresh the device to ensure the session data is properly loaded
         $device->refresh();
