@@ -55,6 +55,19 @@ class Handler extends ExceptionHandler
                 'message' => $exception->getMessage(),
             ], method_exists($exception, 'getStatusCode') ? $exception->getStatusCode() : 500);
         }
+        
+        // Clean exception message to prevent null byte issues
+        $message = $exception->getMessage();
+        if ($message) {
+            $message = str_replace("\0", '', $message); // Remove null bytes
+            $message = trim($message); // Remove whitespace
+        }
+        
+        // Create a new exception with cleaned message if needed
+        if ($message !== $exception->getMessage()) {
+            $exception = new \Exception($message, $exception->getCode(), $exception);
+        }
+        
         return parent::render($request, $exception);
     }
 } 
