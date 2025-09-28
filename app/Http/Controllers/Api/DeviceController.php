@@ -472,7 +472,7 @@ class DeviceController extends Controller
      *     operationId="updateDeviceActiveGardenGroups",
      *     tags={"Devices"},
      *     summary="Update device active garden groups",
-     *     description="Update the active garden groups for a specific device. Active garden groups must be a subset of the device's assigned garden groups. Groups cannot be removed if they are still active on other devices in the same garden.",
+     *     description="Update the active garden groups for a specific device. Active garden groups must be a subset of the device's assigned garden groups. Groups can only be removed if at least one other device in the same garden has those groups active.",
      *     @OA\Parameter(name="id", in="path", required=true, description="Device ID", @OA\Schema(type="integer")),
      *     @OA\RequestBody(
      *         required=true,
@@ -512,6 +512,13 @@ class DeviceController extends Controller
      *         )
      *     ),
      *     @OA\Response(
+     *         response=422,
+     *         description="Cannot remove groups that are not active on other devices",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Cannot remove groups that are not active on any other device in the same garden")
+     *         )
+     *     ),
+     *     @OA\Response(
      *         response=404,
      *         description="Device not found",
      *         @OA\JsonContent(
@@ -545,8 +552,24 @@ class DeviceController extends Controller
         // Find groups that are being removed (were active but are not in the new list)
         $removedGroups = array_diff($currentActiveGroups, $activeGroups);
         
-        // Allow removing groups even if they are active on other devices
-        // This restriction has been removed as requested
+        // Check if any of the removed groups are still active on other devices
+        // Only allow removal if at least one other device has these groups active
+        if (!empty($removedGroups)) {
+            $otherDevicesWithActiveGroups = Device::where('id', '!=', $device->id)
+                ->where('garden_id', $device->garden_id)
+                ->where(function ($query) use ($removedGroups) {
+                    foreach ($removedGroups as $groupId) {
+                        $query->orWhereJsonContains('active_garden_groups', $groupId);
+                    }
+                })
+                ->exists();
+            
+            if (!$otherDevicesWithActiveGroups) {
+                return response()->json([
+                    'message' => 'Cannot remove groups that are not active on any other device in the same garden'
+                ], 422);
+            }
+        }
         
         $device->update(['active_garden_groups' => $activeGroups]);
         

@@ -7561,7 +7561,7 @@
                     "Devices"
                 ],
                 "summary": "Update device active garden groups",
-                "description": "Update the active garden groups for a specific device. Active garden groups must be a subset of the device's assigned garden groups. Groups cannot be removed if they are still active on other devices in the same garden.",
+                "description": "Update the active garden groups for a specific device. Active garden groups must be a subset of the device's assigned garden groups. Groups can only be removed if at least one other device in the same garden has those groups active.",
                 "operationId": "updateDeviceActiveGardenGroups",
                 "parameters": [
                     {
@@ -7695,6 +7695,22 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Active garden groups must be a subset of assigned garden groups"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Cannot remove groups that are not active on other devices",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Cannot remove groups that are not active on any other device in the same garden"
                                         }
                                     },
                                     "type": "object"
