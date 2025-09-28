@@ -19,7 +19,7 @@ return [
                 /*
                  * Edit to include full URL in ui for assets
                  */
-                'use_absolute_path' => env('L5_SWAGGER_USE_ABSOLUTE_PATH', false),
+                'use_absolute_path' => env('L5_SWAGGER_USE_ABSOLUTE_PATH', true),
 
                 /*
                 * Edit to set path where swagger ui assets should be stored
@@ -92,7 +92,7 @@ return [
             /*
              * Edit to set the api's base path
              */
-            'base' => env('L5_SWAGGER_BASE_PATH', '/'),
+            'base' => env('L5_SWAGGER_BASE_PATH', null),
 
             /*
              * Absolute path to directories that should be excluded from scanning
