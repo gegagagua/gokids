@@ -206,8 +206,8 @@ class GardenImageController extends Controller
             return response()->json(['message' => 'Garden image not found.'], 404);
         }
         // Remove image file from storage
-        if ($gardenImage->image && \Storage::disk('public')->exists($gardenImage->image)) {
-            \Storage::disk('public')->delete($gardenImage->image);
+        if ($gardenImage->image && Storage::disk('public')->exists($gardenImage->image)) {
+            Storage::disk('public')->delete($gardenImage->image);
         }
         $gardenImage->delete();
         return response()->noContent();
