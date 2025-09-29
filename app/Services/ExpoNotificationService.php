@@ -450,33 +450,25 @@ class ExpoNotificationService
                 'priority' => 'high',
             ];
             
-            // Add image for Android using "image" field and iOS using "mutableContent"
+            // Add image support - Expo uses a simpler format
             if (isset($data['image_url']) && !empty($data['image_url'])) {
-                // For Android - direct image support with proper channel
-                $payload['android'] = [
-                    'image' => $data['image_url'],
-                    'channelId' => 'images',
-                    'largeIcon' => $data['image_url'],
-                    'style' => [
-                        'type' => 'bigPicture',
-                        'picture' => $data['image_url']
+                // Convert HTTP to HTTPS if needed (iOS requirement)
+                $imageUrl = $data['image_url'];
+                if (strpos($imageUrl, 'http://') === 0) {
+                    $imageUrl = str_replace('http://', 'https://', $imageUrl);
+                }
+                
+                // Use the simpler Expo format that works across platforms
+                $payload['attachments'] = [
+                    [
+                        'url' => $imageUrl,
+                        'identifier' => 'image',
+                        'typeHint' => 'image'
                     ]
                 ];
                 
-                // For iOS - enable mutable content for rich notifications
-                $payload['ios'] = [
-                    'mutableContent' => true,
-                    'attachments' => [
-                        [
-                            'url' => $data['image_url'],
-                            'type' => 'image',
-                            'identifier' => 'image'
-                        ]
-                    ]
-                ];
-                
-                // Also add as top-level image field (some versions of Expo support this)
-                $payload['image'] = $data['image_url'];
+                // Also include in data for fallback
+                $payload['data']['image_url'] = $imageUrl;
                 
                 // Log the payload for debugging
                 Log::info('Sending notification with image payload: ' . json_encode($payload));
