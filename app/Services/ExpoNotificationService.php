@@ -449,6 +449,15 @@ class ExpoNotificationService
                 'sound' => 'default',
                 'priority' => 'high',
             ];
+            
+                 // Add image attachment if image_url is provided in data
+                 if (isset($data['image_url']) && !empty($data['image_url'])) {
+                    $payload['attachments'] = [
+                        [
+                            'url' => $data['image_url']
+                        ]
+                    ];
+                }
 
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
