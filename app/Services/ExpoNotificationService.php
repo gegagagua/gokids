@@ -450,14 +450,37 @@ class ExpoNotificationService
                 'priority' => 'high',
             ];
             
-                 // Add image attachment if image_url is provided in data
-                 if (isset($data['image_url']) && !empty($data['image_url'])) {
-                    $payload['attachments'] = [
+            // Add image for Android using "image" field and iOS using "mutableContent"
+            if (isset($data['image_url']) && !empty($data['image_url'])) {
+                // For Android - direct image support with proper channel
+                $payload['android'] = [
+                    'image' => $data['image_url'],
+                    'channelId' => 'images',
+                    'largeIcon' => $data['image_url'],
+                    'style' => [
+                        'type' => 'bigPicture',
+                        'picture' => $data['image_url']
+                    ]
+                ];
+                
+                // For iOS - enable mutable content for rich notifications
+                $payload['ios'] = [
+                    'mutableContent' => true,
+                    'attachments' => [
                         [
-                            'url' => $data['image_url']
+                            'url' => $data['image_url'],
+                            'type' => 'image',
+                            'identifier' => 'image'
                         ]
-                    ];
-                }
+                    ]
+                ];
+                
+                // Also add as top-level image field (some versions of Expo support this)
+                $payload['image'] = $data['image_url'];
+                
+                // Log the payload for debugging
+                Log::info('Sending notification with image payload: ' . json_encode($payload));
+            }
 
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
