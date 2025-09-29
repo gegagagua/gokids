@@ -467,6 +467,9 @@ class ExpoNotificationService
                     ]
                 ];
                 
+                // Android/Expo big picture support
+                $payload['image'] = $imageUrl;
+                
                 // Also include in data for fallback
                 $payload['data']['image_url'] = $imageUrl;
                 
