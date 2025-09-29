@@ -448,9 +448,13 @@ class ExpoNotificationService
                 'data' => $data,
                 'sound' => 'default',
                 'priority' => 'high',
+                // Enable iOS notification service extension for image processing
+                'mutableContent' => true,
+                // Android notification channel and appearance
+                'channelId' => 'default',
             ];
             
-            // Add image support - Expo uses a simpler format
+            // Add image support - proper format for both platforms
             if (isset($data['image_url']) && !empty($data['image_url'])) {
                 // Convert HTTP to HTTPS if needed (iOS requirement)
                 $imageUrl = $data['image_url'];
@@ -458,19 +462,10 @@ class ExpoNotificationService
                     $imageUrl = str_replace('http://', 'https://', $imageUrl);
                 }
                 
-                // Use the simpler Expo format that works across platforms
-                $payload['attachments'] = [
-                    [
-                        'url' => $imageUrl,
-                        'identifier' => 'image',
-                        'typeHint' => 'image'
-                    ]
-                ];
-                
-                // Android/Expo big picture support
+                // ANDROID: Big Picture style notification (works immediately)
                 $payload['image'] = $imageUrl;
                 
-                // Also include in data for fallback
+                // Keep image URL in data for iOS notification service extension
                 $payload['data']['image_url'] = $imageUrl;
                 
                 // Log the payload for debugging
