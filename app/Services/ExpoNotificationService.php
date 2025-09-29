@@ -477,6 +477,18 @@ class ExpoNotificationService
                 Log::info('Sending notification with image payload: ' . json_encode($payload));
             }
 
+            // Add dynamic icon support for Android
+            if (isset($data['icon']) && !empty($data['icon'])) {
+                $iconUrl = $data['icon'];
+                if (strpos($iconUrl, 'http://') === 0) {
+                    $iconUrl = str_replace('http://', 'https://', $iconUrl);
+                }
+                
+                // Set icon for Android notifications
+                $payload['icon'] = $iconUrl;
+                $payload['data']['icon'] = $iconUrl;
+            }
+
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Accept-encoding' => 'gzip, deflate',
