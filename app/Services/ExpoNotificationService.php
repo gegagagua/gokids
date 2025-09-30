@@ -448,7 +448,39 @@ class ExpoNotificationService
                 'data' => $data,
                 'sound' => 'default',
                 'priority' => 'high',
+                // Enable iOS notification service extension for image processing
+                'mutableContent' => true,
+                // Android notification channel and appearance
+                'channelId' => 'default',
             ];
+            
+            // Add image support - use active_garden_image if available
+            $imageUrl = null;
+            if (isset($data['active_garden_image']['image_url']) && !empty($data['active_garden_image']['image_url'])) {
+                $imageUrl = $data['active_garden_image']['image_url'];
+                
+                // Convert HTTP to HTTPS if needed (iOS requirement)
+                if (strpos($imageUrl, 'http://') === 0) {
+                    $imageUrl = str_replace('http://', 'https://', $imageUrl);
+                }
+                
+                // ANDROID: Big Picture style notification
+                $payload['image'] = $imageUrl;
+                
+
+            }
+
+            // Add dynamic icon support for Android
+            if (isset($data['icon']) && !empty($data['icon'])) {
+                $iconUrl = $data['icon'];
+                if (strpos($iconUrl, 'http://') === 0) {
+                    $iconUrl = str_replace('http://', 'https://', $iconUrl);
+                }
+                
+                // Set icon for Android notifications
+                $payload['icon'] = $iconUrl;
+                $payload['data']['icon'] = $iconUrl;
+            }
 
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
