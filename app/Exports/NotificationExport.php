@@ -14,7 +14,13 @@ class NotificationExport implements FromCollection, WithHeadings, WithMapping
     */
     public function collection()
     {
-        return Notification::with(['device:id,name', 'card:id,phone,status'])->get();
+        // Get current date in the application's timezone
+        $today = now()->startOfDay();
+        $tomorrow = now()->addDay()->startOfDay();
+        
+        return Notification::with(['device:id,name', 'card:id,phone,status'])
+            ->whereBetween('created_at', [$today, $tomorrow])
+            ->get();
     }
 
     /**

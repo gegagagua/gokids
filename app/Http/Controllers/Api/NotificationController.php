@@ -930,8 +930,8 @@ class NotificationController extends Controller
      *     path="/api/notifications/export",
      *     operationId="exportNotifications",
      *     tags={"Notifications"},
-     *     summary="Export all notifications",
-     *     description="Export all notifications data to Excel file",
+     *     summary="Export today's notifications",
+     *     description="Export notifications from the current day only (not last 24 hours) to Excel file",
      *     security={{"sanctum":{}}},
      *     @OA\Response(
      *         response=200,
