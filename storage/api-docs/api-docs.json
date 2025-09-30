@@ -15227,7 +15227,7 @@
                     "Notifications"
                 ],
                 "summary": "Accept a notification",
-                "description": "Mark a notification as accepted when device button is pressed",
+                "description": "Mark a notification as accepted when device button is pressed. Sends confirmation notifications to parent devices and people linked to the card.",
                 "operationId": "acceptNotification",
                 "parameters": [
                     {
