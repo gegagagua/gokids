@@ -762,7 +762,7 @@ class NotificationController extends Controller
      *     operationId="acceptNotification",
      *     tags={"Notifications"},
      *     summary="Accept a notification",
-     *     description="Mark a notification as accepted when device button is pressed",
+     *     description="Mark a notification as accepted when device button is pressed. Sends confirmation notifications to parent devices and people linked to the card.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(
      *         name="notificationId",
@@ -912,6 +912,43 @@ class NotificationController extends Controller
                     );
                     
                 } catch (\Exception $e) {                    // Silent fail for individual devices
+                }
+            }
+
+            // Send notification to people who have this card linked to them
+            $people = \App\Models\People::where('card_id', $card->id)->get();
+            
+            foreach ($people as $person) {
+                try {
+                    $acceptanceData = [
+                        'type' => 'notification_accepted',
+                        'notification_id' => (string) $notification->id,
+                        'card_id' => (string) $card->id,
+                        'card_phone' => $card->phone,
+                        'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                        'garden_name' => $gardenName,
+                        'accepted_at' => now()->toISOString(),
+                        'accepted_by_device' => $currentDevice->name ?? 'Device',
+                        'person_name' => $person->name,
+                        'person_phone' => $person->phone,
+                    ];
+                    
+                    // Create a notification record for the person
+                    \App\Models\Notification::create([
+                        'title' => 'Notification Accepted',
+                        'body' => "Your notification for {$card->child_first_name} was accepted at the garden",
+                        'data' => $acceptanceData,
+                        'expo_token' => null, // People don't have expo tokens, this is just for record keeping
+                        'device_id' => null, // People don't have devices
+                        'card_id' => $card->id,
+                        'status' => 'sent', // Mark as sent since it's a confirmation
+                        'sent_at' => now(),
+                    ]);
+                    
+                    \Log::info("Notification acceptance confirmation created for person {$person->id} ({$person->name}) for card {$card->id}");
+                    
+                } catch (\Exception $e) {
+                    \Log::error("Failed to create notification acceptance confirmation for person {$person->id}: " . $e->getMessage());
                 }
             }
         }
