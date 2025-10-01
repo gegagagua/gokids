@@ -801,7 +801,6 @@ class NotificationController extends Controller
     {
         $notification = Notification::with(['card:id,child_first_name,child_last_name,phone,status,group_id', 'device.garden'])
             ->findOrFail($notificationId);
-
         // Check if notification is already accepted
         if ($notification->status === 'accepted') {
             return response()->json([
