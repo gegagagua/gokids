@@ -19,6 +19,7 @@ class SmsService
         $phone = (string) $phone;
         $phone = str_replace("\0", '', $phone);
         $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        $cleanPhone = str_replace('+', '', $cleanPhone);
         
         // Ensure it starts with 995
         if (!str_starts_with($cleanPhone, '995')) {
