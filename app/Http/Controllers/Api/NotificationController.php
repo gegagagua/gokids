@@ -525,7 +525,7 @@ class NotificationController extends Controller
      *     operationId="sendCardToAllDevicesNotification",
      *     tags={"Notifications"},
      *     summary="Send notification from card or people to all devices in the group",
-     *     description="Send notification from a card or people to all devices that have this card's group in their active_garden_groups. Notifications are sent to all cards in the same group.",
+     *     description="Send notification from a specific card or people to all devices that have this card's group in their active_garden_groups. Only the specified card's information is sent.",
      *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
@@ -686,23 +686,29 @@ class NotificationController extends Controller
         $allResults = [];
         $totalSuccessCount = 0;
 
-        // Send notifications for each card in the group
-        foreach ($cardsInGroup as $cardToNotify) {
-            $results = $expoService->sendCardToAllDevices(
-                $cardToNotify, 
-                $validated['title'], 
-                $validated['body'] ?? '', 
-                $validated['data'] ?? []
-            );
-
-            $successCount = is_array($results) ? count(array_filter($results)) : 0;
-            $totalSuccessCount += $successCount;
-            $allResults[] = [
-                'card_id' => $cardToNotify->id,
-                'success_count' => $successCount,
-                'results' => $results
-            ];
+        // Send notification only for the specific card_id (not all cards in group)
+        if ($hasCardId) {
+            // Use the specific card that was requested
+            $cardToNotify = $sourceEntity;
+        } else {
+            // If people_id was provided, use their card
+            $cardToNotify = $sourceEntity->card;
         }
+
+        $results = $expoService->sendCardToAllDevices(
+            $cardToNotify, 
+            $validated['title'], 
+            $validated['body'] ?? '', 
+            $validated['data'] ?? []
+        );
+
+        $successCount = is_array($results) ? count(array_filter($results)) : 0;
+        $totalSuccessCount = $successCount;
+        $allResults[] = [
+            'card_id' => $cardToNotify->id,
+            'success_count' => $successCount,
+            'results' => $results
+        ];
 
         // Record the notification call if it was successful
         if ($totalSuccessCount > 0) {
@@ -727,8 +733,8 @@ class NotificationController extends Controller
             'devices_count' => $totalSuccessCount,
             'remaining_calls' => $remainingCalls,
             'source_type' => $isFromPeople ? 'people' : 'card',
-            'source_id' => $isFromPeople ? $sourceEntity->id : $card->id,
-            'cards_notified' => $cardsInGroup->count(),
+            'source_id' => $isFromPeople ? $sourceEntity->id : $cardToNotify->id,
+            'card_notified' => $cardToNotify->id,
             'group' => $group,
             'cards_in_group' => $cardsInGroup->map(function($card) {
                 return [
