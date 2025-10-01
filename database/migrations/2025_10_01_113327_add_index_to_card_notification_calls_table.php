@@ -12,7 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('card_notification_calls', function (Blueprint $table) {
-            $table->index(['card_id', 'notification_type', 'called_at'], 'card_notif_calls_idx');
+            // Check if index doesn't exist before creating it
+            if (!Schema::hasIndex('card_notification_calls', 'card_notif_calls_idx')) {
+                $table->index(['card_id', 'notification_type', 'called_at'], 'card_notif_calls_idx');
+            }
         });
     }
 
