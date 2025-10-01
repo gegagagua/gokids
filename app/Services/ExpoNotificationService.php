@@ -290,18 +290,53 @@ class ExpoNotificationService
         }
 
         // Get all devices that have this card's group in their active_garden_groups
-        $devices = Device::where('garden_id', $card->group->garden->id)
+        // CRITICAL: Only devices from the specific garden where the card belongs
+        $targetGardenId = $card->group->garden->id;
+        $targetGroupId = $card->group_id;
+        
+        $devices = Device::where('garden_id', $targetGardenId)
             ->where('status', 'active')
             ->whereNotNull('expo_token')
-            ->whereJsonContains('active_garden_groups', $card->group_id)
+            ->where(function($query) use ($targetGroupId) {
+                // Primary: devices that have this specific group in their active_garden_groups
+                $query->whereJsonContains('active_garden_groups', $targetGroupId);
+            })
             ->get();
 
+        // Debug logging to understand the filtering
+        Log::info("Device filtering debug", [
+            'card_id' => $card->id,
+            'card_group_id' => $targetGroupId,
+            'target_garden_id' => $targetGardenId,
+            'garden_name' => $card->group->garden->name,
+            'devices_found' => $devices->count(),
+            'device_ids' => $devices->pluck('id')->toArray(),
+            'device_garden_ids' => $devices->pluck('garden_id')->unique()->toArray(),
+            'device_active_groups' => $devices->pluck('active_garden_groups')->toArray(),
+            'query_verification' => [
+                'all_devices_in_garden' => Device::where('garden_id', $targetGardenId)->count(),
+                'active_devices_in_garden' => Device::where('garden_id', $targetGardenId)->where('status', 'active')->count(),
+                'devices_with_expo_token' => Device::where('garden_id', $targetGardenId)->where('status', 'active')->whereNotNull('expo_token')->count()
+            ]
+        ]);
+
         if ($devices->isEmpty()) {
-            Log::info("No devices found for card {$card->id} group {$card->group_id}");
+            Log::info("No devices found for card {$card->id} group {$targetGroupId} in garden {$targetGardenId}");
             return false;
         }
 
-        Log::info("Sending card notification to {$devices->count()} devices for card {$card->id}");
+        // CRITICAL: Verify that all devices are from the correct garden
+        $incorrectGardenDevices = $devices->where('garden_id', '!=', $targetGardenId);
+        if ($incorrectGardenDevices->count() > 0) {
+            Log::error("CRITICAL ERROR: Found devices from wrong garden!", [
+                'expected_garden_id' => $targetGardenId,
+                'incorrect_devices' => $incorrectGardenDevices->pluck('id', 'garden_id')->toArray()
+            ]);
+            // Filter out devices from wrong gardens
+            $devices = $devices->where('garden_id', $targetGardenId);
+        }
+
+        Log::info("Sending card notification to {$devices->count()} devices for card {$card->id} in garden {$card->group->garden->name}");
 
         // Load necessary relationships for card data
         $card->load(['personType', 'group.garden.images']);

@@ -14875,7 +14875,7 @@
                     "Notifications"
                 ],
                 "summary": "Send notification from card or people to all devices in the group",
-                "description": "Send notification from a card or people to all devices that have this card's group in their active_garden_groups. Notifications are sent to all cards in the same group.",
+                "description": "Send notification from a specific card or people to all devices that have this card's group in their active_garden_groups. Only the specified card's information is sent.",
                 "operationId": "sendCardToAllDevicesNotification",
                 "requestBody": {
                     "required": true,
