@@ -370,6 +370,28 @@ class DeviceController extends Controller
         }
         
         $device->update($validated);
+        
+        // If garden_groups was updated, automatically add new groups to active_garden_groups
+        if (isset($validated['garden_groups'])) {
+            $currentActiveGroups = $device->active_garden_groups ?? [];
+            $newGroups = $validated['garden_groups'];
+            
+            // Find groups that are new (not currently active)
+            $groupsToAdd = array_diff($newGroups, $currentActiveGroups);
+            
+            if (!empty($groupsToAdd)) {
+                // Add new groups to active_garden_groups
+                $updatedActiveGroups = array_merge($currentActiveGroups, $groupsToAdd);
+                $device->update(['active_garden_groups' => $updatedActiveGroups]);
+                
+                \Log::info("Automatically added new groups to active_garden_groups", [
+                    'device_id' => $device->id,
+                    'new_groups' => $groupsToAdd,
+                    'updated_active_groups' => $updatedActiveGroups
+                ]);
+            }
+        }
+        
         return response()->json($device);
     }
 
@@ -557,6 +579,7 @@ class DeviceController extends Controller
         if (!empty($removedGroups)) {
             $otherDevicesWithActiveGroups = Device::where('id', '!=', $device->id)
                 ->where('garden_id', $device->garden_id)
+                ->where('is_logged_in', true) // Only consider logged in devices
                 ->where(function ($query) use ($removedGroups) {
                     foreach ($removedGroups as $groupId) {
                         $query->orWhereJsonContains('active_garden_groups', $groupId);
@@ -566,7 +589,7 @@ class DeviceController extends Controller
             
             if (!$otherDevicesWithActiveGroups) {
                 return response()->json([
-                    'message' => 'Cannot remove groups that are not active on any other device in the same garden'
+                    'message' => 'Cannot remove groups that are not active on any other logged in device in the same garden'
                 ], 422);
             }
         }
@@ -575,6 +598,18 @@ class DeviceController extends Controller
         
         // Load active garden groups data
         $activeGardenGroups = $device->activeGardenGroups()->get();
+        
+        // Find groups that were added (for logging)
+        $addedGroups = array_diff($activeGroups, $currentActiveGroups);
+        $removedGroups = array_diff($currentActiveGroups, $activeGroups);
+        
+        $message = 'Active garden groups updated successfully';
+        if (!empty($addedGroups)) {
+            $message .= '. Added groups: ' . implode(', ', $addedGroups);
+        }
+        if (!empty($removedGroups)) {
+            $message .= '. Removed groups: ' . implode(', ', $removedGroups);
+        }
         
         return response()->json([
             'id' => $device->id,
@@ -585,7 +620,11 @@ class DeviceController extends Controller
             'garden_groups' => $device->garden_groups,
             'active_garden_groups' => $device->active_garden_groups,
             'active_garden_groups_data' => $activeGardenGroups,
-            'message' => 'Active garden groups updated successfully',
+            'message' => $message,
+            'changes' => [
+                'added_groups' => $addedGroups,
+                'removed_groups' => $removedGroups
+            ]
         ]);
     }
 
