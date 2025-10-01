@@ -14874,8 +14874,8 @@
                 "tags": [
                     "Notifications"
                 ],
-                "summary": "Send notification from card to all devices in the group",
-                "description": "Send notification from a card to all devices that have this card's group in their active_garden_groups",
+                "summary": "Send notification from card or people to all devices in the group",
+                "description": "Send notification from a card or people to all devices that have this card's group in their active_garden_groups. Notifications are sent to all cards in the same group.",
                 "operationId": "sendCardToAllDevicesNotification",
                 "requestBody": {
                     "required": true,
@@ -14883,12 +14883,16 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "card_id",
                                     "title"
                                 ],
                                 "properties": {
                                     "card_id": {
-                                        "description": "Card ID",
+                                        "description": "Card ID (either card_id or people_id must be provided)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "people_id": {
+                                        "description": "People ID (either card_id or people_id must be provided)",
                                         "type": "integer",
                                         "example": 1
                                     },
@@ -14931,72 +14935,123 @@
                                             "type": "integer",
                                             "example": 3
                                         },
-                                        "card": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "child_first_name": {
-                                                    "type": "string",
-                                                    "example": "Giorgi"
-                                                },
-                                                "child_last_name": {
-                                                    "type": "string",
-                                                    "example": "Davitashvili"
-                                                },
-                                                "parent_name": {
-                                                    "type": "string",
-                                                    "example": "Nino Davitashvili"
-                                                },
-                                                "phone": {
-                                                    "type": "string",
-                                                    "example": "+995599654321"
-                                                },
-                                                "status": {
-                                                    "type": "string",
-                                                    "example": "active"
-                                                },
-                                                "group_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "person_type_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "parent_code": {
-                                                    "type": "string",
-                                                    "example": "ABC123"
-                                                },
-                                                "image_path": {
-                                                    "type": "string",
-                                                    "example": "images/card1.jpg"
-                                                },
-                                                "active_garden_image": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "image_url": {
-                                                    "type": "string",
-                                                    "example": "https://example.com/images/card1.jpg"
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                },
-                                                "group": {
-                                                    "type": "object"
-                                                },
-                                                "personType": {
-                                                    "type": "object"
-                                                }
-                                            },
+                                        "remaining_calls": {
+                                            "description": "Remaining calls for paid gardens without license",
+                                            "type": "integer",
+                                            "example": 4
+                                        },
+                                        "source_type": {
+                                            "description": "Source type: card or people",
+                                            "type": "string",
+                                            "example": "card"
+                                        },
+                                        "source_id": {
+                                            "description": "Source entity ID",
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "cards_notified": {
+                                            "description": "Number of cards in group that were notified",
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "group": {
+                                            "description": "Group information",
                                             "type": "object"
+                                        },
+                                        "cards_in_group": {
+                                            "description": "List of cards in the group",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "notification_results": {
+                                            "description": "Results for each card notification",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - missing or invalid parameters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Either card_id or people_id must be provided"
+                                        },
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error_code": {
+                                            "type": "string",
+                                            "example": "MISSING_IDENTIFIER"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Card/People not found or no group found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No group found for the provided identifier"
+                                        },
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error_code": {
+                                            "type": "string",
+                                            "example": "NO_GROUP_FOUND"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests - call limit exceeded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Call limit exceeded. You have reached the maximum of 5 notification calls per day for paid gardens without a license."
+                                        },
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error_code": {
+                                            "type": "string",
+                                            "example": "CALL_LIMIT_EXCEEDED"
+                                        },
+                                        "call_limit": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "remaining_calls": {
+                                            "type": "integer",
+                                            "example": 0
                                         }
                                     },
                                     "type": "object"
@@ -15280,6 +15335,28 @@
                                                 }
                                             },
                                             "type": "object"
+                                        },
+                                        "sender_device_id": {
+                                            "description": "ID of the device that accepted the notification",
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "sender_device_name": {
+                                            "description": "Name of the device that accepted the notification",
+                                            "type": "string",
+                                            "example": "Garden Device 1"
+                                        },
+                                        "total_notifications_sent": {
+                                            "description": "Total number of notifications sent to cards and people",
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "notification_results": {
+                                            "description": "Results for each card and people notification sent",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
                                         }
                                     },
                                     "type": "object"

@@ -192,6 +192,60 @@ class Card extends Model
     }
 
     /**
+     * Check if the card's garden is paid (not free)
+     */
+    public function isGardenPaid()
+    {
+        if (!$this->group || !$this->group->garden) {
+            return false;
+        }
+
+        $garden = $this->group->garden;
+        if (!$garden->countryData) {
+            return false;
+        }
+
+        return !$garden->countryData->isFree();
+    }
+
+    /**
+     * Check if the card has a valid license
+     */
+    public function hasValidLicense()
+    {
+        if (!$this->license) {
+            return false;
+        }
+
+        $licenseType = $this->getLicenseType();
+        $licenseValue = $this->getLicenseValue();
+
+        if ($licenseType === 'boolean') {
+            return (bool) $licenseValue;
+        }
+
+        if ($licenseType === 'date') {
+            try {
+                $licenseDate = Carbon::parse($licenseValue);
+                return $licenseDate->isFuture();
+            } catch (\Exception $e) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if the card can make unlimited notification calls
+     * (either garden is free or card has valid license)
+     */
+    public function canMakeUnlimitedCalls()
+    {
+        return !$this->isGardenPaid() || $this->hasValidLicense();
+    }
+
+    /**
      * Soft delete the card (mark as deleted)
      */
     public function softDelete()

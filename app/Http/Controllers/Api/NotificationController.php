@@ -524,14 +524,15 @@ class NotificationController extends Controller
      *     path="/api/notifications/card-to-all-devices",
      *     operationId="sendCardToAllDevicesNotification",
      *     tags={"Notifications"},
-     *     summary="Send notification from card to all devices in the group",
-     *     description="Send notification from a card to all devices that have this card's group in their active_garden_groups",
+     *     summary="Send notification from card or people to all devices in the group",
+     *     description="Send notification from a card or people to all devices that have this card's group in their active_garden_groups. Notifications are sent to all cards in the same group.",
      *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"card_id","title"},
-     *             @OA\Property(property="card_id", type="integer", example=1, description="Card ID"),
+     *             required={"title"},
+     *             @OA\Property(property="card_id", type="integer", example=1, description="Card ID (either card_id or people_id must be provided)"),
+     *             @OA\Property(property="people_id", type="integer", example=1, description="People ID (either card_id or people_id must be provided)"),
      *             @OA\Property(property="title", type="string", example="Parent Call", description="Notification title"),
      *             @OA\Property(property="body", type="string", example="Parent called from card", description="Notification body (optional)"),
      *             @OA\Property(property="data", type="object", description="Additional data")
@@ -544,24 +545,42 @@ class NotificationController extends Controller
      *             @OA\Property(property="message", type="string", example="Card to all devices notification sent"),
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="devices_count", type="integer", example=3),
-     *             @OA\Property(property="card", type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="child_first_name", type="string", example="Giorgi"),
-     *                 @OA\Property(property="child_last_name", type="string", example="Davitashvili"),
-     *                 @OA\Property(property="parent_name", type="string", example="Nino Davitashvili"),
-     *                 @OA\Property(property="phone", type="string", example="+995599654321"),
-     *                 @OA\Property(property="status", type="string", example="active"),
-     *                 @OA\Property(property="group_id", type="integer", example=1),
-     *                 @OA\Property(property="person_type_id", type="integer", example=1),
-     *                 @OA\Property(property="parent_code", type="string", example="ABC123"),
-     *                 @OA\Property(property="image_path", type="string", example="images/card1.jpg"),
-     *                 @OA\Property(property="active_garden_image", type="integer", example=1),
-     *                 @OA\Property(property="image_url", type="string", example="https://example.com/images/card1.jpg"),
-     *                 @OA\Property(property="created_at", type="string", format="date-time"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
-     *                 @OA\Property(property="group", type="object"),
-     *                 @OA\Property(property="personType", type="object")
-     *             )
+     *             @OA\Property(property="remaining_calls", type="integer", example=4, description="Remaining calls for paid gardens without license"),
+     *             @OA\Property(property="source_type", type="string", example="card", description="Source type: card or people"),
+     *             @OA\Property(property="source_id", type="integer", example=1, description="Source entity ID"),
+     *             @OA\Property(property="cards_notified", type="integer", example=2, description="Number of cards in group that were notified"),
+     *             @OA\Property(property="group", type="object", description="Group information"),
+     *             @OA\Property(property="cards_in_group", type="array", @OA\Items(type="object"), description="List of cards in the group"),
+     *             @OA\Property(property="notification_results", type="array", @OA\Items(type="object"), description="Results for each card notification")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad request - missing or invalid parameters",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Either card_id or people_id must be provided"),
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error_code", type="string", example="MISSING_IDENTIFIER")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Card/People not found or no group found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No group found for the provided identifier"),
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error_code", type="string", example="NO_GROUP_FOUND")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=429,
+     *         description="Too Many Requests - call limit exceeded",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Call limit exceeded. You have reached the maximum of 5 notification calls per day for paid gardens without a license."),
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error_code", type="string", example="CALL_LIMIT_EXCEEDED"),
+     *             @OA\Property(property="call_limit", type="integer", example=5),
+     *             @OA\Property(property="remaining_calls", type="integer", example=0)
      *         )
      *     )
      * )
@@ -569,47 +588,158 @@ class NotificationController extends Controller
     public function sendCardToAllDevices(Request $request)
     {
         $validated = $request->validate([
-            'card_id' => 'required|integer|exists:cards,id',
+            'card_id' => 'nullable|integer|exists:cards,id',
+            'people_id' => 'nullable|integer|exists:people,id',
             'title' => 'required|string|max:255',
             'body' => 'nullable|string',
             'data' => 'nullable|array',
         ]);
 
-        $card = Card::with(['group.garden:id,name', 'personType', 'group.garden.images'])->findOrFail($validated['card_id']);
+        // Ensure either card_id or people_id is provided, but not both
+        if (!$validated['card_id'] && !$validated['people_id']) {
+            return response()->json([
+                'message' => 'Either card_id or people_id must be provided',
+                'success' => false,
+                'error_code' => 'MISSING_IDENTIFIER'
+            ], 400);
+        }
+
+        if ($validated['card_id'] && $validated['people_id']) {
+            return response()->json([
+                'message' => 'Only one of card_id or people_id should be provided, not both',
+                'success' => false,
+                'error_code' => 'MULTIPLE_IDENTIFIERS'
+            ], 400);
+        }
+
+        // Get the source entity (card or people) and determine the group
+        $sourceEntity = null;
+        $group = null;
+        $isFromPeople = false;
+
+        if ($validated['card_id']) {
+            $sourceEntity = Card::with(['group.garden:id,name,country_id', 'group.garden.countryData', 'personType', 'group.garden.images'])->findOrFail($validated['card_id']);
+            $group = $sourceEntity->group;
+        } else {
+            $people = \App\Models\People::with(['card.group.garden:id,name,country_id', 'card.group.garden.countryData', 'card.personType', 'card.group.garden.images'])->findOrFail($validated['people_id']);
+            $sourceEntity = $people;
+            $group = $people->card->group;
+            $isFromPeople = true;
+        }
+
+        if (!$group) {
+            return response()->json([
+                'message' => 'No group found for the provided identifier',
+                'success' => false,
+                'error_code' => 'NO_GROUP_FOUND'
+            ], 404);
+        }
+
+        // Get all cards in the same group for sending notifications
+        $cardsInGroup = Card::where('group_id', $group->id)
+            ->where('is_deleted', false)
+            ->with(['group.garden:id,name,country_id', 'group.garden.countryData', 'personType', 'group.garden.images'])
+            ->get();
+
+        if ($cardsInGroup->isEmpty()) {
+            return response()->json([
+                'message' => 'No active cards found in the group',
+                'success' => false,
+                'error_code' => 'NO_CARDS_IN_GROUP'
+            ], 404);
+        }
+
+        // Use the first card for license checking (all cards in group should have same garden)
+        $card = $cardsInGroup->first();
+        
+        // Check if card can make unlimited calls (free garden or has valid license)
+        if (!$card->canMakeUnlimitedCalls()) {
+            // Check call limit for paid gardens without license
+            $callLimit = 5; // Maximum 5 calls per day
+            $since = now()->startOfDay();
+            
+            // Use the source entity ID for call tracking
+            $sourceId = $isFromPeople ? $sourceEntity->id : $card->id;
+            $callType = $isFromPeople ? 'people_to_all_devices' : 'card_to_all_devices';
+            
+            if (\App\Models\CardNotificationCall::hasExceededLimit($sourceId, $callType, $callLimit, $since)) {
+                $remainingCalls = \App\Models\CardNotificationCall::getRemainingCalls($sourceId, $callType, $callLimit, $since);
+                
+                return response()->json([
+                    'message' => 'Call limit exceeded. You have reached the maximum of ' . $callLimit . ' notification calls per day for paid gardens without a license.',
+                    'success' => false,
+                    'error_code' => 'CALL_LIMIT_EXCEEDED',
+                    'call_limit' => $callLimit,
+                    'remaining_calls' => $remainingCalls,
+                    'source_type' => $isFromPeople ? 'people' : 'card',
+                    'source_id' => $sourceId,
+                    'group' => $group,
+                    'cards_in_group' => $cardsInGroup->count()
+                ], 429); // HTTP 429 Too Many Requests
+            }
+        }
         
         $expoService = new ExpoNotificationService();
-        $results = $expoService->sendCardToAllDevices(
-            $card, 
-            $validated['title'], 
-            $validated['body'] ?? '', 
-            $validated['data'] ?? []
-        );
+        $allResults = [];
+        $totalSuccessCount = 0;
 
-        // Count successful notifications
-        $successCount = is_array($results) ? count(array_filter($results)) : 0;
+        // Send notifications for each card in the group
+        foreach ($cardsInGroup as $cardToNotify) {
+            $results = $expoService->sendCardToAllDevices(
+                $cardToNotify, 
+                $validated['title'], 
+                $validated['body'] ?? '', 
+                $validated['data'] ?? []
+            );
+
+            $successCount = is_array($results) ? count(array_filter($results)) : 0;
+            $totalSuccessCount += $successCount;
+            $allResults[] = [
+                'card_id' => $cardToNotify->id,
+                'success_count' => $successCount,
+                'results' => $results
+            ];
+        }
+
+        // Record the notification call if it was successful
+        if ($totalSuccessCount > 0) {
+            $sourceId = $isFromPeople ? $sourceEntity->id : $card->id;
+            $callType = $isFromPeople ? 'people_to_all_devices' : 'card_to_all_devices';
+            \App\Models\CardNotificationCall::recordCall($sourceId, $callType);
+        }
+
+        // Get remaining calls for response
+        $remainingCalls = null;
+        if (!$card->canMakeUnlimitedCalls()) {
+            $callLimit = 5;
+            $since = now()->startOfDay();
+            $sourceId = $isFromPeople ? $sourceEntity->id : $card->id;
+            $callType = $isFromPeople ? 'people_to_all_devices' : 'card_to_all_devices';
+            $remainingCalls = \App\Models\CardNotificationCall::getRemainingCalls($sourceId, $callType, $callLimit, $since);
+        }
 
         return response()->json([
-            'message' => 'Card to all devices notification sent',
-            'success' => $successCount > 0,
-            'devices_count' => $successCount,
-            'card' => [
-                'id' => $card->id,
-                'child_first_name' => $card->child_first_name,
-                'child_last_name' => $card->child_last_name,
-                'parent_name' => $card->parent_name,
-                'phone' => $card->phone,
-                'status' => $card->status,
-                'group_id' => $card->group_id,
-                'person_type_id' => $card->person_type_id,
-                'parent_code' => $card->parent_code,
-                'image_path' => $card->image_path,
-                'active_garden_image' => $card->active_garden_image,
-                'image_url' => $card->image_url,
-                'created_at' => $card->created_at,
-                'updated_at' => $card->updated_at,
-                'group' => $card->group,
-                'personType' => $card->personType,
-            ]
+            'message' => ($isFromPeople ? 'People' : 'Card') . ' to all devices notification sent',
+            'success' => $totalSuccessCount > 0,
+            'devices_count' => $totalSuccessCount,
+            'remaining_calls' => $remainingCalls,
+            'source_type' => $isFromPeople ? 'people' : 'card',
+            'source_id' => $isFromPeople ? $sourceEntity->id : $card->id,
+            'cards_notified' => $cardsInGroup->count(),
+            'group' => $group,
+            'cards_in_group' => $cardsInGroup->map(function($card) {
+                return [
+                    'id' => $card->id,
+                    'child_first_name' => $card->child_first_name,
+                    'child_last_name' => $card->child_last_name,
+                    'parent_name' => $card->parent_name,
+                    'phone' => $card->phone,
+                    'status' => $card->status,
+                    'parent_code' => $card->parent_code,
+                    'image_url' => $card->image_url,
+                ];
+            }),
+            'notification_results' => $allResults
         ]);
     }
 
@@ -784,7 +914,11 @@ class NotificationController extends Controller
      *                 @OA\Property(property="status", type="string", example="accepted"),
      *                 @OA\Property(property="accepted_at", type="string", format="date-time"),
      *                 @OA\Property(property="card", type="object", description="Card information")
-     *             )
+     *             ),
+     *             @OA\Property(property="sender_device_id", type="integer", example=5, description="ID of the device that accepted the notification"),
+     *             @OA\Property(property="sender_device_name", type="string", example="Garden Device 1", description="Name of the device that accepted the notification"),
+     *             @OA\Property(property="total_notifications_sent", type="integer", example=3, description="Total number of notifications sent to cards and people"),
+     *             @OA\Property(property="notification_results", type="array", @OA\Items(type="object"), description="Results for each card and people notification sent")
      *         )
      *     ),
      *     @OA\Response(
@@ -801,6 +935,7 @@ class NotificationController extends Controller
     {
         $notification = Notification::with(['card:id,child_first_name,child_last_name,phone,status,group_id', 'device.garden'])
             ->findOrFail($notificationId);
+            
         // Check if notification is already accepted
         if ($notification->status === 'accepted') {
             return response()->json([
@@ -814,104 +949,222 @@ class NotificationController extends Controller
         $notification->accepted_at = now();
         $notification->save();
 
-        // Send notification back to the card's parent (the one who sent the notification)
-        if ($notification->card) {
-            $card = $notification->card;
-            $currentDevice = $notification->device;
+        // Get the sender device information
+        $senderDevice = $notification->device;
+        $senderDeviceId = $senderDevice ? $senderDevice->id : null;
+        $senderDeviceName = $senderDevice ? $senderDevice->name : 'Unknown Device';
+
+        // Send notification back to all cards and people with the same card_id
+        if ($notification->card_id) {
+            $cardId = $notification->card_id;
+            $expoService = new ExpoNotificationService();
             
-            // Load the card's group and garden relationships
-            $card->load(['group.garden']);
+            // Get all cards with the same card_id (in case there are duplicates or related cards)
+            $cards = Card::where('id', $cardId)
+                ->where('is_deleted', false)
+                ->with(['group.garden', 'personType'])
+                ->get();
             
-            // Get the garden name from the device's garden_id
+            // Get all people with the same card_id
+            $people = \App\Models\People::where('card_id', $cardId)
+                ->with(['card.group.garden', 'personType'])
+                ->get();
+            
+            // Get the garden name
             $gardenName = 'Garden';
-            if ($currentDevice->garden_id) {
-                $garden = \App\Models\Garden::find($currentDevice->garden_id);
+            if ($senderDevice && $senderDevice->garden_id) {
+                $garden = \App\Models\Garden::find($senderDevice->garden_id);
                 if ($garden) {
                     $gardenName = $garden->name;
                 }
             }
             
-            $expoService = new ExpoNotificationService();
+            $totalNotificationsSent = 0;
+            $notificationResults = [];
             
-            // Get devices that have this card's group in their active_garden_groups
-            // but are not the current device (these are the parent devices)
-            if (!$card->group || !$card->group->garden) {
-                \Log::error("Card {$card->id} has no group or garden relationship");
-                return response()->json([
-                    'message' => 'Card has no group or garden relationship',
-                    'notification' => $notification
-                ], 500);
-            }
-            
-        
-            $parentDevices = Device::where('garden_id', $card->group->garden->id)
-                ->where('id', '!=', $currentDevice->id)
-                ->where('status', 'active')
-                ->whereNotNull('expo_token')
-                ->where(function($query) use ($card) {
-                    // Find parent devices using multiple strategies:
-                    // 1. Devices with "Parent" in their name (most common)
-                    // 2. Devices that have this card's group in active_garden_groups
-                    // 3. Devices with null or empty active_garden_groups (default parent behavior)
-                    // 4. Devices that don't have "Garden" in their name (to exclude garden devices)
-                    $query->where('name', 'like', '%Parent%')
-                          ->orWhere(function($subQuery) use ($card) {
-                              $subQuery->where(function($groupQuery) use ($card) {
-                                  $groupQuery->whereJsonContains('active_garden_groups', $card->group_id)
-                                           ->orWhereNull('active_garden_groups')
-                                           ->orWhere('active_garden_groups', '[]')
-                                           ->orWhere('active_garden_groups', '');
-                              })
-                              ->where('name', 'not like', '%Garden%');
-                          });
-                })
-                ->get();
-            
-            // If no parent devices found with the primary strategy, try a fallback
-            if ($parentDevices->count() === 0) {
-                \Log::warning("No parent devices found with primary strategy, trying fallback for card {$card->id}");
+            // Send notifications for each card
+            foreach ($cards as $card) {
+                if (!$card->group || !$card->group->garden) {
+                    \Log::error("Card {$card->id} has no group or garden relationship");
+                    continue;
+                }
                 
+                // Get devices that have this card's group in their active_garden_groups
+                // but are not the current device (these are the parent devices)
                 $parentDevices = Device::where('garden_id', $card->group->garden->id)
-                    ->where('id', '!=', $currentDevice->id)
+                    ->where('id', '!=', $senderDeviceId)
                     ->where('status', 'active')
                     ->whereNotNull('expo_token')
-                    ->where(function($query) {
-                        // Fallback: any device that looks like a parent device
+                    ->where(function($query) use ($card) {
+                        // Find parent devices using multiple strategies:
+                        // 1. Devices with "Parent" in their name (most common)
+                        // 2. Devices that have this card's group in active_garden_groups
+                        // 3. Devices with null or empty active_garden_groups (default parent behavior)
+                        // 4. Devices that don't have "Garden" in their name (to exclude garden devices)
                         $query->where('name', 'like', '%Parent%')
-                              ->orWhere('name', 'like', '%Mobile%')
-                              ->orWhere(function($subQuery) {
-                                  $subQuery->where('name', 'not like', '%Garden%')
-                                           ->where('name', 'not like', '%Device -%'); 
+                              ->orWhere(function($subQuery) use ($card) {
+                                  $subQuery->where(function($groupQuery) use ($card) {
+                                      $groupQuery->whereJsonContains('active_garden_groups', $card->group_id)
+                                               ->orWhereNull('active_garden_groups')
+                                               ->orWhere('active_garden_groups', '[]')
+                                               ->orWhere('active_garden_groups', '');
+                                  })
+                                  ->where('name', 'not like', '%Garden%');
                               });
                     })
                     ->get();
+                
+                // If no parent devices found with the primary strategy, try a fallback
+                if ($parentDevices->count() === 0) {
+                    \Log::warning("No parent devices found with primary strategy, trying fallback for card {$card->id}");
                     
-        
+                    $parentDevices = Device::where('garden_id', $card->group->garden->id)
+                        ->where('id', '!=', $senderDeviceId)
+                        ->where('status', 'active')
+                        ->whereNotNull('expo_token')
+                        ->where(function($query) {
+                            // Fallback: any device that looks like a parent device
+                            $query->where('name', 'like', '%Parent%')
+                                  ->orWhere('name', 'like', '%Mobile%')
+                                  ->orWhere(function($subQuery) {
+                                      $subQuery->where('name', 'not like', '%Garden%')
+                                               ->where('name', 'not like', '%Device -%'); 
+                                  });
+                        })
+                        ->get();
+                }
+                
+                $cardNotificationCount = 0;
+                foreach ($parentDevices as $parentDevice) {
+                    try {
+                        $acceptanceData = [
+                            'type' => 'card_accepted',
+                            'card_id' => (string) $card->id,
+                            'card_phone' => $card->phone,
+                            'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                            'garden_name' => $gardenName,
+                            'accepted_at' => now()->toISOString(),
+                            'accepted_by_device' => $senderDeviceName,
+                            'sender_device_id' => (string) $senderDeviceId,
+                            'notification_id' => (string) $notification->id,
+                        ];
+                        
+                        $result = $expoService->sendToDevice(
+                            $parentDevice,
+                            'Card Accepted',
+                            "Card for {$card->child_first_name} was accepted at the garden",
+                            $acceptanceData,
+                            $card
+                        );
+                        
+                        if ($result) {
+                            $cardNotificationCount++;
+                            $totalNotificationsSent++;
+                        }
+                        
+                    } catch (\Exception $e) {
+                        \Log::error("Failed to send acceptance notification to device {$parentDevice->id}: " . $e->getMessage());
+                    }
+                }
+                
+                $notificationResults[] = [
+                    'card_id' => $card->id,
+                    'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                    'notifications_sent' => $cardNotificationCount,
+                    'parent_devices_found' => $parentDevices->count()
+                ];
             }
             
-            foreach ($parentDevices as $parentDevice) {
-                try {
-                    $acceptanceData = [
-                        'type' => 'card_accepted',
-                        'card_id' => (string) $card->id,
-                        'card_phone' => $card->phone,
-                        'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
-                        'garden_name' => $gardenName,
-                        'accepted_at' => now()->toISOString(),
-                        'accepted_by_device' => $currentDevice->name ?? 'Device',
-                    ];
-                    
-                 
-                    $result = $expoService->sendToDevice(
-                        $parentDevice,
-                        'Card Accepted',
-                        "Card for {$card->child_first_name} was accepted at the garden",
-                        $acceptanceData,
-                        $card
-                    );
-                    
-                } catch (\Exception $e) {                    // Silent fail for individual devices
+            // Send notifications for each people
+            foreach ($people as $person) {
+                if (!$person->card || !$person->card->group || !$person->card->group->garden) {
+                    \Log::error("People {$person->id} has no card or card has no group/garden relationship");
+                    continue;
                 }
+                
+                $card = $person->card;
+                
+                // Get devices that have this card's group in their active_garden_groups
+                // but are not the current device (these are the parent devices)
+                $parentDevices = Device::where('garden_id', $card->group->garden->id)
+                    ->where('id', '!=', $senderDeviceId)
+                    ->where('status', 'active')
+                    ->whereNotNull('expo_token')
+                    ->where(function($query) use ($card) {
+                        $query->where('name', 'like', '%Parent%')
+                              ->orWhere(function($subQuery) use ($card) {
+                                  $subQuery->where(function($groupQuery) use ($card) {
+                                      $groupQuery->whereJsonContains('active_garden_groups', $card->group_id)
+                                               ->orWhereNull('active_garden_groups')
+                                               ->orWhere('active_garden_groups', '[]')
+                                               ->orWhere('active_garden_groups', '');
+                                  })
+                                  ->where('name', 'not like', '%Garden%');
+                              });
+                    })
+                    ->get();
+                
+                // If no parent devices found with the primary strategy, try a fallback
+                if ($parentDevices->count() === 0) {
+                    $parentDevices = Device::where('garden_id', $card->group->garden->id)
+                        ->where('id', '!=', $senderDeviceId)
+                        ->where('status', 'active')
+                        ->whereNotNull('expo_token')
+                        ->where(function($query) {
+                            $query->where('name', 'like', '%Parent%')
+                                  ->orWhere('name', 'like', '%Mobile%')
+                                  ->orWhere(function($subQuery) {
+                                      $subQuery->where('name', 'not like', '%Garden%')
+                                               ->where('name', 'not like', '%Device -%'); 
+                                  });
+                        })
+                        ->get();
+                }
+                
+                $peopleNotificationCount = 0;
+                foreach ($parentDevices as $parentDevice) {
+                    try {
+                        $acceptanceData = [
+                            'type' => 'people_accepted',
+                            'people_id' => (string) $person->id,
+                            'people_name' => $person->name,
+                            'people_phone' => $person->phone,
+                            'card_id' => (string) $card->id,
+                            'card_phone' => $card->phone,
+                            'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                            'garden_name' => $gardenName,
+                            'accepted_at' => now()->toISOString(),
+                            'accepted_by_device' => $senderDeviceName,
+                            'sender_device_id' => (string) $senderDeviceId,
+                            'notification_id' => (string) $notification->id,
+                        ];
+                        
+                        $result = $expoService->sendToDevice(
+                            $parentDevice,
+                            'People Accepted',
+                            "Person {$person->name} was accepted at the garden",
+                            $acceptanceData,
+                            $card
+                        );
+                        
+                        if ($result) {
+                            $peopleNotificationCount++;
+                            $totalNotificationsSent++;
+                        }
+                        
+                    } catch (\Exception $e) {
+                        \Log::error("Failed to send acceptance notification to device {$parentDevice->id}: " . $e->getMessage());
+                    }
+                }
+                
+                $notificationResults[] = [
+                    'people_id' => $person->id,
+                    'people_name' => $person->name,
+                    'card_id' => $card->id,
+                    'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                    'notifications_sent' => $peopleNotificationCount,
+                    'parent_devices_found' => $parentDevices->count()
+                ];
             }
         }
 
@@ -920,7 +1173,11 @@ class NotificationController extends Controller
 
         return response()->json([
             'message' => 'Notification accepted successfully',
-            'notification' => $notification
+            'notification' => $notification,
+            'sender_device_id' => $senderDeviceId,
+            'sender_device_name' => $senderDeviceName,
+            'total_notifications_sent' => $totalNotificationsSent,
+            'notification_results' => $notificationResults
         ]);
     }
 
