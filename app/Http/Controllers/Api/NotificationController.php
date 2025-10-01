@@ -596,7 +596,10 @@ class NotificationController extends Controller
         ]);
 
         // Ensure either card_id or people_id is provided, but not both
-        if (!$validated['card_id'] && !$validated['people_id']) {
+        $hasCardId = isset($validated['card_id']) && $validated['card_id'];
+        $hasPeopleId = isset($validated['people_id']) && $validated['people_id'];
+        
+        if (!$hasCardId && !$hasPeopleId) {
             return response()->json([
                 'message' => 'Either card_id or people_id must be provided',
                 'success' => false,
@@ -604,7 +607,7 @@ class NotificationController extends Controller
             ], 400);
         }
 
-        if ($validated['card_id'] && $validated['people_id']) {
+        if ($hasCardId && $hasPeopleId) {
             return response()->json([
                 'message' => 'Only one of card_id or people_id should be provided, not both',
                 'success' => false,
@@ -617,7 +620,7 @@ class NotificationController extends Controller
         $group = null;
         $isFromPeople = false;
 
-        if ($validated['card_id']) {
+        if ($hasCardId) {
             $sourceEntity = Card::with(['group.garden:id,name,country_id', 'group.garden.countryData', 'personType', 'group.garden.images'])->findOrFail($validated['card_id']);
             $group = $sourceEntity->group;
         } else {
