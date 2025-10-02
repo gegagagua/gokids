@@ -687,8 +687,8 @@ class DeviceController extends Controller
     }
 
     /**
-     * @OA\Delete(
-     *     path="/api/devices/bulk-delete",
+     * @OA\Post(
+     *     path="/api/devices/delete-devices",
      *     operationId="bulkDeleteDevices",
      *     tags={"Devices"},
      *     summary="Delete multiple devices",
