@@ -664,6 +664,15 @@ class DeviceController extends Controller
             $garden = \App\Models\Garden::where('email', $user->email)->first();
             if ($garden) {
                 $query->where('garden_id', $garden->id);
+            } else {
+                return response()->json(['message' => 'Garden not found for user'], 404);
+            }
+        } elseif ($user instanceof \App\Models\Dister) {
+            $allowedGardenIds = $user->gardens ?? [];
+            if (!empty($allowedGardenIds)) {
+                $query->whereIn('garden_id', $allowedGardenIds);
+            } else {
+                return response()->json(['message' => 'No gardens assigned to this dister'], 404);
             }
         } else {
             // For admin users, allow filtering by garden_id if provided
@@ -676,6 +685,7 @@ class DeviceController extends Controller
         $device->delete();
         return response()->json(['message' => 'Device deleted']);
     }
+
 
     /**
      * @OA\Post(

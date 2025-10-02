@@ -282,6 +282,7 @@ class ParentModelController extends Controller
         return $parent;
     }
 
+
     /**
      * @OA\Delete(
      *     path="/api/parents/{id}",
