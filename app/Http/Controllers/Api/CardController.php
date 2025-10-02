@@ -674,6 +674,19 @@ class CardController extends Controller
             }
         }
 
+        // Check if phone is being updated and if it already exists in other cards
+        if (isset($validated['phone']) && $validated['phone'] !== $card->phone) {
+            $existingCard = Card::where('phone', $validated['phone'])
+                ->where('id', '!=', $card->id)
+                ->where('is_deleted', false)
+                ->first();
+            
+            if ($existingCard) {
+                // Phone already exists in another card, set parent_verification to true
+                $validated['parent_verification'] = true;
+            }
+        }
+
         $card->update($validated);
         $card->load(['group', 'personType', 'parents', 'people']);
 
