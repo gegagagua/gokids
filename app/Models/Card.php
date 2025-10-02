@@ -17,6 +17,7 @@ class Card extends Model
         'child_last_name',
         'parent_name',
         'phone',
+        'expo_token',
         'status',
         'group_id',
         'person_type_id',

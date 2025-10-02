@@ -850,6 +850,52 @@ class NotificationController extends Controller
             }
         }
 
+        // Send additional notification to the card owner (the card that sent the original notification)
+        if ($notification->card_id) {
+            $card = Card::find($notification->card_id);
+            
+            if ($card && $card->expo_token) {
+                $expoService = new ExpoNotificationService();
+                
+                $cardOwnerData = [
+                    'type' => 'card_notification_accepted',
+                    'card_id' => (string) $card->id,
+                    'card_phone' => $card->phone,
+                    'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                    'garden_name' => $gardenName,
+                    'accepted_at' => now()->toISOString(),
+                    'accepted_by_device' => $senderDeviceName,
+                    'sender_device_id' => (string) $senderDeviceId,
+                    'notification_id' => (string) $notification->id,
+                ];
+                
+                // Create a temporary device object for the card to send notification
+                $cardAsDevice = new \App\Models\Device();
+                $cardAsDevice->id = $card->id;
+                $cardAsDevice->expo_token = $card->expo_token;
+                $cardAsDevice->name = $card->parent_name ?: 'Card User';
+                
+                $cardOwnerResult = $expoService->sendToDevice(
+                    $cardAsDevice,
+                    'Notification Accepted',
+                    "Your notification was accepted at {$gardenName}",
+                    $cardOwnerData,
+                    $card
+                );
+                
+                if ($cardOwnerResult) {
+                    $totalNotificationsSent++;
+                    $notificationResults[] = [
+                        'type' => 'card_owner_notification',
+                        'card_id' => $card->id,
+                        'card_phone' => $card->phone,
+                        'card_name' => $card->parent_name,
+                        'notification_sent' => true
+                    ];
+                }
+            }
+        }
+
         // Reload the notification to get updated data
         $notification->refresh();
 
