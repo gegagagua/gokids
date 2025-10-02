@@ -731,6 +731,13 @@ class DeviceController extends Controller
             return response()->json(['message' => 'No valid IDs provided'], 400);
         }
 
+        // First check if all devices exist
+        $existingDevices = Device::whereIn('id', $ids)->get();
+        
+        if ($existingDevices->isEmpty()) {
+            return response()->json(['message' => 'No devices found with provided IDs'], 404);
+        }
+
         $query = Device::whereIn('id', $ids);
         
         // Get garden_id from authenticated user if they are a garden user
@@ -760,7 +767,7 @@ class DeviceController extends Controller
         $devices = $query->get();
         
         if ($devices->isEmpty()) {
-            return response()->json(['message' => 'No devices found to delete'], 400);
+            return response()->json(['message' => 'No devices found to delete based on your permissions'], 403);
         }
 
         $deletedCount = 0;
