@@ -88,6 +88,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::apiResource('devices', DeviceController::class);
         Route::patch('/devices/{id}/status', [DeviceController::class, 'updateStatus']);
         Route::post('/devices/{id}/regenerate-code', [DeviceController::class, 'regenerateCode']);
+        Route::delete('/devices/bulk-delete', [DeviceController::class, 'bulkDestroy']);
 
         Route::apiResource('garden-groups', GardenGroupController::class);
         Route::delete('/garden-groups/bulk-delete', [GardenGroupController::class, 'bulkDestroy']);

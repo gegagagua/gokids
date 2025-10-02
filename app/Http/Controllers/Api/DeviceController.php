@@ -686,6 +686,95 @@ class DeviceController extends Controller
         return response()->json(['message' => 'Device deleted']);
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/api/devices/bulk-delete",
+     *     operationId="bulkDeleteDevices",
+     *     tags={"Devices"},
+     *     summary="Delete multiple devices",
+     *     description="Permanently delete multiple devices by their IDs",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"ids"},
+     *             @OA\Property(
+     *                 property="ids",
+     *                 type="array",
+     *                 @OA\Items(type="integer"),
+     *                 example={1, 2, 3}
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Devices deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Devices deleted successfully"),
+     *             @OA\Property(property="deleted_count", type="integer", example=3)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid input",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No valid IDs provided")
+     *         )
+     *     )
+     * )
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $ids = $request->input('ids');
+
+        if (!is_array($ids) || empty($ids)) {
+            return response()->json(['message' => 'No valid IDs provided'], 400);
+        }
+
+        $query = Device::whereIn('id', $ids);
+        
+        // Get garden_id from authenticated user if they are a garden user
+        $user = $request->user();
+        
+        if ($user->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $user->email)->first();
+            if ($garden) {
+                $query->where('garden_id', $garden->id);
+            } else {
+                return response()->json(['message' => 'Garden not found for user'], 404);
+            }
+        } elseif ($user instanceof \App\Models\Dister) {
+            $allowedGardenIds = $user->gardens ?? [];
+            if (!empty($allowedGardenIds)) {
+                $query->whereIn('garden_id', $allowedGardenIds);
+            } else {
+                return response()->json(['message' => 'No gardens assigned to this dister'], 404);
+            }
+        } else {
+            // For admin users, allow filtering by garden_id if provided
+            if ($request->filled('garden_id')) {
+                $query->where('garden_id', $request->query('garden_id'));
+            }
+        }
+
+        $devices = $query->get();
+        
+        if ($devices->isEmpty()) {
+            return response()->json(['message' => 'No devices found to delete'], 400);
+        }
+
+        $deletedCount = 0;
+        foreach ($devices as $device) {
+            $device->delete();
+            $deletedCount++;
+        }
+
+        return response()->json([
+            'message' => 'Devices deleted successfully',
+            'deleted_count' => $deletedCount,
+        ]);
+    }
+
 
     /**
      * @OA\Post(
