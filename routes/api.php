@@ -147,14 +147,9 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/get-spam-cards', [CardController::class, 'getAllSpamCards']);
     
     // Additional notification routes
-    Route::post('/notifications/send-card-info', [NotificationController::class, 'sendCardInfo']);
-    Route::post('/notifications/device-to-card', [NotificationController::class, 'sendDeviceToCard']);
-    Route::post('/notifications/card-to-device', [NotificationController::class, 'sendCardToDevice']);
     Route::post('/notifications/card-to-all-devices', [NotificationController::class, 'sendCardToAllDevices']);
     Route::get('/notifications/device/{deviceId}', [NotificationController::class, 'getDeviceNotifications']);
-    Route::get('/notifications/device/{deviceId}/child-calls', [NotificationController::class, 'getDeviceChildCallNotifications']);
     Route::post('/notifications/{notificationId}/accept', [NotificationController::class, 'acceptNotification']);
-    Route::get('/notifications/stats', [NotificationController::class, 'getStats']);
     
     // BOG Payment additional routes
     Route::post('/bog-payments/saved-card', [BogPaymentController::class, 'payWithSavedCard']);
