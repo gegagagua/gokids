@@ -18,6 +18,16 @@ class ExpoNotificationService
      */
     public function sendToDevice(Device $device, string $title, string $body, array $data = [], ?Card $card = null)
     {
+        Log::info('ExpoNotificationService::sendToDevice - Starting', [
+            'device_id' => $device->id,
+            'device_name' => $device->name,
+            'expo_token' => $device->expo_token ? 'present' : 'missing',
+            'title' => $title,
+            'body' => $body,
+            'data' => $data,
+            'card_id' => $card?->id
+        ]);
+
         try {
             $notification = Notification::create([
                 'title' => $title,
@@ -29,10 +39,21 @@ class ExpoNotificationService
                 'status' => 'pending',
             ]);
 
+            Log::info('ExpoNotificationService::sendToDevice - Notification created', [
+                'notification_id' => $notification->id,
+                'device_id' => $device->id
+            ]);
+
             // Add notification ID to data
             $data['notification_id'] = (string) $notification->id;
 
             $response = $this->sendExpoNotification($device->expo_token, $title, $body, $data);
+
+            Log::info('ExpoNotificationService::sendToDevice - Expo API response', [
+                'notification_id' => $notification->id,
+                'device_id' => $device->id,
+                'response' => $response
+            ]);
 
             if ($response['success']) {
                 $notification->update([
@@ -40,16 +61,31 @@ class ExpoNotificationService
                     'sent_at' => now(),
                     'data' => $data, // Update with notification ID
                 ]);
+                Log::info('ExpoNotificationService::sendToDevice - Notification sent successfully', [
+                    'notification_id' => $notification->id,
+                    'device_id' => $device->id
+                ]);
                 return true;
             } else {
                 $notification->update([
                     'status' => 'failed',
                     'data' => $data, // Update with notification ID
                 ]);
+                Log::error('ExpoNotificationService::sendToDevice - Notification failed', [
+                    'notification_id' => $notification->id,
+                    'device_id' => $device->id,
+                    'error' => $response['error'] ?? 'Unknown error'
+                ]);
                 return false;
             }
         } catch (\Exception $e) {
-            Log::error('Failed to send notification: ' . $e->getMessage());
+            Log::error('ExpoNotificationService::sendToDevice - Exception occurred', [
+                'device_id' => $device->id,
+                'device_name' => $device->name,
+                'title' => $title,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return false;
         }
     }
@@ -145,8 +181,21 @@ class ExpoNotificationService
      */
     public function sendCardToAllDevices(Card $card, string $title, string $body, array $data = [])
     {
+        Log::info('ExpoNotificationService::sendCardToAllDevices - Starting', [
+            'card_id' => $card->id,
+            'card_phone' => $card->phone,
+            'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+            'title' => $title,
+            'body' => $body,
+            'data' => $data
+        ]);
+
         if (!$card->group || !$card->group->garden) {
-            Log::warning("Card {$card->id} has no group or garden assigned");
+            Log::warning('ExpoNotificationService::sendCardToAllDevices - Card has no group or garden', [
+                'card_id' => $card->id,
+                'has_group' => $card->group ? true : false,
+                'has_garden' => $card->group && $card->group->garden ? true : false
+            ]);
             return false;
         }
 
@@ -197,7 +246,12 @@ class ExpoNotificationService
             $devices = $devices->where('garden_id', $targetGardenId);
         }
 
-        Log::info("Sending card notification to {$devices->count()} devices for card {$card->id} in garden {$card->group->garden->name}");
+        Log::info('ExpoNotificationService::sendCardToAllDevices - Sending to devices', [
+            'card_id' => $card->id,
+            'devices_count' => $devices->count(),
+            'garden_name' => $card->group->garden->name,
+            'device_ids' => $devices->pluck('id')->toArray()
+        ]);
 
         // Load necessary relationships for card data
         $card->load(['personType', 'group.garden.images']);
@@ -209,7 +263,16 @@ class ExpoNotificationService
         }
 
         $results = [];
+        $successCount = 0;
+        $failureCount = 0;
+        
         foreach ($devices as $device) {
+            Log::info('ExpoNotificationService::sendCardToAllDevices - Sending to device', [
+                'card_id' => $card->id,
+                'device_id' => $device->id,
+                'device_name' => $device->name,
+                'device_garden_id' => $device->garden_id
+            ]);
             // Create comprehensive card data like in sendCardInfo
             $deviceData = array_merge($data, [
                 'type' => 'card_to_device',
@@ -239,8 +302,23 @@ class ExpoNotificationService
                 ] : null,
             ]);
 
-            $results[] = $this->sendToDevice($device, $title, $body, $deviceData, $card);
+            $result = $this->sendToDevice($device, $title, $body, $deviceData, $card);
+            $results[] = $result;
+            
+            if ($result) {
+                $successCount++;
+            } else {
+                $failureCount++;
+            }
         }
+
+        Log::info('ExpoNotificationService::sendCardToAllDevices - Completed', [
+            'card_id' => $card->id,
+            'total_devices' => $devices->count(),
+            'success_count' => $successCount,
+            'failure_count' => $failureCount,
+            'results' => $results
+        ]);
 
         return $results;
     }
@@ -250,6 +328,13 @@ class ExpoNotificationService
      */
     protected function sendExpoNotification(string $expoToken, string $title, string $body, array $data = [])
     {
+        Log::info('ExpoNotificationService::sendExpoNotification - Starting', [
+            'expo_token' => $expoToken ? 'present' : 'missing',
+            'title' => $title,
+            'body' => $body,
+            'data' => $data
+        ]);
+
         try {
             $payload = [
                 'to' => $expoToken,
@@ -263,6 +348,11 @@ class ExpoNotificationService
                 // Android notification channel and appearance
                 'channelId' => 'default',
             ];
+
+            Log::info('ExpoNotificationService::sendExpoNotification - Payload prepared', [
+                'expo_token' => $expoToken ? 'present' : 'missing',
+                'payload' => $payload
+            ]);
             
             // Add image support - use active_garden_image if available
             $imageUrl = null;
@@ -292,31 +382,62 @@ class ExpoNotificationService
                 $payload['data']['icon'] = $iconUrl;
             }
 
+            Log::info('ExpoNotificationService::sendExpoNotification - Sending to Expo API', [
+                'expo_api_url' => $this->expoApiUrl,
+                'expo_token' => $expoToken ? 'present' : 'missing'
+            ]);
+
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Accept-encoding' => 'gzip, deflate',
                 'Content-Type' => 'application/json',
             ])->post($this->expoApiUrl, [$payload]);
 
+            Log::info('ExpoNotificationService::sendExpoNotification - Expo API response', [
+                'expo_token' => $expoToken ? 'present' : 'missing',
+                'status_code' => $response->status(),
+                'response_body' => $response->body(),
+                'successful' => $response->successful()
+            ]);
+
             if ($response->successful()) {
                 $responseData = $response->json();
                 
                 // Check if the response has the expected structure
                 if (isset($responseData['data'][0]['status']) && $responseData['data'][0]['status'] === 'ok') {
+                    Log::info('ExpoNotificationService::sendExpoNotification - Success (data[0] structure)', [
+                        'expo_token' => $expoToken ? 'present' : 'missing',
+                        'response' => $responseData
+                    ]);
                     return ['success' => true, 'response' => $responseData];
                 } elseif (isset($responseData[0]['status']) && $responseData[0]['status'] === 'ok') {
                     // Fallback for different response structure
+                    Log::info('ExpoNotificationService::sendExpoNotification - Success (direct structure)', [
+                        'expo_token' => $expoToken ? 'present' : 'missing',
+                        'response' => $responseData
+                    ]);
                     return ['success' => true, 'response' => $responseData];
                 } else {
-                    Log::warning('Expo notification failed: ' . json_encode($responseData));
+                    Log::warning('ExpoNotificationService::sendExpoNotification - Failed (unexpected response structure)', [
+                        'expo_token' => $expoToken ? 'present' : 'missing',
+                        'response' => $responseData
+                    ]);
                     return ['success' => false, 'response' => $responseData];
                 }
             } else {
-                Log::error('Expo API request failed: ' . $response->status() . ' - ' . $response->body());
+                Log::error('ExpoNotificationService::sendExpoNotification - HTTP request failed', [
+                    'expo_token' => $expoToken ? 'present' : 'missing',
+                    'status_code' => $response->status(),
+                    'response_body' => $response->body()
+                ]);
                 return ['success' => false, 'response' => null];
             }
         } catch (\Exception $e) {
-            Log::error('Exception in Expo notification: ' . $e->getMessage());
+            Log::error('ExpoNotificationService::sendExpoNotification - Exception occurred', [
+                'expo_token' => $expoToken ? 'present' : 'missing',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return ['success' => false, 'response' => null];
         }
     }
@@ -327,12 +448,31 @@ class ExpoNotificationService
      */
     public function getDeviceNotifications(int $deviceId, int $limit = 50)
     {
+        Log::info('ExpoNotificationService::getDeviceNotifications - Starting', [
+            'device_id' => $deviceId,
+            'limit' => $limit
+        ]);
+
         // Get all notifications for the device in the last 24 hours
         $allNotifications = Notification::where('device_id', $deviceId)
             ->where('created_at', '>=', now()->subHours(24))
             ->with(['card:id,phone,status'])
             ->orderBy('created_at', 'desc')
             ->get();
+
+        Log::info('ExpoNotificationService::getDeviceNotifications - Raw notifications found', [
+            'device_id' => $deviceId,
+            'total_notifications' => $allNotifications->count(),
+            'notifications' => $allNotifications->map(function($n) {
+                return [
+                    'id' => $n->id,
+                    'card_id' => $n->card_id,
+                    'title' => $n->title,
+                    'status' => $n->status,
+                    'created_at' => $n->created_at
+                ];
+            })->toArray()
+        ]);
 
         // Group by card_id and get only the latest notification for each card
         $uniqueNotifications = $allNotifications
@@ -342,6 +482,20 @@ class ExpoNotificationService
             })
             ->values() // Reset array keys
             ->take($limit); // Apply limit
+
+        Log::info('ExpoNotificationService::getDeviceNotifications - Unique notifications after grouping', [
+            'device_id' => $deviceId,
+            'unique_card_count' => $uniqueNotifications->count(),
+            'unique_notifications' => $uniqueNotifications->map(function($n) {
+                return [
+                    'id' => $n->id,
+                    'card_id' => $n->card_id,
+                    'title' => $n->title,
+                    'status' => $n->status,
+                    'created_at' => $n->created_at
+                ];
+            })->toArray()
+        ]);
 
         return $uniqueNotifications;
     }

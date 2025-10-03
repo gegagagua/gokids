@@ -123,7 +123,6 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         // Public card delete route (no authentication required)
         Route::delete('/cards/{id}', [CardController::class, 'destroy']);
         Route::apiResource('parents', ParentModelController::class);
-       
     });
 
     // Card login routes (no authentication required)
