@@ -702,6 +702,13 @@ class NotificationController extends Controller
                 
                 // Get devices that have this card's group in their active_garden_groups
                 // but are not the current device (these are the parent devices)
+                \Log::info('NotificationController::acceptNotification - Searching parent devices for card', [
+                    'card_id' => $card->id,
+                    'garden_id' => $card->group->garden->id,
+                    'group_id' => $card->group_id,
+                    'sender_device_id' => $senderDeviceId
+                ]);
+
                 $parentDevices = Device::where('garden_id', $card->group->garden->id)
                     ->where('id', '!=', $senderDeviceId)
                     ->where('status', 'active')
@@ -724,10 +731,28 @@ class NotificationController extends Controller
                               });
                     })
                     ->get();
+
+                \Log::info('NotificationController::acceptNotification - Parent devices found (primary strategy)', [
+                    'card_id' => $card->id,
+                    'devices_count' => $parentDevices->count(),
+                    'devices' => $parentDevices->map(function($device) {
+                        return [
+                            'id' => $device->id,
+                            'name' => $device->name,
+                            'garden_id' => $device->garden_id,
+                            'active_garden_groups' => $device->active_garden_groups,
+                            'expo_token' => $device->expo_token ? 'present' : 'missing'
+                        ];
+                    })->toArray()
+                ]);
                 
                 // If no parent devices found with the primary strategy, try a fallback
                 if ($parentDevices->count() === 0) {
-                    \Log::warning("No parent devices found with primary strategy, trying fallback for card {$card->id}");
+                    \Log::warning('NotificationController::acceptNotification - No parent devices found with primary strategy, trying fallback', [
+                        'card_id' => $card->id,
+                        'garden_id' => $card->group->garden->id,
+                        'group_id' => $card->group_id
+                    ]);
                     
                     $parentDevices = Device::where('garden_id', $card->group->garden->id)
                         ->where('id', '!=', $senderDeviceId)
@@ -743,10 +768,37 @@ class NotificationController extends Controller
                                   });
                         })
                         ->get();
+
+                    \Log::info('NotificationController::acceptNotification - Parent devices found (fallback strategy)', [
+                        'card_id' => $card->id,
+                        'devices_count' => $parentDevices->count(),
+                        'devices' => $parentDevices->map(function($device) {
+                            return [
+                                'id' => $device->id,
+                                'name' => $device->name,
+                                'garden_id' => $device->garden_id,
+                                'active_garden_groups' => $device->active_garden_groups,
+                                'expo_token' => $device->expo_token ? 'present' : 'missing'
+                            ];
+                        })->toArray()
+                    ]);
                 }
                 
                 $cardNotificationCount = 0;
+                \Log::info('NotificationController::acceptNotification - Sending notifications to parent devices', [
+                    'card_id' => $card->id,
+                    'parent_devices_count' => $parentDevices->count(),
+                    'parent_device_ids' => $parentDevices->pluck('id')->toArray()
+                ]);
+
                 foreach ($parentDevices as $parentDevice) {
+                    \Log::info('NotificationController::acceptNotification - Sending notification to parent device', [
+                        'card_id' => $card->id,
+                        'parent_device_id' => $parentDevice->id,
+                        'parent_device_name' => $parentDevice->name,
+                        'parent_device_garden_id' => $parentDevice->garden_id
+                    ]);
+
                     try {
                         $acceptanceData = [
                             'type' => 'card_accepted',
@@ -760,6 +812,12 @@ class NotificationController extends Controller
                             'notification_id' => (string) $notification->id,
                         ];
                         
+                        \Log::info('NotificationController::acceptNotification - Notification data prepared', [
+                            'card_id' => $card->id,
+                            'parent_device_id' => $parentDevice->id,
+                            'acceptance_data' => $acceptanceData
+                        ]);
+                        
                         $result = $expoService->sendToDevice(
                             $parentDevice,
                             'Card Accepted',
@@ -768,13 +826,24 @@ class NotificationController extends Controller
                             $card
                         );
                         
+                        \Log::info('NotificationController::acceptNotification - Notification sent result', [
+                            'card_id' => $card->id,
+                            'parent_device_id' => $parentDevice->id,
+                            'result' => $result
+                        ]);
+                        
                         if ($result) {
                             $cardNotificationCount++;
                             $totalNotificationsSent++;
                         }
                         
                     } catch (\Exception $e) {
-                        \Log::error("Failed to send acceptance notification to device {$parentDevice->id}: " . $e->getMessage());
+                        \Log::error('NotificationController::acceptNotification - Failed to send notification to parent device', [
+                            'card_id' => $card->id,
+                            'parent_device_id' => $parentDevice->id,
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
                     }
                 }
                 
@@ -917,8 +986,21 @@ class NotificationController extends Controller
         }
 
         // Send additional notification to the card owner (the card that sent the original notification)
+        \Log::info('NotificationController::acceptNotification - Checking card owner notification', [
+            'notification_card_id' => $notification->card_id,
+            'has_card_id' => $notification->card_id ? true : false
+        ]);
+
         if ($notification->card_id) {
             $card = Card::find($notification->card_id);
+            
+            \Log::info('NotificationController::acceptNotification - Card owner found', [
+                'card_id' => $card ? $card->id : 'not_found',
+                'card_phone' => $card ? $card->phone : 'not_found',
+                'card_child_name' => $card ? $card->child_first_name . ' ' . $card->child_last_name : 'not_found',
+                'has_expo_token' => $card && $card->expo_token ? true : false,
+                'expo_token' => $card && $card->expo_token ? 'present' : 'missing'
+            ]);
             
             if ($card && $card->expo_token) {
                 $expoService = new ExpoNotificationService();
@@ -935,11 +1017,23 @@ class NotificationController extends Controller
                     'notification_id' => (string) $notification->id,
                 ];
                 
+                \Log::info('NotificationController::acceptNotification - Card owner notification data prepared', [
+                    'card_id' => $card->id,
+                    'card_owner_data' => $cardOwnerData
+                ]);
+                
                 // Create a temporary device object for the card to send notification
                 $cardAsDevice = new \App\Models\Device();
                 $cardAsDevice->id = $card->id;
                 $cardAsDevice->expo_token = $card->expo_token;
                 $cardAsDevice->name = $card->parent_name ?: 'Card User';
+                
+                \Log::info('NotificationController::acceptNotification - Card as device created', [
+                    'card_id' => $card->id,
+                    'card_as_device_id' => $cardAsDevice->id,
+                    'card_as_device_name' => $cardAsDevice->name,
+                    'card_as_device_expo_token' => $cardAsDevice->expo_token ? 'present' : 'missing'
+                ]);
                 
                 $cardOwnerResult = $expoService->sendToDevice(
                     $cardAsDevice,
@@ -948,6 +1042,11 @@ class NotificationController extends Controller
                     $cardOwnerData,
                     $card
                 );
+                
+                \Log::info('NotificationController::acceptNotification - Card owner notification sent result', [
+                    'card_id' => $card->id,
+                    'result' => $cardOwnerResult
+                ]);
                 
                 if ($cardOwnerResult) {
                     $totalNotificationsSent++;
@@ -959,7 +1058,17 @@ class NotificationController extends Controller
                         'notification_sent' => true
                     ];
                 }
+            } else {
+                \Log::warning('NotificationController::acceptNotification - Card owner notification skipped', [
+                    'card_id' => $card ? $card->id : 'not_found',
+                    'has_card' => $card ? true : false,
+                    'has_expo_token' => $card && $card->expo_token ? true : false
+                ]);
             }
+        } else {
+            \Log::info('NotificationController::acceptNotification - No card_id in notification, skipping card owner notification', [
+                'notification_id' => $notification->id
+            ]);
         }
 
         // Reload the notification to get updated data

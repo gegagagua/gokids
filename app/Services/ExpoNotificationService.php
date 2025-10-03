@@ -312,6 +312,60 @@ class ExpoNotificationService
             }
         }
 
+        // Send notification back to the card owner (the card that sent the notification)
+        if ($card->expo_token) {
+            Log::info('ExpoNotificationService::sendCardToAllDevices - Sending notification back to card owner', [
+                'card_id' => $card->id,
+                'card_phone' => $card->phone,
+                'has_expo_token' => $card->expo_token ? true : false
+            ]);
+
+            $cardOwnerData = array_merge($data, [
+                'type' => 'card_notification_sent',
+                'card_id' => (string) $card->id,
+                'card_phone' => $card->phone,
+                'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                'garden_name' => $card->group?->garden?->name ?? 'Unknown Garden',
+                'sent_at' => now()->toISOString(),
+                'notification_title' => $title,
+                'notification_body' => $body,
+                'devices_notified' => $successCount,
+                'total_devices' => $devices->count()
+            ]);
+
+            // Create a temporary device object for the card to send notification
+            $cardAsDevice = new \App\Models\Device();
+            $cardAsDevice->id = $card->id;
+            $cardAsDevice->expo_token = $card->expo_token;
+            $cardAsDevice->name = $card->parent_name ?: 'Card User';
+
+            $cardOwnerResult = $this->sendToDevice(
+                $cardAsDevice,
+                'Notification Sent',
+                "Your notification was sent to {$successCount} devices",
+                $cardOwnerData,
+                $card
+            );
+
+            Log::info('ExpoNotificationService::sendCardToAllDevices - Card owner notification result', [
+                'card_id' => $card->id,
+                'result' => $cardOwnerResult
+            ]);
+
+            if ($cardOwnerResult) {
+                $successCount++;
+                $results[] = true; // Add card owner notification as successful
+            } else {
+                $failureCount++;
+                $results[] = false; // Add card owner notification as failed
+            }
+        } else {
+            Log::warning('ExpoNotificationService::sendCardToAllDevices - Card owner notification skipped', [
+                'card_id' => $card->id,
+                'has_expo_token' => false
+            ]);
+        }
+
         Log::info('ExpoNotificationService::sendCardToAllDevices - Completed', [
             'card_id' => $card->id,
             'total_devices' => $devices->count(),
