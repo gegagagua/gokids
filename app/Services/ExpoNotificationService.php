@@ -279,6 +279,18 @@ class ExpoNotificationService
                 'device_name' => $device->name,
                 'device_garden_id' => $device->garden_id
             ]);
+            
+            // Get backtrace for debugging
+            $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5);
+            $backtraceInfo = array_map(function($trace) {
+                return [
+                    'file' => $trace['file'] ?? 'unknown',
+                    'line' => $trace['line'] ?? 0,
+                    'function' => $trace['function'] ?? 'unknown',
+                    'class' => $trace['class'] ?? null,
+                ];
+            }, $backtrace);
+            
             // Create comprehensive card data like in sendCardInfo
             $deviceData = array_merge($data, [
                 'type' => 'card_to_device',
@@ -306,6 +318,9 @@ class ExpoNotificationService
                     'name' => $card->personType->name,
                     'description' => $card->personType->description,
                 ] : null,
+                // Debug info
+                'debug_timestamp' => now()->toISOString(),
+                'debug_backtrace' => $backtraceInfo,
             ]);
 
             $result = $this->sendToDevice($device, $title, $body, $deviceData, $card);
