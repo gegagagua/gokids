@@ -191,7 +191,9 @@ class ExpoNotificationService
             'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
             'title' => $title,
             'body' => $body,
-            'data' => $data
+            'data' => $data,
+            'timestamp' => now()->toISOString(),
+            'backtrace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5)
         ]);
 
         if (!$card->group || !$card->group->garden) {
