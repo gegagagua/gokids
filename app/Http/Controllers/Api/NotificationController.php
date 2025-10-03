@@ -1022,25 +1022,11 @@ class NotificationController extends Controller
                     'card_owner_data' => $cardOwnerData
                 ]);
                 
-                // Create a temporary device object for the card to send notification
-                $cardAsDevice = new \App\Models\Device();
-                $cardAsDevice->id = $card->id;
-                $cardAsDevice->expo_token = $card->expo_token;
-                $cardAsDevice->name = $card->parent_name ?: 'Card User';
-                
-                \Log::info('NotificationController::acceptNotification - Card as device created', [
-                    'card_id' => $card->id,
-                    'card_as_device_id' => $cardAsDevice->id,
-                    'card_as_device_name' => $cardAsDevice->name,
-                    'card_as_device_expo_token' => $cardAsDevice->expo_token ? 'present' : 'missing'
-                ]);
-                
-                $cardOwnerResult = $expoService->sendToDevice(
-                    $cardAsDevice,
+                $cardOwnerResult = $expoService->sendToCardOwner(
+                    $card,
                     'Notification Accepted',
                     "Your notification was accepted at {$gardenName}",
-                    $cardOwnerData,
-                    $card
+                    $cardOwnerData
                 );
                 
                 \Log::info('NotificationController::acceptNotification - Card owner notification sent result', [

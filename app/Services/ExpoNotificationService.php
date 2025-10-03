@@ -25,16 +25,20 @@ class ExpoNotificationService
             'title' => $title,
             'body' => $body,
             'data' => $data,
-            'card_id' => $card?->id
+            'card_id' => $card?->id,
+            'device_exists' => $device->exists
         ]);
 
         try {
+            // Check if device actually exists in database (to handle temporary card-as-device objects)
+            $deviceId = $device->exists ? $device->id : null;
+            
             $notification = Notification::create([
                 'title' => $title,
                 'body' => $body,
                 'data' => $data, // Laravel will automatically cast to JSON
                 'expo_token' => $device->expo_token,
-                'device_id' => $device->id,
+                'device_id' => $deviceId,
                 'card_id' => $card?->id,
                 'status' => 'pending',
             ]);
@@ -333,18 +337,11 @@ class ExpoNotificationService
                 'total_devices' => $devices->count()
             ]);
 
-            // Create a temporary device object for the card to send notification
-            $cardAsDevice = new \App\Models\Device();
-            $cardAsDevice->id = $card->id;
-            $cardAsDevice->expo_token = $card->expo_token;
-            $cardAsDevice->name = $card->parent_name ?: 'Card User';
-
-            $cardOwnerResult = $this->sendToDevice(
-                $cardAsDevice,
+            $cardOwnerResult = $this->sendToCardOwner(
+                $card,
                 'Notification Sent',
                 "Your notification was sent to {$successCount} devices",
-                $cardOwnerData,
-                $card
+                $cardOwnerData
             );
 
             Log::info('ExpoNotificationService::sendCardToAllDevices - Card owner notification result', [
@@ -375,6 +372,57 @@ class ExpoNotificationService
         ]);
 
         return $results;
+    }
+
+    /**
+     * Send notification directly to a card owner (without creating notification record)
+     */
+    public function sendToCardOwner(Card $card, string $title, string $body, array $data = [])
+    {
+        Log::info('ExpoNotificationService::sendToCardOwner - Starting', [
+            'card_id' => $card->id,
+            'card_phone' => $card->phone,
+            'expo_token' => $card->expo_token ? 'present' : 'missing',
+            'title' => $title,
+            'body' => $body,
+            'data' => $data
+        ]);
+
+        if (!$card->expo_token) {
+            Log::warning('ExpoNotificationService::sendToCardOwner - No expo_token', [
+                'card_id' => $card->id
+            ]);
+            return false;
+        }
+
+        try {
+            $response = $this->sendExpoNotification($card->expo_token, $title, $body, $data);
+
+            Log::info('ExpoNotificationService::sendToCardOwner - Expo API response', [
+                'card_id' => $card->id,
+                'response' => $response
+            ]);
+
+            if ($response['success']) {
+                Log::info('ExpoNotificationService::sendToCardOwner - Notification sent successfully', [
+                    'card_id' => $card->id
+                ]);
+                return true;
+            } else {
+                Log::error('ExpoNotificationService::sendToCardOwner - Notification failed', [
+                    'card_id' => $card->id,
+                    'error' => $response['error'] ?? 'Unknown error'
+                ]);
+                return false;
+            }
+        } catch (\Exception $e) {
+            Log::error('ExpoNotificationService::sendToCardOwner - Exception occurred', [
+                'card_id' => $card->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return false;
+        }
     }
 
     /**
