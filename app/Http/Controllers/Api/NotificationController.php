@@ -559,10 +559,10 @@ class NotificationController extends Controller
      */
     public function getDeviceNotifications(string $deviceId, Request $request)
     {
-        $limit = min($request->query('limit', 50), 50); // Cap at 50 maximum
+        // $limit = min($request->query('limit', 50), 50); // Cap at 50 maximum
         
         $expoService = new ExpoNotificationService();
-        $notifications = $expoService->getDeviceNotifications((int) $deviceId, $limit);
+        $notifications = $expoService->getDeviceNotifications((int) $deviceId, 500);
         
         return response()->json($notifications);
     }

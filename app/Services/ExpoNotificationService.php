@@ -335,15 +335,15 @@ class ExpoNotificationService
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Group by card_id and get only the latest notification for each card
-        $uniqueNotifications = $allNotifications
-            ->groupBy('card_id')
-            ->map(function ($notifications) {
-                return $notifications->first();
-            })
-            ->values()
-            ->take($limit);
+        // // Group by card_id and get only the latest notification for each card
+        // $uniqueNotifications = $allNotifications
+        //     ->groupBy('card_id')
+        //     ->map(function ($notifications) {
+        //         return $notifications->first();
+        //     })
+        //     ->values()
+        //     ->take($limit);
 
-        return $uniqueNotifications;
+        return $allNotifications;
     }
 }
