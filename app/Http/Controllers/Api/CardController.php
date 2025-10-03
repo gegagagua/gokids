@@ -1649,6 +1649,7 @@ class CardController extends Controller
         $request->validate([
             'phone' => 'required|string|max:255',
             'otp' => 'required|string|size:6',
+            'expo_token' => 'nullable|string|max:255',
         ]);
 
         // Find the OTP record
@@ -1673,11 +1674,18 @@ class CardController extends Controller
             ->where('spam', '!=', 1)
             ->get();
 
-        // Update parent verification status for all cards associated with this phone number
+        // Update parent verification status and expo_token for all cards associated with this phone number
         if ($cards->isNotEmpty()) {
+            $updateData = ['parent_verification' => true];
+            
+            // If expo_token is provided, save it to all cards with this phone
+            if ($request->expo_token) {
+                $updateData['expo_token'] = $request->expo_token;
+            }
+            
             Card::where('phone', $request->phone)
                 ->where('spam', '!=', 1)
-                ->update(['parent_verification' => true]);
+                ->update($updateData);
         }
 
         // Get all people with this phone number
