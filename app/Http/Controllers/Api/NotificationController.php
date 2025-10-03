@@ -665,38 +665,8 @@ class NotificationController extends Controller
             $notificationResults = [];
             
             // Send notifications for each card
-            \Log::info('NotificationController::acceptNotification - Processing cards', [
-                'total_cards' => $cards->count(),
-                'cards' => $cards->map(function($card) {
-                    return [
-                        'id' => $card->id,
-                        'phone' => $card->phone,
-                        'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
-                        'group_id' => $card->group_id,
-                        'has_group' => $card->group ? true : false,
-                        'has_garden' => $card->group && $card->group->garden ? true : false,
-                        'garden_id' => $card->group?->garden?->id,
-                        'garden_name' => $card->group?->garden?->name
-                    ];
-                })->toArray()
-            ]);
-
             foreach ($cards as $card) {
-                \Log::info('NotificationController::acceptNotification - Processing card', [
-                    'card_id' => $card->id,
-                    'card_phone' => $card->phone,
-                    'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
-                    'group_id' => $card->group_id,
-                    'garden_id' => $card->group?->garden?->id,
-                    'garden_name' => $card->group?->garden?->name
-                ]);
-
                 if (!$card->group || !$card->group->garden) {
-                    \Log::error("Card {$card->id} has no group or garden relationship", [
-                        'card_id' => $card->id,
-                        'has_group' => $card->group ? true : false,
-                        'has_garden' => $card->group && $card->group->garden ? true : false
-                    ]);
                     continue;
                 }
                 
