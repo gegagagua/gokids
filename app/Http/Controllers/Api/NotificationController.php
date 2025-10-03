@@ -665,9 +665,38 @@ class NotificationController extends Controller
             $notificationResults = [];
             
             // Send notifications for each card
+            \Log::info('NotificationController::acceptNotification - Processing cards', [
+                'total_cards' => $cards->count(),
+                'cards' => $cards->map(function($card) {
+                    return [
+                        'id' => $card->id,
+                        'phone' => $card->phone,
+                        'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                        'group_id' => $card->group_id,
+                        'has_group' => $card->group ? true : false,
+                        'has_garden' => $card->group && $card->group->garden ? true : false,
+                        'garden_id' => $card->group?->garden?->id,
+                        'garden_name' => $card->group?->garden?->name
+                    ];
+                })->toArray()
+            ]);
+
             foreach ($cards as $card) {
+                \Log::info('NotificationController::acceptNotification - Processing card', [
+                    'card_id' => $card->id,
+                    'card_phone' => $card->phone,
+                    'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                    'group_id' => $card->group_id,
+                    'garden_id' => $card->group?->garden?->id,
+                    'garden_name' => $card->group?->garden?->name
+                ]);
+
                 if (!$card->group || !$card->group->garden) {
-                    \Log::error("Card {$card->id} has no group or garden relationship");
+                    \Log::error("Card {$card->id} has no group or garden relationship", [
+                        'card_id' => $card->id,
+                        'has_group' => $card->group ? true : false,
+                        'has_garden' => $card->group && $card->group->garden ? true : false
+                    ]);
                     continue;
                 }
                 
@@ -758,9 +787,46 @@ class NotificationController extends Controller
             }
             
             // Send notifications for each people
+            \Log::info('NotificationController::acceptNotification - Processing people', [
+                'total_people' => $people->count(),
+                'people' => $people->map(function($person) {
+                    return [
+                        'id' => $person->id,
+                        'name' => $person->name,
+                        'phone' => $person->phone,
+                        'card_id' => $person->card_id,
+                        'has_card' => $person->card ? true : false,
+                        'card_phone' => $person->card?->phone,
+                        'card_child_name' => $person->card ? $person->card->child_first_name . ' ' . $person->card->child_last_name : null,
+                        'group_id' => $person->card?->group_id,
+                        'has_group' => $person->card && $person->card->group ? true : false,
+                        'has_garden' => $person->card && $person->card->group && $person->card->group->garden ? true : false,
+                        'garden_id' => $person->card?->group?->garden?->id,
+                        'garden_name' => $person->card?->group?->garden?->name
+                    ];
+                })->toArray()
+            ]);
+
             foreach ($people as $person) {
+                \Log::info('NotificationController::acceptNotification - Processing person', [
+                    'person_id' => $person->id,
+                    'person_name' => $person->name,
+                    'person_phone' => $person->phone,
+                    'card_id' => $person->card_id,
+                    'card_phone' => $person->card?->phone,
+                    'card_child_name' => $person->card ? $person->card->child_first_name . ' ' . $person->card->child_last_name : null,
+                    'group_id' => $person->card?->group_id,
+                    'garden_id' => $person->card?->group?->garden?->id,
+                    'garden_name' => $person->card?->group?->garden?->name
+                ]);
+
                 if (!$person->card || !$person->card->group || !$person->card->group->garden) {
-                    \Log::error("People {$person->id} has no card or card has no group/garden relationship");
+                    \Log::error("People {$person->id} has no card or card has no group/garden relationship", [
+                        'person_id' => $person->id,
+                        'has_card' => $person->card ? true : false,
+                        'has_group' => $person->card && $person->card->group ? true : false,
+                        'has_garden' => $person->card && $person->card->group && $person->card->group->garden ? true : false
+                    ]);
                     continue;
                 }
                 
