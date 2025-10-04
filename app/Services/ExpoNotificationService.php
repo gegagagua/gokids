@@ -144,20 +144,16 @@ class ExpoNotificationService
      */
     public function sendCardToAllDevices(Card $card, string $title, string $body, array $data = [])
     {
-        if (!$card->group || !$card->group->garden) {
+        if (!$card->group_id) {
             return false;
         }
 
         // Get all devices that have this card's group in their active_garden_groups
-        $targetGardenId = $card->group->garden->id;
         $targetGroupId = $card->group_id;
         
-        $devices = Device::where('garden_id', $targetGardenId)
-            ->where('status', 'active')
+        $devices = Device::where('status', 'active')
             ->whereNotNull('expo_token')
-            ->where(function($query) use ($targetGroupId) {
-                $query->whereJsonContains('active_garden_groups', $targetGroupId);
-            })
+            ->whereJsonContains('active_garden_groups', $targetGroupId)
             ->get();
 
         if ($devices->isEmpty()) {
