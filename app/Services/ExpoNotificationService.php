@@ -305,14 +305,14 @@ class ExpoNotificationService
     }
 
     /**
-     * Get notification history for a device (last 24 hours, max 50 notifications)
-     * Returns only unique notifications per card_id (latest notification for each card)
+     * Get notification history for a device (today's notifications only - from 00:00)
+     * Returns all notifications from the start of the current day
      */
     public function getDeviceNotifications(int $deviceId, int $limit = 50)
     {
-        // Get all notifications for the device in the last 24 hours
+        // Get all notifications for the device from the start of today (00:00)
         $allNotifications = Notification::where('device_id', $deviceId)
-            ->where('created_at', '>=', now()->subHours(24))
+            ->where('created_at', '>=', now()->startOfDay())
             ->with(['card:id,phone,status'])
             ->orderBy('created_at', 'desc')
             ->get();
