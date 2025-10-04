@@ -335,14 +335,14 @@ class ExpoNotificationService
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // // Group by card_id and get only the latest notification for each card
-        // $uniqueNotifications = $allNotifications
-        //     ->groupBy('card_id')
-        //     ->map(function ($notifications) {
-        //         return $notifications->first();
-        //     })
-        //     ->values()
-        //     ->take($limit);
+        // Add formatted dates to each notification
+        $allNotifications = $allNotifications->map(function($notification) {
+            $notification->created_at_formatted = $notification->created_at->format('Y-m-d H:i:s');
+            $notification->sent_at_formatted = $notification->sent_at ? $notification->sent_at->format('Y-m-d H:i:s') : null;
+            $notification->created_at_iso = $notification->created_at->toISOString();
+            $notification->sent_at_iso = $notification->sent_at ? $notification->sent_at->toISOString() : null;
+            return $notification;
+        });
 
         return $allNotifications;
     }
