@@ -91,7 +91,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::post('/devices/delete-devices', [DeviceController::class, 'bulkDestroy']);
 
         Route::apiResource('garden-groups', GardenGroupController::class);
-        Route::delete('/garden-groups/bulk-delete', [GardenGroupController::class, 'bulkDestroy']);
+        Route::post('/garden-groups/bulk-delete', [GardenGroupController::class, 'bulkDestroy']);
         
         // Card authenticated routes (must be before garden-filtered routes to avoid conflicts)
         Route::get('/cards/me', [CardController::class, 'me'])->middleware('auth:sanctum');
