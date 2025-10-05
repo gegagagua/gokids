@@ -650,20 +650,80 @@ class NotificationController extends Controller
             }
         }
 
-        //send notification other devices, which have this card in their active garden groups
-        $otherDevices = Device::whereHas('activeGardenGroups', function($query) use ($notification) {
-            $query->where('card_id', $notification->card_id);
-            // logged in devices only
-            $query->where('is_logged_in', true);
-            // active devices only
-            $query->where('status', 'active');
-        })->get();
-        
-        foreach ($otherDevices as $device) {
-            $expoService->sendToDevice($device, 'Notification Accepted', "Your notification was accepted at {$gardenName}", $notification->card_id);
+        // Send notification to other devices that have this card's group in their active garden groups
+        if ($notification->card_id) {
+            $card = Card::with('group')->find($notification->card_id);
+            
+            if ($card && $card->group_id) {
+                // Find devices that have this card's group in their active_garden_groups
+                $otherDevices = Device::where('garden_id', $card->group->garden_id)
+                    ->where('id', '!=', $senderDeviceId)
+                    ->where('status', 'active')
+                    ->where('is_logged_in', true)
+                    ->whereNotNull('expo_token')
+                    ->where(function($query) use ($card) {
+                        $query->whereJsonContains('active_garden_groups', $card->group_id)
+                              ->orWhereNull('active_garden_groups')
+                              ->orWhere('active_garden_groups', '[]')
+                              ->orWhere('active_garden_groups', '');
+                    })
+                    ->get();
+                
+                \Log::info('NotificationController::acceptNotification - Sending to other devices', [
+                    'card_id' => $card->id,
+                    'group_id' => $card->group_id,
+                    'other_devices_count' => $otherDevices->count(),
+                    'devices' => $otherDevices->map(function($device) {
+                        return [
+                            'id' => $device->id,
+                            'name' => $device->name,
+                            'active_garden_groups' => $device->active_garden_groups
+                        ];
+                    })->toArray()
+                ]);
+                
+                foreach ($otherDevices as $device) {
+                    try {
+                        $deviceData = [
+                            'type' => 'card_accepted',
+                            'card_id' => (string) $card->id,
+                            'card_phone' => $card->phone,
+                            'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                            'garden_name' => $gardenName,
+                            'accepted_at' => now()->toISOString(),
+                            'accepted_by_device' => $senderDeviceName,
+                            'sender_device_id' => (string) $senderDeviceId,
+                            'notification_id' => (string) $notification->id,
+                        ];
+                        
+                        $result = $expoService->sendToDevice(
+                            $device,
+                            'Card Accepted',
+                            "Card for {$card->child_first_name} was accepted at {$gardenName}",
+                            $deviceData,
+                            $card
+                        );
+                        
+                        if ($result) {
+                            $totalNotificationsSent++;
+                        }
+                        
+                        \Log::info('NotificationController::acceptNotification - Sent to device', [
+                            'device_id' => $device->id,
+                            'device_name' => $device->name,
+                            'result' => $result
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::error('NotificationController::acceptNotification - Failed to send to device', [
+                            'device_id' => $device->id,
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            }
         }
 
-        // send notification to the card owner
+        // Send notification to the card owner
         if ($notification->card_id) {
             $card = Card::find($notification->card_id);
             
