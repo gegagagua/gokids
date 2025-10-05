@@ -225,6 +225,13 @@ class ExpoNotificationService
             return false;
         }
 
+        \Log::info('ExpoNotificationService::sendToCardOwner - Sending notification to card owner', [
+            'card_id' => $card->id,
+            'card_phone' => $card->phone,
+            'card_child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+            'card_owner_data' => $data
+        ]);
+
         try {
             $response = $this->sendExpoNotification($card->expo_token, $title, $body, $data);
 

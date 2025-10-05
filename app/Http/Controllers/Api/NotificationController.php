@@ -707,12 +707,7 @@ class NotificationController extends Controller
                         if ($result) {
                             $totalNotificationsSent++;
                         }
-                        
-                        \Log::info('NotificationController::acceptNotification - Sent to device', [
-                            'device_id' => $device->id,
-                            'device_name' => $device->name,
-                            'result' => $result
-                        ]);
+   
                     } catch (\Exception $e) {
                         \Log::error('NotificationController::acceptNotification - Failed to send to device', [
                             'device_id' => $device->id,
@@ -726,15 +721,7 @@ class NotificationController extends Controller
         // Send notification to the card owner
         if ($notification->card_id) {
             $card = Card::find($notification->card_id);
-            
-            \Log::info('NotificationController::acceptNotification - Card owner found', [
-                'card_id' => $card ? $card->id : 'not_found',
-                'card_phone' => $card ? $card->phone : 'not_found',
-                'card_child_name' => $card ? $card->child_first_name . ' ' . $card->child_last_name : 'not_found',
-                'has_expo_token' => $card && $card->expo_token ? true : false,
-                'expo_token' => $card && $card->expo_token ? 'present' : 'missing'
-            ]);
-            
+
             if ($card && $card->expo_token) {
                 
                 $cardOwnerData = [
@@ -748,23 +735,13 @@ class NotificationController extends Controller
                     'sender_device_id' => (string) $senderDeviceId,
                     'notification_id' => (string) $notification->id,
                 ];
-                
-                \Log::info('NotificationController::acceptNotification - Card owner notification data prepared', [
-                    'card_id' => $card->id,
-                    'card_owner_data' => $cardOwnerData
-                ]);
-                
+
                 $cardOwnerResult = $expoService->sendToCardOwner(
                     $card,
                     'Notification Accepted',
                     "Your notification was accepted at {$gardenName}",
                     $cardOwnerData
                 );
-                
-                \Log::info('NotificationController::acceptNotification - Card owner notification sent result', [
-                    'card_id' => $card->id,
-                    'result' => $cardOwnerResult
-                ]);
                 
                 if ($cardOwnerResult) {
                     $totalNotificationsSent++;
@@ -776,17 +753,7 @@ class NotificationController extends Controller
                         'notification_sent' => true
                     ];
                 }
-            } else {
-                \Log::warning('NotificationController::acceptNotification - Card owner notification skipped', [
-                    'card_id' => $card ? $card->id : 'not_found',
-                    'has_card' => $card ? true : false,
-                    'has_expo_token' => $card && $card->expo_token ? true : false
-                ]);
             }
-        } else {
-            \Log::info('NotificationController::acceptNotification - No card_id in notification, skipping card owner notification', [
-                'notification_id' => $notification->id
-            ]);
         }
 
         // Reload the notification to get updated data
