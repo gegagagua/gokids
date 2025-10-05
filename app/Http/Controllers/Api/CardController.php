@@ -1962,6 +1962,13 @@ class CardController extends Controller
      *         description="Phone number to validate against the authenticated card",
      *         @OA\Schema(type="string", example="+995599123456")
      *     ),
+     *     @OA\Parameter(
+     *         name="expo_token",
+     *         in="query",
+     *         required=false,
+     *         description="Expo push notification token to update for this card",
+     *         @OA\Schema(type="string", example="ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Card data retrieved successfully",
@@ -2042,6 +2049,18 @@ class CardController extends Controller
                 return response()->json([
                     'message' => 'Phone number does not match authenticated card'
                 ], 403);
+            }
+
+            // Update expo_token if provided (like in verifyOtp)
+            if ($request->has('expo_token') && $request->expo_token) {
+                Card::where('phone', $user->phone)
+                    ->where('spam', '!=', 1)
+                    ->update(['expo_token' => $request->expo_token]);
+                
+                \Log::info('CardController::me - Updated expo_token for cards', [
+                    'phone' => $user->phone,
+                    'expo_token' => $request->expo_token
+                ]);
             }
 
             // Get ALL cards with this phone number (same as verifyOtp)
