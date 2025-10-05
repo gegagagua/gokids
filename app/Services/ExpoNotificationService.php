@@ -241,6 +241,13 @@ class ExpoNotificationService
                 return false;
             }
         } catch (\Exception $e) {
+            \Log::error('ExpoNotificationService::sendToCardOwner - Failed to send notification to card owner', [
+                'card_id' => $card->id,
+                'card_phone' => $card->phone,
+                'card_child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                'card_owner_data' => $data,
+                'error' => $e->getMessage()
+            ]);
             return false;
         }
     }
