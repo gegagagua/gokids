@@ -603,6 +603,52 @@ class DeviceController extends Controller
         $addedGroups = array_diff($activeGroups, $currentActiveGroups);
         $removedGroups = array_diff($currentActiveGroups, $activeGroups);
         
+        // Get full cards information for all active groups
+        $cardsInActiveGroups = \App\Models\Card::whereIn('group_id', $activeGroups)
+            ->where('is_deleted', false)
+            ->with(['personType', 'group.garden.images', 'group'])
+            ->get();
+        
+        // Format cards data with full information
+        $cardsData = $cardsInActiveGroups->map(function($card) {
+            // Find the active garden image
+            $activeGardenImage = null;
+            if ($card->active_garden_image && $card->group?->garden?->images) {
+                $activeGardenImage = $card->group->garden->images->where('id', $card->active_garden_image)->first();
+            }
+            
+            return [
+                'id' => $card->id,
+                'phone' => $card->phone,
+                'status' => $card->status,
+                'child_first_name' => $card->child_first_name,
+                'child_last_name' => $card->child_last_name,
+                'parent_name' => $card->parent_name,
+                'parent_code' => $card->parent_code,
+                'image_path' => $card->image_path,
+                'image_url' => $card->image_url,
+                'group_id' => $card->group_id,
+                'group_name' => $card->group?->name,
+                'is_deleted' => $card->is_deleted,
+                'deleted_at' => $card->deleted_at,
+                'created_at' => $card->created_at,
+                'updated_at' => $card->updated_at,
+                'active_garden_image' => $activeGardenImage ? [
+                    'id' => $activeGardenImage->id,
+                    'title' => $activeGardenImage->title,
+                    'image_path' => $activeGardenImage->image_path,
+                    'image_url' => $activeGardenImage->image_url,
+                    'index' => $activeGardenImage->index,
+                    'created_at' => $activeGardenImage->created_at,
+                ] : null,
+                'person_type' => $card->personType ? [
+                    'id' => $card->personType->id,
+                    'name' => $card->personType->name,
+                    'description' => $card->personType->description,
+                ] : null,
+            ];
+        });
+        
         $message = 'Active garden groups updated successfully';
         if (!empty($addedGroups)) {
             $message .= '. Added groups: ' . implode(', ', $addedGroups);
@@ -620,6 +666,7 @@ class DeviceController extends Controller
             'garden_groups' => $device->garden_groups,
             'active_garden_groups' => $device->active_garden_groups,
             'active_garden_groups_data' => $activeGardenGroups,
+            'cards' => $cardsData,
             'message' => $message,
             'changes' => [
                 'added_groups' => $addedGroups,
@@ -1316,10 +1363,64 @@ class DeviceController extends Controller
         $gardenGroups = $device->gardenGroups()->get();
         $activeGardenGroups = $device->activeGardenGroups()->get();
         
+        // Get full cards information for all active groups
+        $activeGroups = $device->active_garden_groups ?? [];
+        $cardsInActiveGroups = [];
+        
+        if (!empty($activeGroups)) {
+            $cardsInActiveGroups = \App\Models\Card::whereIn('group_id', $activeGroups)
+                ->where('is_deleted', false)
+                ->with(['personType', 'group.garden.images', 'group'])
+                ->get();
+        }
+        
+        // Format cards data with full information
+        $cardsData = $cardsInActiveGroups instanceof \Illuminate\Support\Collection 
+            ? $cardsInActiveGroups->map(function($card) {
+                // Find the active garden image
+                $activeGardenImage = null;
+                if ($card->active_garden_image && $card->group?->garden?->images) {
+                    $activeGardenImage = $card->group->garden->images->where('id', $card->active_garden_image)->first();
+                }
+                
+                return [
+                    'id' => $card->id,
+                    'phone' => $card->phone,
+                    'status' => $card->status,
+                    'child_first_name' => $card->child_first_name,
+                    'child_last_name' => $card->child_last_name,
+                    'parent_name' => $card->parent_name,
+                    'parent_code' => $card->parent_code,
+                    'image_path' => $card->image_path,
+                    'image_url' => $card->image_url,
+                    'group_id' => $card->group_id,
+                    'group_name' => $card->group?->name,
+                    'is_deleted' => $card->is_deleted,
+                    'deleted_at' => $card->deleted_at,
+                    'created_at' => $card->created_at,
+                    'updated_at' => $card->updated_at,
+                    'active_garden_image' => $activeGardenImage ? [
+                        'id' => $activeGardenImage->id,
+                        'title' => $activeGardenImage->title,
+                        'image_path' => $activeGardenImage->image_path,
+                        'image_url' => $activeGardenImage->image_url,
+                        'index' => $activeGardenImage->index,
+                        'created_at' => $activeGardenImage->created_at,
+                    ] : null,
+                    'person_type' => $card->personType ? [
+                        'id' => $card->personType->id,
+                        'name' => $card->personType->name,
+                        'description' => $card->personType->description,
+                    ] : null,
+                ];
+            })
+            : [];
+        
         // Add garden groups data to device response
         $deviceData = $device->toArray();
         $deviceData['garden_groups_data'] = $gardenGroups;
         $deviceData['active_garden_groups_data'] = $activeGardenGroups;
+        $deviceData['cards'] = $cardsData;
 
         return response()->json([
             'message' => 'Device login successful',
@@ -1578,10 +1679,64 @@ class DeviceController extends Controller
         $gardenGroups = $device->gardenGroups()->get();
         $activeGardenGroups = $device->activeGardenGroups()->get();
         
+        // Get full cards information for all active groups
+        $activeGroups = $device->active_garden_groups ?? [];
+        $cardsInActiveGroups = [];
+        
+        if (!empty($activeGroups)) {
+            $cardsInActiveGroups = \App\Models\Card::whereIn('group_id', $activeGroups)
+                ->where('is_deleted', false)
+                ->with(['personType', 'group.garden.images', 'group'])
+                ->get();
+        }
+        
+        // Format cards data with full information
+        $cardsData = $cardsInActiveGroups instanceof \Illuminate\Support\Collection 
+            ? $cardsInActiveGroups->map(function($card) {
+                // Find the active garden image
+                $activeGardenImage = null;
+                if ($card->active_garden_image && $card->group?->garden?->images) {
+                    $activeGardenImage = $card->group->garden->images->where('id', $card->active_garden_image)->first();
+                }
+                
+                return [
+                    'id' => $card->id,
+                    'phone' => $card->phone,
+                    'status' => $card->status,
+                    'child_first_name' => $card->child_first_name,
+                    'child_last_name' => $card->child_last_name,
+                    'parent_name' => $card->parent_name,
+                    'parent_code' => $card->parent_code,
+                    'image_path' => $card->image_path,
+                    'image_url' => $card->image_url,
+                    'group_id' => $card->group_id,
+                    'group_name' => $card->group?->name,
+                    'is_deleted' => $card->is_deleted,
+                    'deleted_at' => $card->deleted_at,
+                    'created_at' => $card->created_at,
+                    'updated_at' => $card->updated_at,
+                    'active_garden_image' => $activeGardenImage ? [
+                        'id' => $activeGardenImage->id,
+                        'title' => $activeGardenImage->title,
+                        'image_path' => $activeGardenImage->image_path,
+                        'image_url' => $activeGardenImage->image_url,
+                        'index' => $activeGardenImage->index,
+                        'created_at' => $activeGardenImage->created_at,
+                    ] : null,
+                    'person_type' => $card->personType ? [
+                        'id' => $card->personType->id,
+                        'name' => $card->personType->name,
+                        'description' => $card->personType->description,
+                    ] : null,
+                ];
+            })
+            : [];
+        
         // Add garden groups data to device response
         $deviceData = $device->toArray();
         $deviceData['garden_groups_data'] = $gardenGroups;
         $deviceData['active_garden_groups_data'] = $activeGardenGroups;
+        $deviceData['cards'] = $cardsData;
 
         return response()->json([
             'message' => 'Device information retrieved successfully',
