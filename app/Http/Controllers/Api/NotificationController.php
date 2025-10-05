@@ -645,12 +645,14 @@ class NotificationController extends Controller
             $cards = Card::where('id', $cardId)
                 ->where('is_deleted', false)
                 ->with(['group.garden', 'personType'])
+                ->limit(1)
                 ->get();
             
             // Get all people with the same card_id
-            $people = \App\Models\People::where('card_id', $cardId)
-                ->with(['card.group.garden', 'personType'])
-                ->get();
+            // $people = \App\Models\People::where('card_id', $cardId)
+            //     ->with(['card.group.garden', 'personType'])
+            //     ->get();
+            $people = [];
             
             // Get the garden name
             $gardenName = 'Garden';
