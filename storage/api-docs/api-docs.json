@@ -4507,6 +4507,16 @@
                             "type": "string",
                             "example": "+995599123456"
                         }
+                    },
+                    {
+                        "name": "expo_token",
+                        "in": "query",
+                        "description": "Expo push notification token to update for this card",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+                        }
                     }
                 ],
                 "responses": {

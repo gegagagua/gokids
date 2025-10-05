@@ -15,11 +15,13 @@ class Notification extends Model
         'card_id',
         'status',
         'sent_at',
+        'accepted_at',
     ];
 
     protected $casts = [
         'data' => 'array',
         'sent_at' => 'datetime',
+        'accepted_at' => 'datetime',
     ];
 
     /**

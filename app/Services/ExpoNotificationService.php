@@ -321,9 +321,29 @@ class ExpoNotificationService
     /**
      * Get notification history for a device (today's notifications only - from 00:00)
      * Returns all notifications from the start of the current day
+     * Automatically cancels notifications that are pending for more than 5 minutes
      */
     public function getDeviceNotifications(int $deviceId, int $limit = 50)
     {
+        // First, auto-cancel notifications that are pending/sent for more than 5 minutes
+        $fiveMinutesAgo = now()->subMinutes(5);
+        
+        $canceledCount = Notification::where('device_id', $deviceId)
+            ->whereIn('status', ['pending', 'sent'])
+            ->where('created_at', '<', $fiveMinutesAgo)
+            ->update([
+                'status' => 'canceled',
+                'updated_at' => now()
+            ]);
+        
+        if ($canceledCount > 0) {
+            \Log::info('ExpoNotificationService::getDeviceNotifications - Auto-canceled old notifications', [
+                'device_id' => $deviceId,
+                'canceled_count' => $canceledCount,
+                'cutoff_time' => $fiveMinutesAgo->toISOString()
+            ]);
+        }
+
         // Get all notifications for the device from the start of today (00:00)
         $allNotifications = Notification::where('device_id', $deviceId)
             ->where('created_at', '>=', now()->startOfDay())
