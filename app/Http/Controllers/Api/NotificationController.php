@@ -636,6 +636,33 @@ class NotificationController extends Controller
         $senderDeviceId = $senderDevice ? $senderDevice->id : null;
         $senderDeviceName = $senderDevice ? $senderDevice->name : 'Unknown Device';
 
+        // Initialize variables for notification sending
+        $totalNotificationsSent = 0;
+        $notificationResults = [];
+        $expoService = new ExpoNotificationService();
+        
+        // Get the garden name
+        $gardenName = 'Garden';
+        if ($senderDevice && $senderDevice->garden_id) {
+            $garden = \App\Models\Garden::find($senderDevice->garden_id);
+            if ($garden) {
+                $gardenName = $garden->name;
+            }
+        }
+
+        //send notification other devices, which have this card in their active garden groups
+        $otherDevices = Device::whereHas('activeGardenGroups', function($query) use ($notification) {
+            $query->where('card_id', $notification->card_id);
+            // logged in devices only
+            $query->where('is_logged_in', true);
+            // active devices only
+            $query->where('status', 'active');
+        })->get();
+        
+        foreach ($otherDevices as $device) {
+            $expoService->sendToDevice($device, 'Notification Accepted', "Your notification was accepted at {$gardenName}", $notification->card_id);
+        }
+
         // send notification to the card owner
         if ($notification->card_id) {
             $card = Card::find($notification->card_id);
@@ -649,7 +676,6 @@ class NotificationController extends Controller
             ]);
             
             if ($card && $card->expo_token) {
-                $expoService = new ExpoNotificationService();
                 
                 $cardOwnerData = [
                     'type' => 'card_notification_accepted',
