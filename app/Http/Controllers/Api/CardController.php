@@ -2069,6 +2069,77 @@ class CardController extends Controller
                 ->where('spam', '!=', 1)
                 ->get();
 
+            // If no cards found, try to find in People table
+            if ($cards->isEmpty()) {
+                \Log::info('CardController::me - No cards found for phone, checking People table', [
+                    'phone' => $user->phone
+                ]);
+                
+                $people = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
+                    ->where('phone', $user->phone)
+                    ->get();
+                
+                if ($people->isEmpty()) {
+                    \Log::warning('CardController::me - No cards or people found', [
+                        'phone' => $user->phone
+                    ]);
+                    
+                    return response()->json([
+                        'message' => 'No data found for this phone number',
+                        'cards' => [],
+                        'user_type' => 'card'
+                    ]);
+                }
+                
+                // Transform people to include full card data in same format as Cards
+                $transformedPeople = $people->map(function ($person) {
+                    // If person has a card, return in Card format (same as normal cards)
+                    if ($person->card) {
+                        return [
+                            'id' => $person->card->id,
+                            'child_first_name' => $person->card->child_first_name,
+                            'child_last_name' => $person->card->child_last_name,
+                            'parent_name' => $person->card->parent_name,
+                            'phone' => $person->card->phone,
+                            'status' => $person->card->status,
+                            'group_id' => $person->card->group_id,
+                            'person_type_id' => $person->card->person_type_id,
+                            'parent_code' => $person->card->parent_code,
+                            'image_path' => $person->card->image_path,
+                            'active_garden_image' => $person->card->active_garden_image,
+                            'image_url' => $person->card->image_url,
+                            'is_deleted' => $person->card->is_deleted,
+                            'deleted_at' => $person->card->deleted_at,
+                            'created_at' => $person->card->created_at,
+                            'updated_at' => $person->card->updated_at,
+                            'group' => $person->card->group,
+                            'personType' => $person->card->personType,
+                            'parents' => $person->card->parents,
+                            'people' => $person->card->people,
+                            'garden_images' => $person->card->garden_images,
+                            'garden' => $person->card->garden,
+                            'main_parent' => false
+                        ];
+                    }
+                    
+                    // If no card, return minimal person data
+                    return [
+                        'id' => null,
+                        'name' => $person->name,
+                        'phone' => $person->phone,
+                        'person_type_id' => $person->person_type_id,
+                        'person_type' => $person->personType,
+                        'main_parent' => false
+                    ];
+                });
+                
+                return response()->json([
+                    'message' => 'People data retrieved successfully',
+                    'cards' => $transformedPeople,
+                    'user_type' => 'people'
+                ]);
+            }
+
             // Get all people with this phone number (same as verifyOtp)
             $people = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
                 ->where('phone', $user->phone)
