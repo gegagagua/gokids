@@ -373,13 +373,6 @@ class NotificationController extends Controller
             ], 400);
         }
 
-        // if ($hasCardId && $hasPeopleId) {
-        //     return response()->json([
-        //         'message' => 'Only one of card_id or people_id should be provided, not both',
-        //         'success' => false,
-        //         'error_code' => 'MULTIPLE_IDENTIFIERS'
-        //     ], 400);
-        // }
 
         // Get the source entity (card or people) and determine the group
         $sourceEntity = null;
