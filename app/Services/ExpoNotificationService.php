@@ -6,6 +6,7 @@ use App\Models\Notification;
 use App\Models\Device;
 use App\Models\Card;
 use App\Models\People;
+use App\Services\NotificationImageService;
 use Illuminate\Support\Facades\Http;
 
 class ExpoNotificationService
@@ -278,28 +279,32 @@ class ExpoNotificationService
             }
 
             if ($imageUrl) {
-                // Convert HTTP to HTTPS if needed (iOS requirement)
-                if (strpos($imageUrl, 'http://') === 0) {
-                    $imageUrl = str_replace('http://', 'https://', $imageUrl);
+                // Get optimized image URL (converts HTTP to HTTPS, adds CDN resize params if supported)
+                $optimizedImageUrl = NotificationImageService::getOptimizedImageUrl($imageUrl);
+
+                if ($optimizedImageUrl) {
+                    \Log::info('ExpoNotificationService: Sending notification with image', [
+                        'original_url' => $imageUrl,
+                        'optimized_url' => $optimizedImageUrl,
+                        'title' => $title,
+                        'expo_token' => substr($expoToken, 0, 20) . '...'
+                    ]);
+
+                    // Add optimized image to payload for both iOS and Android
+                    $payload['image'] = $optimizedImageUrl;
+
+                    // For Android and iOS, also add to data for custom notification handling
+                    $data['notification_image'] = $optimizedImageUrl;
+                    $data['image_url'] = $optimizedImageUrl;
+
+                    // Update payload data with optimized image URLs
+                    $payload['data'] = $data;
+                } else {
+                    \Log::warning('ExpoNotificationService: Image optimization failed', [
+                        'original_url' => $imageUrl,
+                        'title' => $title
+                    ]);
                 }
-
-                \Log::info('ExpoNotificationService: Sending notification with image', [
-                    'image_url' => $imageUrl,
-                    'title' => $title,
-                    'expo_token' => substr($expoToken, 0, 20) . '...'
-                ]);
-
-                // Add image to payload for both iOS and Android
-                $payload['image'] = $imageUrl;
-
-                // For Android and iOS, also add to data for custom notification handling
-                $data['notification_image'] = $imageUrl;
-                // Make sure image_url is in data if not already there
-                if (!isset($data['image_url'])) {
-                    $data['image_url'] = $imageUrl;
-                }
-                // Update payload data with image URLs
-                $payload['data'] = $data;
             } else {
                 \Log::warning('ExpoNotificationService: No image URL found', [
                     'title' => $title,
