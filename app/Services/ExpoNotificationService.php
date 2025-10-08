@@ -267,6 +267,7 @@ class ExpoNotificationService
                 'sound' => 'default',
                 'priority' => 'high',
                 'mutableContent' => true,
+                'mutable-content' => true,  // Add both formats for iOS
                 'channelId' => 'default',
             ];
             
