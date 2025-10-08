@@ -266,8 +266,6 @@ class ExpoNotificationService
                 'data' => $data,
                 'sound' => 'default',
                 'priority' => 'high',
-                'mutableContent' => true,
-                'mutable-content' => true,  // Add both formats for iOS
                 'channelId' => 'default',
             ];
             
@@ -291,14 +289,29 @@ class ExpoNotificationService
                         'expo_token' => substr($expoToken, 0, 20) . '...'
                     ]);
 
-                    // Add optimized image to payload for both iOS and Android
+                    // Add image for Android (shows on LEFT automatically)
+                    $payload['android'] = [
+                        'priority' => 'high',
+                        'image' => $optimizedImageUrl,
+                    ];
+
+                    // Add image for iOS (shows as attachment)
+                    $payload['ios'] = [
+                        'sound' => 'default',
+                        '_displayInForeground' => true,
+                        'attachments' => [[
+                            'url' => $optimizedImageUrl,
+                        ]],
+                    ];
+
+                    // Also add to main payload for compatibility
                     $payload['image'] = $optimizedImageUrl;
 
-                    // For Android and iOS, also add to data for custom notification handling
+                    // Add to data for custom notification handling
                     $data['notification_image'] = $optimizedImageUrl;
                     $data['image_url'] = $optimizedImageUrl;
 
-                    // Update payload data with optimized image URLs
+                    // Update payload data with image URLs
                     $payload['data'] = $data;
                 } else {
                     \Log::warning('ExpoNotificationService: Image optimization failed', [
