@@ -1646,28 +1646,13 @@ class CardController extends Controller
      */
     public function verifyOtp(Request $request)
     {
-        \Log::info('=== VERIFY OTP START ===');
-        \Log::info('Request data:', $request->all());
-
-        try {
-            $request->validate([
-                'phone' => 'required|string|max:255',
-                'otp' => 'required|string|size:6',
-                'expo_token' => 'nullable|string|max:255',
-            ]);
-            \Log::info('Validation passed');
-        } catch (\Exception $e) {
-            \Log::error('Validation failed:', ['error' => $e->getMessage()]);
-            throw $e;
-        }
-
-        // Find the OTP record
-        \Log::info('Searching for OTP record', [
-            'phone' => $request->phone,
-            'otp' => $request->otp,
-            'current_time' => now()
+        $request->validate([
+            'phone' => 'required|string|max:255',
+            'otp' => 'required|string|size:6',
+            'expo_token' => 'nullable|string|max:255',
         ]);
 
+        // Find the OTP record
         $otpRecord = CardOtp::where('phone', $request->phone)
             ->where('otp', $request->otp)
             ->where('used', false)
@@ -1675,37 +1660,19 @@ class CardController extends Controller
             ->first();
 
         if (!$otpRecord) {
-            \Log::warning('OTP verification failed - OTP not found or invalid', [
-                'phone' => $request->phone,
-                'otp' => $request->otp
-            ]);
-
-            // Log all OTPs for this phone for debugging
-            $allOtps = CardOtp::where('phone', $request->phone)->get();
-            \Log::info('All OTPs for this phone:', $allOtps->toArray());
-
             return response()->json([
                 'message' => 'Invalid or expired OTP'
             ], 401);
         }
 
-        \Log::info('OTP record found', ['otp_id' => $otpRecord->id]);
-
         // Mark OTP as used
         $otpRecord->update(['used' => true]);
-        \Log::info('OTP marked as used');
 
         // Get all cards with this phone number
-        \Log::info('Fetching cards for phone', ['phone' => $request->phone]);
         $cards = Card::with(['group.garden.images', 'personType', 'parents', 'people'])
             ->where('phone', $request->phone)
             ->where('spam', '!=', 1)
             ->get();
-
-        \Log::info('Cards found', ['count' => $cards->count()]);
-        if ($cards->isNotEmpty()) {
-            \Log::info('Card IDs:', $cards->pluck('id')->toArray());
-        }
 
         // Update parent verification status and expo_token for all cards associated with this phone number
         if ($cards->isNotEmpty()) {
@@ -1714,157 +1681,112 @@ class CardController extends Controller
             // If expo_token is provided, save it to all cards with this phone
             if ($request->expo_token) {
                 $updateData['expo_token'] = $request->expo_token;
-                \Log::info('Expo token provided', ['expo_token' => $request->expo_token]);
             }
 
-            \Log::info('Updating cards with:', $updateData);
             Card::where('phone', $request->phone)
                 ->where('spam', '!=', 1)
                 ->update($updateData);
-            \Log::info('Cards updated successfully');
         }
 
         // Get all people with this phone number
-        \Log::info('Fetching people for phone', ['phone' => $request->phone]);
         $people = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
             ->where('phone', $request->phone)
             ->get();
 
-        \Log::info('People found', ['count' => $people->count()]);
-        if ($people->isNotEmpty()) {
-            \Log::info('People IDs:', $people->pluck('id')->toArray());
-        }
-
         // Generate token for the first card or person
         $token = null;
         $userType = null;
-
-        try {
-            if ($cards->isNotEmpty()) {
-                \Log::info('Generating token for card', ['card_id' => $cards->first()->id]);
-                $token = $cards->first()->createToken('card-token')->plainTextToken;
-                $userType = 'card';
-                \Log::info('Token generated successfully for card');
-            } elseif ($people->isNotEmpty()) {
-                \Log::info('Generating token for person', ['person_id' => $people->first()->id]);
-                $token = $people->first()->createToken('people-token')->plainTextToken;
-                $userType = 'people';
-                \Log::info('Token generated successfully for person');
-            }
-        } catch (\Exception $e) {
-            \Log::error('Token generation failed:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            throw $e;
+        if ($cards->isNotEmpty()) {
+            $token = $cards->first()->createToken('card-token')->plainTextToken;
+            $userType = 'card';
+        } elseif ($people->isNotEmpty()) {
+            $token = $people->first()->createToken('people-token')->plainTextToken;
+            $userType = 'people';
         }
 
         if ($cards->isEmpty() && $people->isEmpty()) {
-            \Log::warning('No cards or people found for phone number', ['phone' => $request->phone]);
             return response()->json([
                 'message' => 'No cards or people found for this phone number'
             ], 404);
         }
 
         // Transform cards to include garden images and garden info
-        \Log::info('Transforming cards data');
-        try {
-            $transformedCards = $cards->map(function ($card) {
-                \Log::info('Transforming card', ['card_id' => $card->id]);
-                return [
-                    'id' => $card->id,
-                    'child_first_name' => $card->child_first_name,
-                    'child_last_name' => $card->child_last_name,
-                    'parent_name' => $card->parent_name,
-                    'phone' => $card->phone,
-                    'status' => $card->status,
-                    'group_id' => $card->group_id,
-                    'person_type_id' => $card->person_type_id,
-                    'parent_code' => $card->parent_code,
-                    'image_path' => $card->image_path,
-                    'active_garden_image' => $card->active_garden_image,
-                    'image_url' => $card->image_url,
-                    'is_deleted' => $card->is_deleted,
-                    'deleted_at' => $card->deleted_at,
-                    'created_at' => $card->created_at,
-                    'updated_at' => $card->updated_at,
-                    'group' => $card->group,
-                    'personType' => $card->personType,
-                    'parents' => $card->parents,
-                    'people' => $card->people,
-                    'garden_images' => $card->garden_images,
-                    'garden' => $card->garden,
-                    'main_parent' => true
-                ];
-            });
-            \Log::info('Cards transformation completed');
-        } catch (\Exception $e) {
-            \Log::error('Card transformation failed:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            throw $e;
-        }
+        $transformedCards = $cards->map(function ($card) {
+            return [
+                'id' => $card->id,
+                'child_first_name' => $card->child_first_name,
+                'child_last_name' => $card->child_last_name,
+                'parent_name' => $card->parent_name,
+                'phone' => $card->phone,
+                'status' => $card->status,
+                'group_id' => $card->group_id,
+                'person_type_id' => $card->person_type_id,
+                'parent_code' => $card->parent_code,
+                'image_path' => $card->image_path,
+                'active_garden_image' => $card->active_garden_image,
+                'image_url' => $card->image_url,
+                'is_deleted' => $card->is_deleted,
+                'deleted_at' => $card->deleted_at,
+                'created_at' => $card->created_at,
+                'updated_at' => $card->updated_at,
+                'group' => $card->group,
+                'personType' => $card->personType,
+                'parents' => $card->parents,
+                'people' => $card->people,
+                'garden_images' => $card->garden_images,
+                'garden' => $card->garden,
+                'main_parent' => true
+            ];
+        });
 
         // Transform people to include full card data
-        \Log::info('Transforming people data');
-        try {
-            $transformedPeople = $people->map(function ($person) {
-                \Log::info('Transforming person', ['person_id' => $person->id]);
-                $baseData = [
-                    'name' => $person->name,
-                    'phone' => $person->phone,
-                    'person_type_id' => $person->person_type_id,
-                    'card_id' => $person->card_id,
-                    'created_at' => $person->created_at,
-                    'updated_at' => $person->updated_at,
-                    'person_type' => $person->personType,
-                    'main_parent' => false
+        $transformedPeople = $people->map(function ($person) {
+            $baseData = [
+                'name' => $person->name,
+                'phone' => $person->phone,
+                'person_type_id' => $person->person_type_id,
+                'card_id' => $person->card_id,
+                'created_at' => $person->created_at,
+                'updated_at' => $person->updated_at,
+                'person_type' => $person->personType,
+                'main_parent' => false
+            ];
+
+            // If person has a card, merge card data directly into the base data
+            if ($person->card) {
+                $cardData = [
+                    'id' => $person->card->id,
+                    'child_first_name' => $person->card->child_first_name,
+                    'child_last_name' => $person->card->child_last_name,
+                    'parent_name' => $person->card->parent_name,
+                    'card_phone' => $person->card->phone,
+                    'status' => $person->card->status,
+                    'parent_code' => $person->card->parent_code,
+                    'image_url' => $person->card->image_url,
+                    'parent_verification' => $person->card->parent_verification,
+                    'license' => $person->card->license,
+                    'active_garden_image' => $person->card->active_garden_image,
+                    'is_deleted' => $person->card->is_deleted,
+                    'deleted_at' => $person->card->deleted_at,
+                    'card_created_at' => $person->card->created_at,
+                    'card_updated_at' => $person->card->updated_at,
+                    'group' => $person->card->group,
+                    'card_person_type' => $person->card->personType,
+                    'parents' => $person->card->parents,
+                    'people' => $person->card->people,
+                    'garden_images' => $person->card->garden_images,
+                    'garden' => $person->card->garden
                 ];
 
-                // If person has a card, merge card data directly into the base data
-                if ($person->card) {
-                    \Log::info('Person has card, merging card data', ['card_id' => $person->card->id]);
-                    $cardData = [
-                        'id' => $person->card->id,
-                        'child_first_name' => $person->card->child_first_name,
-                        'child_last_name' => $person->card->child_last_name,
-                        'parent_name' => $person->card->parent_name,
-                        'card_phone' => $person->card->phone,
-                        'status' => $person->card->status,
-                        'parent_code' => $person->card->parent_code,
-                        'image_url' => $person->card->image_url,
-                        'parent_verification' => $person->card->parent_verification,
-                        'license' => $person->card->license,
-                        'active_garden_image' => $person->card->active_garden_image,
-                        'is_deleted' => $person->card->is_deleted,
-                        'deleted_at' => $person->card->deleted_at,
-                        'card_created_at' => $person->card->created_at,
-                        'card_updated_at' => $person->card->updated_at,
-                        'group' => $person->card->group,
-                        'card_person_type' => $person->card->personType,
-                        'parents' => $person->card->parents,
-                        'people' => $person->card->people,
-                        'garden_images' => $person->card->garden_images,
-                        'garden' => $person->card->garden
-                    ];
+                // Merge card data into base data (like JavaScript spread operator)
+                $baseData = array_merge($baseData, $cardData);
+            }
 
-                    // Merge card data into base data (like JavaScript spread operator)
-                    $baseData = array_merge($baseData, $cardData);
-                }
-
-                return $baseData;
-            });
-            \Log::info('People transformation completed');
-        } catch (\Exception $e) {
-            \Log::error('People transformation failed:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            throw $e;
-        }
+            return $baseData;
+        });
 
         // Combine cards and people into one array
-        \Log::info('Combining cards and people');
         $allCards = $transformedCards->concat($transformedPeople);
-        \Log::info('Final combined count', ['count' => $allCards->count()]);
-
-        \Log::info('=== VERIFY OTP SUCCESS ===', [
-            'user_type' => $userType,
-            'cards_count' => $allCards->count(),
-            'token_generated' => $token ? 'yes' : 'no'
-        ]);
 
         return response()->json([
             'message' => 'Login successful',
