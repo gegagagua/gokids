@@ -283,11 +283,30 @@ class ExpoNotificationService
                     $imageUrl = str_replace('http://', 'https://', $imageUrl);
                 }
 
+                \Log::info('ExpoNotificationService: Sending notification with image', [
+                    'image_url' => $imageUrl,
+                    'title' => $title,
+                    'expo_token' => substr($expoToken, 0, 20) . '...'
+                ]);
+
                 // Add image to payload for both iOS and Android
                 $payload['image'] = $imageUrl;
 
-                // For Android, also add to data for custom notification handling
+                // For Android and iOS, also add to data for custom notification handling
                 $data['notification_image'] = $imageUrl;
+                // Make sure image_url is in data if not already there
+                if (!isset($data['image_url'])) {
+                    $data['image_url'] = $imageUrl;
+                }
+                // Update payload data with image URLs
+                $payload['data'] = $data;
+            } else {
+                \Log::warning('ExpoNotificationService: No image URL found', [
+                    'title' => $title,
+                    'has_active_garden_image' => isset($data['active_garden_image']),
+                    'has_image_url' => isset($data['image_url']),
+                    'data_keys' => array_keys($data)
+                ]);
             }
 
             // Add dynamic icon support for Android
