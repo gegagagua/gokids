@@ -269,17 +269,25 @@ class ExpoNotificationService
                 'channelId' => 'default',
             ];
             
-            // Add image support - use active_garden_image if available
+            // Add image support - use active_garden_image if available, fallback to card image
             $imageUrl = null;
             if (isset($data['active_garden_image']['image_url']) && !empty($data['active_garden_image']['image_url'])) {
                 $imageUrl = $data['active_garden_image']['image_url'];
-                
+            } elseif (isset($data['image_url']) && !empty($data['image_url'])) {
+                $imageUrl = $data['image_url'];
+            }
+
+            if ($imageUrl) {
                 // Convert HTTP to HTTPS if needed (iOS requirement)
                 if (strpos($imageUrl, 'http://') === 0) {
                     $imageUrl = str_replace('http://', 'https://', $imageUrl);
                 }
-                
+
+                // Add image to payload for both iOS and Android
                 $payload['image'] = $imageUrl;
+
+                // For Android, also add to data for custom notification handling
+                $data['notification_image'] = $imageUrl;
             }
 
             // Add dynamic icon support for Android
