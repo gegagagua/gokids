@@ -296,6 +296,7 @@ class ExpoNotificationService
                     ];
 
                     // Add image for iOS (shows as attachment)
+                    // CRITICAL: mutableContent must be true to trigger NotificationService extension
                     $payload['ios'] = [
                         'sound' => 'default',
                         '_displayInForeground' => true,
@@ -303,6 +304,9 @@ class ExpoNotificationService
                             'url' => $optimizedImageUrl,
                         ]],
                     ];
+
+                    // CRITICAL: This triggers the Notification Service Extension on iOS
+                    $payload['mutableContent'] = true;
 
                     // Also add to main payload for compatibility
                     $payload['image'] = $optimizedImageUrl;
