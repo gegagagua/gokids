@@ -343,6 +343,11 @@ class ExpoNotificationService
                 $payload['data']['icon'] = $iconUrl;
             }
 
+            // Log the complete payload being sent to Expo
+            \Log::info('ExpoNotificationService: Complete payload to Expo', [
+                'payload' => $payload
+            ]);
+
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Accept-encoding' => 'gzip, deflate',
