@@ -687,6 +687,7 @@ class NotificationController extends Controller
                             'accepted_by_device' => $senderDeviceName,
                             'sender_device_id' => (string) $senderDeviceId,
                             'notification_id' => (string) $notification->id,
+                            'image_url' => $card->image_url,
                         ];
                         
                         $result = $expoService->sendToDevice(
@@ -727,6 +728,7 @@ class NotificationController extends Controller
                     'accepted_by_device' => $senderDeviceName,
                     'sender_device_id' => (string) $senderDeviceId,
                     'notification_id' => (string) $notification->id,
+                    'image_url' => $card->image_url,
                 ];
 
                 $cardOwnerResult = $expoService->sendToCardOwner(

@@ -6,6 +6,7 @@ use App\Models\Notification;
 use App\Models\Device;
 use App\Models\Card;
 use App\Models\People;
+use App\Services\NotificationImageService;
 use Illuminate\Support\Facades\Http;
 
 class ExpoNotificationService
@@ -271,21 +272,70 @@ class ExpoNotificationService
                 'data' => $data,
                 'sound' => 'default',
                 'priority' => 'high',
-                'mutableContent' => true,
                 'channelId' => 'default',
             ];
             
-            // Add image support - use active_garden_image if available
+            // Add image support - use active_garden_image if available, fallback to card image
             $imageUrl = null;
             if (isset($data['active_garden_image']['image_url']) && !empty($data['active_garden_image']['image_url'])) {
                 $imageUrl = $data['active_garden_image']['image_url'];
-                
-                // Convert HTTP to HTTPS if needed (iOS requirement)
-                if (strpos($imageUrl, 'http://') === 0) {
-                    $imageUrl = str_replace('http://', 'https://', $imageUrl);
+            } elseif (isset($data['image_url']) && !empty($data['image_url'])) {
+                $imageUrl = $data['image_url'];
+            }
+
+            if ($imageUrl) {
+                // Get optimized image URL (converts HTTP to HTTPS, adds CDN resize params if supported)
+                $optimizedImageUrl = NotificationImageService::getOptimizedImageUrl($imageUrl);
+
+                if ($optimizedImageUrl) {
+                    \Log::info('ExpoNotificationService: Sending notification with image', [
+                        'original_url' => $imageUrl,
+                        'optimized_url' => $optimizedImageUrl,
+                        'title' => $title,
+                        'expo_token' => substr($expoToken, 0, 20) . '...'
+                    ]);
+
+                    // Add image for Android (shows on LEFT automatically)
+                    $payload['android'] = [
+                        'priority' => 'high',
+                        'image' => $optimizedImageUrl,
+                    ];
+
+                    // Add image for iOS (shows as attachment)
+                    // CRITICAL: mutableContent must be true to trigger NotificationService extension
+                    $payload['ios'] = [
+                        'sound' => 'default',
+                        '_displayInForeground' => true,
+                        'attachments' => [[
+                            'url' => $optimizedImageUrl,
+                        ]],
+                    ];
+
+                    // CRITICAL: This triggers the Notification Service Extension on iOS
+                    $payload['mutableContent'] = true;
+
+                    // Also add to main payload for compatibility
+                    $payload['image'] = $optimizedImageUrl;
+
+                    // Add to data for custom notification handling
+                    $data['notification_image'] = $optimizedImageUrl;
+                    $data['image_url'] = $optimizedImageUrl;
+
+                    // Update payload data with image URLs
+                    $payload['data'] = $data;
+                } else {
+                    \Log::warning('ExpoNotificationService: Image optimization failed', [
+                        'original_url' => $imageUrl,
+                        'title' => $title
+                    ]);
                 }
-                
-                $payload['image'] = $imageUrl;
+            } else {
+                \Log::warning('ExpoNotificationService: No image URL found', [
+                    'title' => $title,
+                    'has_active_garden_image' => isset($data['active_garden_image']),
+                    'has_image_url' => isset($data['image_url']),
+                    'data_keys' => array_keys($data)
+                ]);
             }
 
             // Add dynamic icon support for Android
@@ -298,6 +348,11 @@ class ExpoNotificationService
                 $payload['icon'] = $iconUrl;
                 $payload['data']['icon'] = $iconUrl;
             }
+
+            // Log the complete payload being sent to Expo
+            \Log::info('ExpoNotificationService: Complete payload to Expo', [
+                'payload' => $payload
+            ]);
 
             $response = Http::withHeaders([
                 'Accept' => 'application/json',

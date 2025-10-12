@@ -1677,12 +1677,12 @@ class CardController extends Controller
         // Update parent verification status and expo_token for all cards associated with this phone number
         if ($cards->isNotEmpty()) {
             $updateData = ['parent_verification' => true];
-            
+
             // If expo_token is provided, save it to all cards with this phone
             if ($request->expo_token) {
                 $updateData['expo_token'] = $request->expo_token;
             }
-            
+
             Card::where('phone', $request->phone)
                 ->where('spam', '!=', 1)
                 ->update($updateData);
@@ -1777,7 +1777,7 @@ class CardController extends Controller
                     'garden_images' => $person->card->garden_images,
                     'garden' => $person->card->garden
                 ];
-                
+
                 // Merge card data into base data (like JavaScript spread operator)
                 $baseData = array_merge($baseData, $cardData);
             }
