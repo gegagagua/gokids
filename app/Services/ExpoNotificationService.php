@@ -319,7 +319,7 @@ class ExpoNotificationService
 
                     // Add to data for custom notification handling
                     $data['notification_image'] = $optimizedImageUrl;
-                    $data['image_url'] = $optimizedImageUrl;
+                    // $data['image_url'] = $optimizedImageUrl;
 
                     // Update payload data with image URLs
                     $payload['data'] = $data;
