@@ -186,6 +186,7 @@ class ExpoNotificationService
                 'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
                 'parent_name' => $card->parent_name,
                 'image_url' => $card->image_url,
+                'icon' => $card->image_url, // Card image for notification icon (left side)
                 'is_deleted' => $card->is_deleted,
                 'deleted_at' => $card->deleted_at,
                 'active_garden_image' => $activeGardenImage ? [
@@ -226,6 +227,11 @@ class ExpoNotificationService
         }
 
         try {
+            // Add card image as icon if not already present
+            if (!isset($data['icon']) && $card->image_url) {
+                $data['icon'] = $card->image_url;
+            }
+            
             $response = $this->sendExpoNotification($card->expo_token, $title, $body, $data);
             \Log::info('ExpoNotificationService::sendToCardOwner - Notification sent to card owner', [
                 'card_id' => $card->id,
