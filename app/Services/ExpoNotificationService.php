@@ -295,9 +295,13 @@ class ExpoNotificationService
                         'expo_token' => substr($expoToken, 0, 20) . '...'
                     ]);
 
-                    // Add image for Android (shows on LEFT automatically)
+                    // CRITICAL: Add image at TOP LEVEL for Android to display automatically
+                    $payload['image'] = $optimizedImageUrl;
+
+                    // Add image for Android notification settings
                     $payload['android'] = [
                         'priority' => 'high',
+                        'channelId' => 'default',
                         'image' => $optimizedImageUrl,
                     ];
 
@@ -314,12 +318,9 @@ class ExpoNotificationService
                     // CRITICAL: This triggers the Notification Service Extension on iOS
                     $payload['mutableContent'] = true;
 
-                    // Also add to main payload for compatibility
-                    $payload['image'] = $optimizedImageUrl;
-
                     // Add to data for custom notification handling
                     $data['notification_image'] = $optimizedImageUrl;
-                    // $data['image_url'] = $optimizedImageUrl;
+                    $data['image_url'] = $optimizedImageUrl;
 
                     // Update payload data with image URLs
                     $payload['data'] = $data;
