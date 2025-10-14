@@ -38,17 +38,32 @@ class FCMService
                 }
             }
 
-            // Add title and body to data payload
-            $data['title'] = $title;
-            $data['body'] = $body;
-
-            // Build FCM payload
-            // Send data-only message to trigger background handler
+            // Build FCM payload with notification AND data
+            // For Android BigPictureStyle, use 'notification' field with 'image'
             $payload = [
                 'to' => $fcmToken,
                 'priority' => 'high',
-                'data' => $data, // Data payload triggers background handler
+                'notification' => [
+                    'title' => $title,
+                    'body' => $body,
+                    'sound' => 'default',
+                ],
+                'data' => $data,
             ];
+            
+            // Add image for Android BigPictureStyle (native FCM support!)
+            if (isset($data['notification_image'])) {
+                $payload['notification']['image'] = $data['notification_image'];
+                
+                // Also add to Android-specific config for guaranteed delivery
+                $payload['android'] = [
+                    'priority' => 'high',
+                    'notification' => [
+                        'image' => $data['notification_image'],
+                        'channel_id' => 'default',
+                    ],
+                ];
+            }
 
             \Log::info('FCMService: Sending notification', [
                 'fcm_token' => substr($fcmToken, 0, 20) . '...',
