@@ -80,8 +80,10 @@ class FCMService
             \Log::info('FCMService: Sending notification', [
                 'fcm_token' => substr($fcmToken, 0, 20) . '...',
                 'title' => $title,
+                'body' => $body,
                 'has_image' => isset($data['notification_image']),
                 'image_url' => $data['notification_image'] ?? null,
+                'payload' => $payload, // LOG FULL PAYLOAD!
             ]);
 
             // Send to FCM

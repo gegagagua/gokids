@@ -36,7 +36,7 @@ class ExpoNotificationService
             // Add notification ID to data
             $data['notification_id'] = (string) $notification->id;
 
-            // Use FCM Direct instead of Expo Push
+            // Use FCM Direct for push notifications
             $fcmService = new FCMService();
             $response = $fcmService->sendToDevice($device, $title, $body, $data);
 
@@ -236,12 +236,12 @@ class ExpoNotificationService
                 $data['icon'] = $card->image_url;
             }
             
-            // Create a temporary device object to use FCM service
+            // Create temporary device object for FCM service
             $tempDevice = new Device();
             $tempDevice->expo_token = $card->expo_token;
-            $tempDevice->exists = false; // Mark as temporary
+            $tempDevice->exists = false;
             
-            // Use FCM Direct instead of Expo Push
+            // Use FCM Direct for push notifications
             $fcmService = new FCMService();
             $response = $fcmService->sendToDevice($tempDevice, $title, $body, $data);
             
