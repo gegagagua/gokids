@@ -13,7 +13,8 @@ class FCMService
 
     public function __construct()
     {
-        $this->serverKey = env('FCM_SERVER_KEY');
+        // FCM Server Key - hardcoded for security (not in .env)
+        $this->serverKey = 'AIzaSyAaAutvOV-XIclZ3WqK-B_ZdKe-lJDZauw';
     }
 
     /**
@@ -38,6 +39,12 @@ class FCMService
                 }
             }
 
+            // Extract icon (card image) for notification
+            $iconUrl = isset($data['icon']) ? $data['icon'] : null;
+            if ($iconUrl && strpos($iconUrl, 'http://') === 0) {
+                $iconUrl = str_replace('http://', 'https://', $iconUrl);
+            }
+
             // Build FCM payload with notification AND data
             // For Android BigPictureStyle, use 'notification' field with 'image'
             $payload = [
@@ -50,6 +57,11 @@ class FCMService
                 ],
                 'data' => $data,
             ];
+            
+            // Add icon (small icon on the left)
+            if ($iconUrl) {
+                $payload['notification']['icon'] = $iconUrl;
+            }
             
             // Add image for Android BigPictureStyle (native FCM support!)
             if (isset($data['notification_image'])) {

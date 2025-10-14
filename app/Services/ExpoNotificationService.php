@@ -236,8 +236,16 @@ class ExpoNotificationService
                 $data['icon'] = $card->image_url;
             }
             
-            $response = $this->sendExpoNotification($card->expo_token, $title, $body, $data);
-            \Log::info('ExpoNotificationService::sendToCardOwner - Notification sent to card owner', [
+            // Create a temporary device object to use FCM service
+            $tempDevice = new Device();
+            $tempDevice->expo_token = $card->expo_token;
+            $tempDevice->exists = false; // Mark as temporary
+            
+            // Use FCM Direct instead of Expo Push
+            $fcmService = new FCMService();
+            $response = $fcmService->sendToDevice($tempDevice, $title, $body, $data);
+            
+            \Log::info('ExpoNotificationService::sendToCardOwner - Notification sent to card owner via FCM', [
                 'card_id' => $card->id,
                 'card_phone' => $card->phone,
                 'card_child_name' => $card->child_first_name . ' ' . $card->child_last_name,
