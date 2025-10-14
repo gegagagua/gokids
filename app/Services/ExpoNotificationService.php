@@ -7,6 +7,7 @@ use App\Models\Device;
 use App\Models\Card;
 use App\Models\People;
 use App\Services\NotificationImageService;
+use App\Services\FCMService;
 use Illuminate\Support\Facades\Http;
 
 class ExpoNotificationService
@@ -35,7 +36,9 @@ class ExpoNotificationService
             // Add notification ID to data
             $data['notification_id'] = (string) $notification->id;
 
-            $response = $this->sendExpoNotification($device->expo_token, $title, $body, $data);
+            // Use FCM Direct instead of Expo Push
+            $fcmService = new FCMService();
+            $response = $fcmService->sendToDevice($device, $title, $body, $data);
 
             if ($response['success']) {
                 $notification->update([
