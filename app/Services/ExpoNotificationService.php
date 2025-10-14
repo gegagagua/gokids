@@ -298,7 +298,6 @@ class ExpoNotificationService
                     // Add to data for custom notification handling - THIS IS KEY!
                     // Mobile app will read this from data payload
                     $data['notification_image'] = $optimizedImageUrl;
-                    $data['image_url'] = $optimizedImageUrl;
                     $data['image'] = $optimizedImageUrl; // Add as 'image' too
 
                     // Update payload data FIRST
@@ -306,12 +305,6 @@ class ExpoNotificationService
 
                     // CRITICAL: This triggers the Notification Service Extension on iOS
                     $payload['mutableContent'] = true;
-                    
-                    \Log::info('ExpoNotificationService: Complete payload with image', [
-                        'has_image' => true,
-                        'image_url' => $optimizedImageUrl,
-                        'data_keys' => array_keys($data)
-                    ]);
                 } else {
                     \Log::warning('ExpoNotificationService: Image optimization failed', [
                         'original_url' => $imageUrl,
