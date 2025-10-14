@@ -295,35 +295,23 @@ class ExpoNotificationService
                         'expo_token' => substr($expoToken, 0, 20) . '...'
                     ]);
 
-                    // CRITICAL: Add image at TOP LEVEL for Android to display automatically
-                    $payload['image'] = $optimizedImageUrl;
+                    // Add to data for custom notification handling - THIS IS KEY!
+                    // Mobile app will read this from data payload
+                    $data['notification_image'] = $optimizedImageUrl;
+                    $data['image_url'] = $optimizedImageUrl;
+                    $data['image'] = $optimizedImageUrl; // Add as 'image' too
 
-                    // Add image for Android notification settings
-                    $payload['android'] = [
-                        'priority' => 'high',
-                        'channelId' => 'default',
-                        'image' => $optimizedImageUrl,
-                    ];
-
-                    // Add image for iOS (shows as attachment)
-                    // CRITICAL: mutableContent must be true to trigger NotificationService extension
-                    $payload['ios'] = [
-                        'sound' => 'default',
-                        '_displayInForeground' => true,
-                        'attachments' => [[
-                            'url' => $optimizedImageUrl,
-                        ]],
-                    ];
+                    // Update payload data FIRST
+                    $payload['data'] = $data;
 
                     // CRITICAL: This triggers the Notification Service Extension on iOS
                     $payload['mutableContent'] = true;
-
-                    // Add to data for custom notification handling
-                    $data['notification_image'] = $optimizedImageUrl;
-                    $data['image_url'] = $optimizedImageUrl;
-
-                    // Update payload data with image URLs
-                    $payload['data'] = $data;
+                    
+                    \Log::info('ExpoNotificationService: Complete payload with image', [
+                        'has_image' => true,
+                        'image_url' => $optimizedImageUrl,
+                        'data_keys' => array_keys($data)
+                    ]);
                 } else {
                     \Log::warning('ExpoNotificationService: Image optimization failed', [
                         'original_url' => $imageUrl,
