@@ -364,15 +364,32 @@ class ExpoNotificationService
     /**
      * Get notification history for a device (today's notifications only - from 00:00)
      * Returns all notifications from the start of the current day
-     * Automatically cancels notifications that are pending for more than 5 minutes
+     * Automatically cancels notifications that are pending/sent for more than 5 minutes
+     * Does NOT cancel notifications that are already accepted
      */
     public function getDeviceNotifications(int $deviceId, int $limit = 50)
     {
         // First, auto-cancel notifications that are pending/sent for more than 5 minutes
+        // BUT do NOT cancel if already accepted
         $fiveMinutesAgo = now()->subMinutes(5);
         
+        // Log what we're about to cancel
+        $notificationsToCancelIds = Notification::where('device_id', $deviceId)
+            ->whereIn('status', ['pending', 'sent']) // Only pending or sent, NOT accepted
+            ->where('created_at', '<', $fiveMinutesAgo)
+            ->pluck('id')
+            ->toArray();
+        
+        if (!empty($notificationsToCancelIds)) {
+            \Log::info('ExpoNotificationService::getDeviceNotifications - About to auto-cancel notifications', [
+                'device_id' => $deviceId,
+                'notifications_to_cancel' => $notificationsToCancelIds,
+                'cutoff_time' => $fiveMinutesAgo->toISOString()
+            ]);
+        }
+        
         $canceledCount = Notification::where('device_id', $deviceId)
-            ->whereIn('status', ['pending', 'sent'])
+            ->whereIn('status', ['pending', 'sent']) // Only pending or sent, NOT accepted
             ->where('created_at', '<', $fiveMinutesAgo)
             ->update([
                 'status' => 'canceled',
@@ -383,9 +400,28 @@ class ExpoNotificationService
             \Log::info('ExpoNotificationService::getDeviceNotifications - Auto-canceled old notifications', [
                 'device_id' => $deviceId,
                 'canceled_count' => $canceledCount,
+                'canceled_ids' => $notificationsToCancelIds,
                 'cutoff_time' => $fiveMinutesAgo->toISOString()
             ]);
         }
+        
+        // Log all notification statuses for debugging
+        $allStatuses = Notification::where('device_id', $deviceId)
+            ->where('created_at', '>=', $fiveMinutesAgo)
+            ->select('id', 'status', 'created_at', 'accepted_at')
+            ->get();
+        
+        \Log::info('ExpoNotificationService::getDeviceNotifications - Recent notification statuses', [
+            'device_id' => $deviceId,
+            'notifications' => $allStatuses->map(function($n) {
+                return [
+                    'id' => $n->id,
+                    'status' => $n->status,
+                    'created_at' => $n->created_at->toISOString(),
+                    'accepted_at' => $n->accepted_at ? $n->accepted_at->toISOString() : null
+                ];
+            })->toArray()
+        ]);
 
         // Get all notifications for the device from the start of today (00:00)
         $allNotifications = Notification::where('device_id', $deviceId)
