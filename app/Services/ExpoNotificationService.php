@@ -287,9 +287,10 @@ class ExpoNotificationService
                     // CRITICAL: This triggers the Notification Service Extension on iOS
                     $payload['mutableContent'] = true;
 
-                    $payload['richContent'] = {
-                        'image': $optimizedImageUrl
-                    };
+                    // Fix array syntax error and use correct PHP array assignment
+                    $payload['richContent'] = [
+                        'image' => $optimizedImageUrl
+                    ];
                 } else {
                     \Log::warning('ExpoNotificationService: Image optimization failed', [
                         'original_url' => $imageUrl,
