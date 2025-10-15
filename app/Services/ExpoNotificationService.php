@@ -237,27 +237,12 @@ class ExpoNotificationService
             // Send Expo notification
             $response = $this->sendExpoNotification($card->expo_token, $title, $body, $data);
             
-            \Log::info('ExpoNotificationService::sendToCardOwner - Notification sent to card owner', [
-                'card_id' => $card->id,
-                'card_phone' => $card->phone,
-                'card_child_name' => $card->child_first_name . ' ' . $card->child_last_name,
-                'card_owner_data' => $data,
-                'response' => $response
-            ]);
-
             if ($response['success']) {
                 return true;
             } else {
                 return false;
             }
         } catch (\Exception $e) {
-            \Log::error('ExpoNotificationService::sendToCardOwner - Failed to send notification to card owner', [
-                'card_id' => $card->id,
-                'card_phone' => $card->phone,
-                'card_child_name' => $card->child_first_name . ' ' . $card->child_last_name,
-                'card_owner_data' => $data,
-                'error' => $e->getMessage()
-            ]);
             return false;
         }
     }
@@ -291,13 +276,6 @@ class ExpoNotificationService
                 $optimizedImageUrl = NotificationImageService::getOptimizedImageUrl($imageUrl);
 
                 if ($optimizedImageUrl) {
-                    \Log::info('ExpoNotificationService: Sending notification with image', [
-                        'original_url' => $imageUrl,
-                        'optimized_url' => $optimizedImageUrl,
-                        'title' => $title,
-                        'expo_token' => substr($expoToken, 0, 20) . '...'
-                    ]);
-
                     // Add to data for custom notification handling - THIS IS KEY!
                     // Mobile app will read this from data payload
                     $data['notification_image'] = $optimizedImageUrl;
@@ -314,15 +292,7 @@ class ExpoNotificationService
                         'title' => $title
                     ]);
                 }
-            } else {
-                \Log::warning('ExpoNotificationService: No image URL found', [
-                    'title' => $title,
-                    'has_active_garden_image' => isset($data['active_garden_image']),
-                    'has_image_url' => isset($data['image_url']),
-                    'data_keys' => array_keys($data)
-                ]);
             }
-
             // Add dynamic icon support for Android
             if (isset($data['icon']) && !empty($data['icon'])) {
                 $iconUrl = $data['icon'];
@@ -376,55 +346,6 @@ class ExpoNotificationService
         // BUT do NOT cancel if already accepted
         $fiveMinutesAgo = now()->subMinutes(5);
         
-        // Log what we're about to cancel
-        $notificationsToCancelIds = Notification::where('device_id', $deviceId)
-            ->whereIn('status', ['pending', 'sent']) // Only pending or sent, NOT accepted
-            ->where('created_at', '<', $fiveMinutesAgo)
-            ->pluck('id')
-            ->toArray();
-        
-        if (!empty($notificationsToCancelIds)) {
-            \Log::info('ExpoNotificationService::getDeviceNotifications - About to auto-cancel notifications', [
-                'device_id' => $deviceId,
-                'notifications_to_cancel' => $notificationsToCancelIds,
-                'cutoff_time' => $fiveMinutesAgo->toISOString()
-            ]);
-        }
-        
-        $canceledCount = Notification::where('device_id', $deviceId)
-            ->whereIn('status', ['pending', 'sent']) // Only pending or sent, NOT accepted
-            ->where('created_at', '<', $fiveMinutesAgo)
-            ->update([
-                'status' => 'canceled',
-                'updated_at' => now()
-            ]);
-        
-        if ($canceledCount > 0) {
-            \Log::info('ExpoNotificationService::getDeviceNotifications - Auto-canceled old notifications', [
-                'device_id' => $deviceId,
-                'canceled_count' => $canceledCount,
-                'canceled_ids' => $notificationsToCancelIds,
-                'cutoff_time' => $fiveMinutesAgo->toISOString()
-            ]);
-        }
-        
-        // Log all notification statuses for debugging
-        $allStatuses = Notification::where('device_id', $deviceId)
-            ->where('created_at', '>=', $fiveMinutesAgo)
-            ->select('id', 'status', 'created_at', 'accepted_at')
-            ->get();
-        
-        \Log::info('ExpoNotificationService::getDeviceNotifications - Recent notification statuses', [
-            'device_id' => $deviceId,
-            'notifications' => $allStatuses->map(function($n) {
-                return [
-                    'id' => $n->id,
-                    'status' => $n->status,
-                    'created_at' => $n->created_at->toISOString(),
-                    'accepted_at' => $n->accepted_at ? $n->accepted_at->toISOString() : null
-                ];
-            })->toArray()
-        ]);
 
         // Get all notifications for the device from the start of today (00:00)
         $allNotifications = Notification::where('device_id', $deviceId)
