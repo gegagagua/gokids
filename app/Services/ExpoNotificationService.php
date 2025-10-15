@@ -7,7 +7,6 @@ use App\Models\Device;
 use App\Models\Card;
 use App\Models\People;
 use App\Services\NotificationImageService;
-use App\Services\FCMService;
 use Illuminate\Support\Facades\Http;
 
 class ExpoNotificationService
@@ -36,9 +35,8 @@ class ExpoNotificationService
             // Add notification ID to data
             $data['notification_id'] = (string) $notification->id;
 
-            // Use FCM Direct for push notifications
-            $fcmService = new FCMService();
-            $response = $fcmService->sendToDevice($device, $title, $body, $data);
+            // Send Expo notification
+            $response = $this->sendExpoNotification($device->expo_token, $title, $body, $data);
 
             if ($response['success']) {
                 $notification->update([
@@ -236,16 +234,10 @@ class ExpoNotificationService
                 $data['icon'] = $card->image_url;
             }
             
-            // Create temporary device object for FCM service
-            $tempDevice = new Device();
-            $tempDevice->expo_token = $card->expo_token;
-            $tempDevice->exists = false;
+            // Send Expo notification
+            $response = $this->sendExpoNotification($card->expo_token, $title, $body, $data);
             
-            // Use FCM Direct for push notifications
-            $fcmService = new FCMService();
-            $response = $fcmService->sendToDevice($tempDevice, $title, $body, $data);
-            
-            \Log::info('ExpoNotificationService::sendToCardOwner - Notification sent to card owner via FCM', [
+            \Log::info('ExpoNotificationService::sendToCardOwner - Notification sent to card owner', [
                 'card_id' => $card->id,
                 'card_phone' => $card->phone,
                 'card_child_name' => $card->child_first_name . ' ' . $card->child_last_name,
