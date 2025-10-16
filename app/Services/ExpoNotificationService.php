@@ -293,16 +293,6 @@ class ExpoNotificationService
                     ]);
                 }
             }
-            // Add dynamic icon support for Android
-            if (isset($data['icon']) && !empty($data['icon'])) {
-                $iconUrl = $data['icon'];
-                if (strpos($iconUrl, 'http://') === 0) {
-                    $iconUrl = str_replace('http://', 'https://', $iconUrl);
-                }
-                
-                $payload['icon'] = $iconUrl;
-                $payload['data']['icon'] = $iconUrl;
-            }
 
             // Log the complete payload being sent to Expo
             \Log::info('ExpoNotificationService: Complete payload to Expo', [
