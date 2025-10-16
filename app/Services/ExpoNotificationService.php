@@ -276,13 +276,8 @@ class ExpoNotificationService
                 $optimizedImageUrl = NotificationImageService::getOptimizedImageUrl($imageUrl);
 
                 if ($optimizedImageUrl) {
-                    // Add to data for custom notification handling - THIS IS KEY!
-                    // Mobile app will read this from data payload
-                    // $data['notification_image'] = $optimizedImageUrl;
-                    // $data['image'] = $optimizedImageUrl; // Add as 'image' too
-
-                    // Update payload data FIRST
                     $payload['data'] = $data;
+                    $payload['icon'] = '';
 
                     // CRITICAL: This triggers the Notification Service Extension on iOS
                     $payload['mutableContent'] = true;
