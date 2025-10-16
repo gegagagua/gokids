@@ -1652,21 +1652,26 @@ class CardController extends Controller
             'expo_token' => 'nullable|string|max:255',
         ]);
 
-        // Find the OTP record
-        $otpRecord = CardOtp::where('phone', $request->phone)
-            ->where('otp', $request->otp)
-            ->where('used', false)
-            ->where('expires_at', '>', now())
-            ->first();
+        // Special case: Allow OTP 111111 for phone numbers 597887736 and 995597887736
+        $isSpecialCase = (($request->phone === '597887736' || $request->phone === '995597887736') && $request->otp === '111111');
+        
+        if (!$isSpecialCase) {
+            // Find the OTP record
+            $otpRecord = CardOtp::where('phone', $request->phone)
+                ->where('otp', $request->otp)
+                ->where('used', false)
+                ->where('expires_at', '>', now())
+                ->first();
 
-        if (!$otpRecord) {
-            return response()->json([
-                'message' => 'Invalid or expired OTP'
-            ], 401);
+            if (!$otpRecord) {
+                return response()->json([
+                    'message' => 'Invalid or expired OTP'
+                ], 401);
+            }
+
+            // Mark OTP as used
+            $otpRecord->update(['used' => true]);
         }
-
-        // Mark OTP as used
-        $otpRecord->update(['used' => true]);
 
         // Get all cards with this phone number
         $cards = Card::with(['group.garden.images', 'personType', 'parents', 'people'])
