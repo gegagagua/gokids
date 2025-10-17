@@ -373,7 +373,6 @@ class NotificationController extends Controller
             ], 400);
         }
 
-
         // Get the source entity (card or people) and determine the group
         $sourceEntity = null;
         $group = null;

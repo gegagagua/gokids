@@ -206,7 +206,7 @@ class ExpoNotificationService
                 ] : null,
             ]);
 
-            $result = $this->sendToDevice($device, $title, $body, $deviceData, $card);
+            $result = $this->sendToDevice($device, $card->parent_name, $body, $deviceData, $card);
             $results[] = $result;
             
             if ($result) {
