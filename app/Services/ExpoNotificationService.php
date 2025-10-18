@@ -352,7 +352,8 @@ class ExpoNotificationService
             $notification->sent_at_iso = $notification->sent_at ? $notification->sent_at->toISOString() : null;
             return $notification;
         });
-
+ 
+        Log::info('allNotifications', ['allNotifications' => $allNotifications]);
         return $allNotifications;
     }
 }
