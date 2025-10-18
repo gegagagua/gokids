@@ -357,10 +357,8 @@ class ExpoNotificationService
             $data['debug_timestamp'] = $debugTimestamp;
             
             // Auto-cancel pending notifications older than 5 minutes
-            if ($notification->status === 'pending' && $notification->created_at < $fiveMinutesAgo) {
-                $notification->status = 'canceled';
-                // Also update card_status in data field
-                if (isset($data['card_status']) && $data['card_status'] === 'pending') {
+            if ($data['card_status'] === 'pending' && $notification->created_at < $fiveMinutesAgo) {
+                if (isset($data['card_status'])) {
                     $data['card_status'] = 'canceled';
                 }
             }
