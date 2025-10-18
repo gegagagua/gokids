@@ -353,9 +353,10 @@ class ExpoNotificationService
             $notification->sent_at_iso = $notification->sent_at ? $notification->sent_at->toISOString() : null;
             
             // Add debug_timestamp to the data field
-            $data = json_decode($notification->data, true) ?? [];
+            $data = is_string($notification->data) ? json_decode($notification->data, true) : $notification->data;
+            $data = $data ?? [];
             $data['debug_timestamp'] = $debugTimestamp;
-            $notification->data = json_encode($data);
+            $notification->data = $data;
             
             return $notification;
         });
