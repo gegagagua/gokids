@@ -351,15 +351,20 @@ class ExpoNotificationService
             $notification->created_at_iso = $notification->created_at->toISOString();
             $notification->sent_at_iso = $notification->sent_at ? $notification->sent_at->toISOString() : null;
             
-            // Auto-cancel pending notifications older than 5 minutes
-            if ($notification->status === 'pending' && $notification->created_at < $fiveMinutesAgo) {
-                $notification->status = 'canceled';
-            }
-            
             // Add debug_timestamp to the data field
             $data = is_string($notification->data) ? json_decode($notification->data, true) : $notification->data;
             $data = $data ?? [];
             $data['debug_timestamp'] = $debugTimestamp;
+            
+            // Auto-cancel pending notifications older than 5 minutes
+            if ($notification->status === 'pending' && $notification->created_at < $fiveMinutesAgo) {
+                $notification->status = 'canceled';
+                // Also update card_status in data field
+                if (isset($data['card_status']) && $data['card_status'] === 'pending') {
+                    $data['card_status'] = 'canceled';
+                }
+            }
+            
             $notification->data = $data;
             
             return $notification;
