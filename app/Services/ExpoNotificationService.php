@@ -335,7 +335,6 @@ class ExpoNotificationService
         // First, auto-cancel notifications that are pending/sent for more than 5 minutes
         // BUT do NOT cancel if already accepted
         $fiveMinutesAgo = now()->subMinutes(5);
-        
 
         // Get all notifications for the device from the start of today (00:00)
         $allNotifications = Notification::where('device_id', $deviceId)
@@ -344,13 +343,18 @@ class ExpoNotificationService
             ->orderBy('created_at', 'desc')
             ->get();
 
-        // Add formatted dates to each notification
-        $allNotifications = $allNotifications->map(function($notification) {
+        // Add formatted dates to each notification and auto-cancel old pending ones
+        $allNotifications = $allNotifications->map(function($notification) use ($fiveMinutesAgo) {
             $debugTimestamp = $notification->created_at->format('Y-m-d H:i:s');
             $notification->debug_timestamp = $debugTimestamp;
             $notification->sent_at_formatted = $notification->sent_at ? $notification->sent_at->format('Y-m-d H:i:s') : null;
             $notification->created_at_iso = $notification->created_at->toISOString();
             $notification->sent_at_iso = $notification->sent_at ? $notification->sent_at->toISOString() : null;
+            
+            // Auto-cancel pending notifications older than 5 minutes
+            if ($notification->status === 'pending' && $notification->created_at < $fiveMinutesAgo) {
+                $notification->status = 'canceled';
+            }
             
             // Add debug_timestamp to the data field
             $data = is_string($notification->data) ? json_decode($notification->data, true) : $notification->data;
