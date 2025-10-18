@@ -27,7 +27,7 @@ class CardNotificationService
             $devices = $this->getGardenDevices($card);
             
             if ($devices->isEmpty()) {
-                Log::info("No devices found for garden {$card->group->garden->id} to send card created notification");
+                \Log::info("No devices found for garden {$card->group->garden->id} to send card created notification");
                 return false;
             }
 
@@ -51,14 +51,14 @@ class CardNotificationService
                 $card
             );
 
-            Log::info("Card created notification sent to " . count($devices) . " devices", [
+            \Log::info("Card created notification sent to " . count($devices) . " devices", [
                 'card_id' => $card->id,
                 'results' => $results
             ]);
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Failed to send card created notification: ' . $e->getMessage());
+            \Log::error('Failed to send card created notification: ' . $e->getMessage());
             return false;
         }
     }
@@ -72,7 +72,7 @@ class CardNotificationService
             $devices = $this->getGardenDevices($card);
             
             if ($devices->isEmpty()) {
-                Log::info("No devices found for garden {$card->group->garden->id} to send card updated notification");
+                \Log::info("No devices found for garden {$card->group->garden->id} to send card updated notification");
                 return false;
             }
 
@@ -97,14 +97,14 @@ class CardNotificationService
                 $card
             );
 
-            Log::info("Card updated notification sent to " . count($devices) . " devices", [
+            \Log::info("Card updated notification sent to " . count($devices) . " devices", [
                 'card_id' => $card->id,
                 'results' => $results
             ]);
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Failed to send card updated notification: ' . $e->getMessage());
+            \Log::error('Failed to send card updated notification: ' . $e->getMessage());
             return false;
         }
     }
@@ -118,7 +118,7 @@ class CardNotificationService
             $devices = $this->getGardenDevices($card);
             
             if ($devices->isEmpty()) {
-                Log::info("No devices found for garden {$card->group->garden->id} to send card status changed notification");
+                \Log::info("No devices found for garden {$card->group->garden->id} to send card status changed notification");
                 return false;
             }
 
@@ -144,7 +144,7 @@ class CardNotificationService
                 $card
             );
 
-            Log::info("Card status changed notification sent to " . count($devices) . " devices", [
+            \Log::info("Card status changed notification sent to " . count($devices) . " devices", [
                 'card_id' => $card->id,
                 'old_status' => $oldStatus,
                 'new_status' => $newStatus,
@@ -153,7 +153,7 @@ class CardNotificationService
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Failed to send card status changed notification: ' . $e->getMessage());
+            \Log::error('Failed to send card status changed notification: ' . $e->getMessage());
             return false;
         }
     }
@@ -167,7 +167,7 @@ class CardNotificationService
             $devices = $this->getGardenDevices($card);
             
             if ($devices->isEmpty()) {
-                Log::info("No devices found for garden {$card->group->garden->id} to send card deleted notification");
+                \Log::info("No devices found for garden {$card->group->garden->id} to send card deleted notification");
                 return false;
             }
 
@@ -191,14 +191,14 @@ class CardNotificationService
                 $card
             );
 
-            Log::info("Card deleted notification sent to " . count($devices) . " devices", [
+            \Log::info("Card deleted notification sent to " . count($devices) . " devices", [
                 'card_id' => $card->id,
                 'results' => $results
             ]);
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Failed to send card deleted notification: ' . $e->getMessage());
+            \Log::error('Failed to send card deleted notification: ' . $e->getMessage());
             return false;
         }
     }
@@ -212,7 +212,7 @@ class CardNotificationService
             $devices = $this->getGardenDevices($card);
             
             if ($devices->isEmpty()) {
-                Log::info("No devices found for garden {$card->group->garden->id} to send card moved notification");
+                \Log::info("No devices found for garden {$card->group->garden->id} to send card moved notification");
                 return false;
             }
 
@@ -238,7 +238,7 @@ class CardNotificationService
                 $card
             );
 
-            Log::info("Card moved notification sent to " . count($devices) . " devices", [
+            \Log::info("Card moved notification sent to " . count($devices) . " devices", [
                 'card_id' => $card->id,
                 'old_group_id' => $oldGroupId,
                 'new_group_id' => $newGroupId,
@@ -247,7 +247,7 @@ class CardNotificationService
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Failed to send card moved notification: ' . $e->getMessage());
+            \Log::error('Failed to send card moved notification: ' . $e->getMessage());
             return false;
         }
     }
@@ -261,7 +261,7 @@ class CardNotificationService
             $devices = $this->getGardenDevices($card);
             
             if ($devices->isEmpty()) {
-                Log::info("No devices found for garden {$card->group->garden->id} to send card spam notification");
+                \Log::info("No devices found for garden {$card->group->garden->id} to send card spam notification");
                 return false;
             }
 
@@ -285,14 +285,14 @@ class CardNotificationService
                 $card
             );
 
-            Log::info("Card spam notification sent to " . count($devices) . " devices", [
+            \Log::info("Card spam notification sent to " . count($devices) . " devices", [
                 'card_id' => $card->id,
                 'results' => $results
             ]);
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Failed to send card spam notification: ' . $e->getMessage());
+            \Log::error('Failed to send card spam notification: ' . $e->getMessage());
             return false;
         }
     }
@@ -303,7 +303,7 @@ class CardNotificationService
     protected function getGardenDevices(Card $card)
     {
         if (!$card->group || !$card->group->garden) {
-            Log::warning("Card {$card->id} has no group or garden assigned");
+            \Log::warning("Card {$card->id} has no group or garden assigned");
             return collect();
         }
 
@@ -414,7 +414,7 @@ class CardNotificationService
                 ->get();
 
             if ($devices->isEmpty()) {
-                Log::info("No devices found for garden {$gardenId} to send custom notification");
+                \Log::info("No devices found for garden {$gardenId} to send custom notification");
                 return false;
             }
 
@@ -425,7 +425,7 @@ class CardNotificationService
                 $data
             );
 
-            Log::info("Custom notification sent to " . count($devices) . " devices in garden {$gardenId}", [
+            \Log::info("Custom notification sent to " . count($devices) . " devices in garden {$gardenId}", [
                 'title' => $title,
                 'body' => $body,
                 'results' => $results
@@ -433,7 +433,7 @@ class CardNotificationService
 
             return true;
         } catch (\Exception $e) {
-            Log::error('Failed to send custom notification to garden: ' . $e->getMessage());
+            \Log::error('Failed to send custom notification to garden: ' . $e->getMessage());
             return false;
         }
     }

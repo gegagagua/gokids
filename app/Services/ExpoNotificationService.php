@@ -346,10 +346,17 @@ class ExpoNotificationService
 
         // Add formatted dates to each notification
         $allNotifications = $allNotifications->map(function($notification) {
-            $notification->debug_timestamp = $notification->created_at->format('Y-m-d H:i:s');
+            $debugTimestamp = $notification->created_at->format('Y-m-d H:i:s');
+            $notification->debug_timestamp = $debugTimestamp;
             $notification->sent_at_formatted = $notification->sent_at ? $notification->sent_at->format('Y-m-d H:i:s') : null;
             $notification->created_at_iso = $notification->created_at->toISOString();
             $notification->sent_at_iso = $notification->sent_at ? $notification->sent_at->toISOString() : null;
+            
+            // Add debug_timestamp to the data field
+            $data = json_decode($notification->data, true) ?? [];
+            $data['debug_timestamp'] = $debugTimestamp;
+            $notification->data = json_encode($data);
+            
             return $notification;
         });
  

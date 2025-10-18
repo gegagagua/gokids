@@ -124,14 +124,14 @@ class NotificationImageService
 
             // If image is already small, return original URL
             if ($imageSize <= self::MAX_IMAGE_SIZE) {
-                Log::info('NotificationImageService: Image size acceptable', [
+                \Log::info('NotificationImageService: Image size acceptable', [
                     'url' => $imageUrl,
                     'size' => $imageSize
                 ]);
                 return $imageUrl;
             }
 
-            Log::info('NotificationImageService: Image too large, needs optimization', [
+            \Log::info('NotificationImageService: Image too large, needs optimization', [
                 'url' => $imageUrl,
                 'size' => $imageSize,
                 'max_size' => self::MAX_IMAGE_SIZE
@@ -142,7 +142,7 @@ class NotificationImageService
             return $imageUrl;
 
         } catch (\Exception $e) {
-            Log::error('NotificationImageService: Error processing image', [
+            \Log::error('NotificationImageService: Error processing image', [
                 'url' => $imageUrl,
                 'error' => $e->getMessage()
             ]);
@@ -163,7 +163,7 @@ class NotificationImageService
             $response = Http::timeout(5)->head($imageUrl);
 
             if (!$response->successful()) {
-                Log::warning('NotificationImageService: Image URL not accessible', [
+                \Log::warning('NotificationImageService: Image URL not accessible', [
                     'url' => $imageUrl,
                     'status' => $response->status()
                 ]);
@@ -175,7 +175,7 @@ class NotificationImageService
             $validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
 
             if (!in_array(strtolower($contentType), $validTypes)) {
-                Log::warning('NotificationImageService: Invalid content type', [
+                \Log::warning('NotificationImageService: Invalid content type', [
                     'url' => $imageUrl,
                     'content_type' => $contentType
                 ]);
@@ -185,7 +185,7 @@ class NotificationImageService
             return true;
 
         } catch (\Exception $e) {
-            Log::error('NotificationImageService: Error validating image URL', [
+            \Log::error('NotificationImageService: Error validating image URL', [
                 'url' => $imageUrl,
                 'error' => $e->getMessage()
             ]);

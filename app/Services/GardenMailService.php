@@ -16,14 +16,14 @@ class GardenMailService
         try {
             Mail::to($email)->send(new GardenOtpMail($otp, $email));
             
-            Log::info("Garden OTP sent successfully to: {$email}");
+            \Log::info("Garden OTP sent successfully to: {$email}");
             
             return [
                 'success' => true,
                 'message' => 'OTP sent to email successfully'
             ];
         } catch (\Exception $e) {
-            Log::error("Failed to send garden OTP to {$email}: " . $e->getMessage());
+            \Log::error("Failed to send garden OTP to {$email}: " . $e->getMessage());
             
             return [
                 'success' => false,

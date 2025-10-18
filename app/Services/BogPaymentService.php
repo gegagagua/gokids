@@ -57,7 +57,7 @@ class BogPaymentService
                     ]),
                 ]);
 
-                Log::info('BOG payment created successfully', [
+                \Log::info('BOG payment created successfully', [
                     'payment_id' => $payment->id,
                     'order_id' => $payment->order_id,
                     'amount' => $payment->amount,
@@ -72,7 +72,7 @@ class BogPaymentService
                 ];
             } else {
                 // If BOG API fails, return error
-                Log::error('BOG payment creation failed', [
+                \Log::error('BOG payment creation failed', [
                     'payment_id' => $payment->id,
                     'error' => $bogResponse['error'],
                 ]);
@@ -84,7 +84,7 @@ class BogPaymentService
             }
 
         } catch (\Exception $e) {
-            Log::error('Failed to create BOG payment: ' . $e->getMessage(), [
+            \Log::error('Failed to create BOG payment: ' . $e->getMessage(), [
                 'data' => $data,
             ]);
 
@@ -109,7 +109,7 @@ class BogPaymentService
             return $this->generateDirectPaymentUrl($payment, $config, $transactionId);
 
         } catch (\Exception $e) {
-            Log::error('BOG payment URL generation exception: ' . $e->getMessage());
+            \Log::error('BOG payment URL generation exception: ' . $e->getMessage());
             
             return [
                 'success' => false,
@@ -136,7 +136,7 @@ class BogPaymentService
                 'callback_url' => url('/api/bog-payment/callback'),
             ]);
 
-            Log::info('Using direct BOG payment URL (fallback)', [
+            \Log::info('Using direct BOG payment URL (fallback)', [
                 'transaction_id' => $transactionId,
                 'payment_url' => $paymentUrl,
             ]);
@@ -172,7 +172,7 @@ class BogPaymentService
             $payment = BogPayment::where('order_id', $callbackData['order_id'])->first();
 
             if (!$payment) {
-                Log::error('Payment not found for callback', $callbackData);
+                \Log::error('Payment not found for callback', $callbackData);
                 return false;
             }
 
@@ -191,7 +191,7 @@ class BogPaymentService
                 $payment->update(['paid_at' => now()]);
             }
 
-            Log::info('BOG payment callback handled successfully', [
+            \Log::info('BOG payment callback handled successfully', [
                 'payment_id' => $payment->id,
                 'order_id' => $payment->order_id,
                 'status' => $status,
@@ -200,7 +200,7 @@ class BogPaymentService
             return true;
 
         } catch (\Exception $e) {
-            Log::error('Failed to handle BOG payment callback: ' . $e->getMessage(), [
+            \Log::error('Failed to handle BOG payment callback: ' . $e->getMessage(), [
                 'callback_data' => $callbackData,
             ]);
 
