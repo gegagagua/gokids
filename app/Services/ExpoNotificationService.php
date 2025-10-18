@@ -365,7 +365,7 @@ class ExpoNotificationService
             return $notification;
         });
  
-        \Log::info('allNotifications', ['allNotifications' => $allNotifications]);
+        \Log::info('allNotifications', ['allNotifications' => $allNotifications[0]]);
         return $allNotifications;
     }
 }
