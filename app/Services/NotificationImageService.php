@@ -112,7 +112,7 @@ class NotificationImageService
             $response = Http::timeout(10)->get($imageUrl);
 
             if (!$response->successful()) {
-                Log::warning('NotificationImageService: Failed to download image', [
+                \Log::warning('NotificationImageService: Failed to download image', [
                     'url' => $imageUrl,
                     'status' => $response->status()
                 ]);
