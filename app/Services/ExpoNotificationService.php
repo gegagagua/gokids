@@ -253,6 +253,8 @@ class ExpoNotificationService
     protected function sendExpoNotification(string $expoToken, string $title, string $body, array $data = [])
     {
         try {
+            // CRITICAL FIX for Android: Merge critical data fields into the root payload
+            // Android strips custom 'data' fields when app is killed, but preserves root-level fields
             $payload = [
                 'to' => $expoToken,
                 'title' => $title,
@@ -262,6 +264,17 @@ class ExpoNotificationService
                 'priority' => 'high',
                 'channelId' => 'default',
             ];
+
+            // Add critical fields to payload root for Android compatibility
+            if (isset($data['type'])) {
+                $payload['type'] = $data['type'];
+            }
+            if (isset($data['card_id'])) {
+                $payload['card_id'] = $data['card_id'];
+            }
+            if (isset($data['notification_id'])) {
+                $payload['notification_id'] = $data['notification_id'];
+            }
             
             // Add image support - use active_garden_image if available, fallback to card image
             $imageUrl = null;
