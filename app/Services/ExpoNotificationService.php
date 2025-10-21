@@ -35,29 +35,9 @@ class ExpoNotificationService
             // Add notification ID to data
             $data['notification_id'] = (string) $notification->id;
 
-            // CRITICAL FIX for Android: Encode critical data in body for killed app scenario
-            // Android strips all custom fields, so we encode data in the body itself
-            // Using completely invisible encoding with zero-width characters
+            // Don't encode in body - keep it clean for Android users
+            // The data is already in the 'data' field which works when app is not killed
             $encodedBody = $body;
-            if (isset($data['type']) && ($data['type'] === 'card_to_device' || $data['type'] === 'card_accepted')) {
-                $type = $data['type'];
-
-                // Encode data as base64 and use zero-width characters
-                $dataToEncode = $notification->id . '|' . ($card?->id ?? '') . '|' . $type;
-                $base64Encoded = base64_encode($dataToEncode);
-
-                // Use multiple zero-width characters to ensure invisibility
-                // ZWSP (U+200B) + encoded data + ZWSP
-                $invisibleMarker = "\u{200B}\u{200C}\u{200D}"; // Combination of zero-width chars
-                $encodedBody = $body . $invisibleMarker . $base64Encoded . $invisibleMarker;
-
-                \Log::info('ExpoNotificationService: Encoded body for ' . $type, [
-                    'original_body' => $body,
-                    'data_to_encode' => $dataToEncode,
-                    'base64' => $base64Encoded,
-                    'type' => $type
-                ]);
-            }
 
             // Send Expo notification with encoded body
             $response = $this->sendExpoNotification($device->expo_token, $title, $encodedBody, $data);
