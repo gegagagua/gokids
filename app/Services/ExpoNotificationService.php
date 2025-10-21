@@ -265,7 +265,7 @@ class ExpoNotificationService
                 'channelId' => 'default',
             ];
 
-            // Add critical fields to payload root for Android compatibility
+            // Add critical fields to payload root for Android
             if (isset($data['type'])) {
                 $payload['type'] = $data['type'];
             }
