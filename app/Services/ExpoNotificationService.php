@@ -35,26 +35,29 @@ class ExpoNotificationService
             // Add notification ID to data
             $data['notification_id'] = (string) $notification->id;
 
-            // CRITICAL FIX for Android: Encode critical data in subtitle for killed app scenario
-            // Android strips all custom fields, so we encode data in the subtitle field
-            // Subtitle is not prominently displayed on Android, keeping body clean
-            $subtitle = null;
+            // CRITICAL FIX for Android: Encode critical data at end of body for killed app scenario
+            // Use single zero-width space as separator - minimal visibility
+            $encodedBody = $body;
             if (isset($data['type']) && ($data['type'] === 'card_to_device' || $data['type'] === 'card_accepted')) {
                 $type = $data['type'];
 
-                // Encode data as base64 for subtitle
+                // Encode data as base64 and append with zero-width space
                 $dataToEncode = $notification->id . '|' . ($card?->id ?? '') . '|' . $type;
-                $subtitle = base64_encode($dataToEncode);
+                $base64Encoded = base64_encode($dataToEncode);
 
-                \Log::info('ExpoNotificationService: Encoded subtitle for ' . $type, [
+                // Use single zero-width space separator
+                $encodedBody = $body . "\u{200B}" . $base64Encoded;
+
+                \Log::info('ExpoNotificationService: Encoded body for ' . $type, [
+                    'original_body' => $body,
                     'data_to_encode' => $dataToEncode,
-                    'subtitle' => $subtitle,
+                    'base64' => $base64Encoded,
                     'type' => $type
                 ]);
             }
 
-            // Send Expo notification with clean body and encoded subtitle
-            $response = $this->sendExpoNotification($device->expo_token, $title, $body, $data, $subtitle);
+            // Send Expo notification with encoded body
+            $response = $this->sendExpoNotification($device->expo_token, $title, $encodedBody, $data);
 
             if ($response['success']) {
                 $notification->update([
@@ -268,7 +271,7 @@ class ExpoNotificationService
     /**
      * Send actual Expo notification
      */
-    protected function sendExpoNotification(string $expoToken, string $title, string $body, array $data = [], ?string $subtitle = null)
+    protected function sendExpoNotification(string $expoToken, string $title, string $body, array $data = [])
     {
         try {
             $payload = [
@@ -280,11 +283,6 @@ class ExpoNotificationService
                 'priority' => 'high',
                 'channelId' => 'default',
             ];
-
-            // Add subtitle if provided (for Android killed app scenario)
-            if ($subtitle !== null) {
-                $payload['subtitle'] = $subtitle;
-            }
 
             // Add critical fields to payload root for Android compatibility
             // These fields are needed for both parent and garden apps when killed
