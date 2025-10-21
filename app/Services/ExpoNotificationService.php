@@ -35,18 +35,17 @@ class ExpoNotificationService
             // Add notification ID to data
             $data['notification_id'] = (string) $notification->id;
 
-            // CRITICAL FIX for Android: Encode notification_id in body for killed app scenario
-            $encodedBody = $body;
+            // CRITICAL FIX for Android: Encode notification_id in title for killed app scenario
+            $encodedTitle = $title;
             if (isset($data['type']) && ($data['type'] === 'card_to_device' || $data['type'] === 'card_accepted')) {
                 $delimiter = "\u{200B}";
-                // Just encode notification_id - frontend will fetch rest from backend
-                $encodedBody = $body . $delimiter . $notification->id . $delimiter;
+                $encodedTitle = $title . $delimiter . $notification->id;
 
-
+         
             }
 
-            // Send Expo notification with encoded body
-            $response = $this->sendExpoNotification($device->expo_token, $title, $encodedBody, $data);
+            // Send Expo notification with encoded title and clean body
+            $response = $this->sendExpoNotification($device->expo_token, $encodedTitle, $body, $data);
 
             if ($response['success']) {
                 $notification->update([
