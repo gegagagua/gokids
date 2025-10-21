@@ -35,10 +35,22 @@ class ExpoNotificationService
             // Add notification ID to data
             $data['notification_id'] = (string) $notification->id;
 
-            // Send Expo notification with clean body
-            // Note: When app is killed, Android strips data fields. In this case,
-            // the app will fetch notification history from backend on next open.
-            $response = $this->sendExpoNotification($device->expo_token, $title, $body, $data);
+            // CRITICAL FIX for Android: Encode critical data in body for killed app scenario
+            // Android strips all custom fields, so we encode data in the body itself
+            $encodedBody = $body;
+            if (isset($data['type']) && ($data['type'] === 'card_to_device' || $data['type'] === 'card_accepted')) {
+                $delimiter = "\u{200B}"; 
+                $type = $data['type'];
+                $encodedBody = $body . $delimiter . $notification->id . '|' . ($card?->id ?? '') . '|' . $type . $delimiter;
+                \Log::info('ExpoNotificationService: Encoded body for ' . $type, [
+                    'original_body' => $body,
+                    'encoded_body' => $encodedBody,
+                    'type' => $type
+                ]);
+            }
+
+            // Send Expo notification with encoded body
+            $response = $this->sendExpoNotification($device->expo_token, $title, $encodedBody, $data);
 
             if ($response['success']) {
                 $notification->update([
