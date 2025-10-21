@@ -292,7 +292,8 @@ class ExpoNotificationService
                 $payload['image_url'] = $data['image_url'];
             }
             if (isset($data['active_garden_image'])) {
-                $payload['active_garden_image'] = $data['active_garden_image'];
+                // Send active_garden_image as JSON string for Android compatibility
+                $payload['active_garden_image_json'] = json_encode($data['active_garden_image']);
             }
 
             // Add image support - use active_garden_image if available, fallback to card image
