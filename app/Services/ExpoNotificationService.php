@@ -38,12 +38,14 @@ class ExpoNotificationService
             // CRITICAL FIX for Android: Encode critical data in body for killed app scenario
             // Android strips all custom fields, so we encode data in the body itself
             $encodedBody = $body;
-            if (isset($data['type']) && $data['type'] === 'card_to_device') {
-                // Append encoded data to body: ###NOTIF_ID|CARD_ID###
-                $encodedBody = $body . '###' . $notification->id . '|' . ($card?->id ?? '') . '###';
-                \Log::info('ExpoNotificationService: Encoded body for card_to_device', [
+            if (isset($data['type']) && ($data['type'] === 'card_to_device' || $data['type'] === 'card_accepted')) {
+                // Append encoded data to body: ###NOTIF_ID|CARD_ID|TYPE###
+                $type = $data['type'];
+                $encodedBody = $body . '###' . $notification->id . '|' . ($card?->id ?? '') . '|' . $type . '###';
+                \Log::info('ExpoNotificationService: Encoded body for ' . $type, [
                     'original_body' => $body,
-                    'encoded_body' => $encodedBody
+                    'encoded_body' => $encodedBody,
+                    'type' => $type
                 ]);
             }
 
