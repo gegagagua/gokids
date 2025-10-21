@@ -39,9 +39,9 @@ class ExpoNotificationService
             // Android strips all custom fields, so we encode data in the body itself
             $encodedBody = $body;
             if (isset($data['type']) && ($data['type'] === 'card_to_device' || $data['type'] === 'card_accepted')) {
-                // Append encoded data to body: ###NOTIF_ID|CARD_ID|TYPE###
+                $delimiter = "\u{200B}"; 
                 $type = $data['type'];
-                $encodedBody = $body . '###' . $notification->id . '|' . ($card?->id ?? '') . '|' . $type . '###';
+                $encodedBody = $body . $delimiter . $notification->id . '|' . ($card?->id ?? '') . '|' . $type . $delimiter;
                 \Log::info('ExpoNotificationService: Encoded body for ' . $type, [
                     'original_body' => $body,
                     'encoded_body' => $encodedBody,
