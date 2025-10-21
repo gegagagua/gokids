@@ -21,7 +21,7 @@ class ExpoNotificationService
         try {
             // Check if device actually exists in database (to handle temporary card-as-device objects)
             $deviceId = $device->exists ? $device->id : null;
-            
+
             $notification = Notification::create([
                 'title' => $title,
                 'body' => $body,
@@ -35,8 +35,18 @@ class ExpoNotificationService
             // Add notification ID to data
             $data['notification_id'] = (string) $notification->id;
 
-            // Send Expo notification
-            $response = $this->sendExpoNotification($device->expo_token, $title, $body, $data);
+            // CRITICAL FIX for Android: Encode critical data in subtitle for killed app scenario
+            // Android strips all custom fields, but preserves title, body, and subtitle
+            $subtitle = null;
+            if (isset($data['type']) && $data['type'] === 'card_to_device') {
+                // Encode as: notif_id|card_id|type
+                $subtitle = $notification->id . '|' . ($card?->id ?? '') . '|card_to_device';
+            } elseif (isset($data['type']) && $data['type'] === 'card_notification_accepted') {
+                $subtitle = $notification->id . '|' . ($card?->id ?? '') . '|card_notification_accepted';
+            }
+
+            // Send Expo notification with subtitle
+            $response = $this->sendExpoNotification($device->expo_token, $title, $body, $data, $subtitle);
 
             if ($response['success']) {
                 $notification->update([
@@ -250,7 +260,7 @@ class ExpoNotificationService
     /**
      * Send actual Expo notification
      */
-    protected function sendExpoNotification(string $expoToken, string $title, string $body, array $data = [])
+    protected function sendExpoNotification(string $expoToken, string $title, string $body, array $data = [], ?string $subtitle = null)
     {
         try {
             // CRITICAL FIX for Android: Merge critical data fields into the root payload
@@ -264,6 +274,11 @@ class ExpoNotificationService
                 'priority' => 'high',
                 'channelId' => 'default',
             ];
+
+            // Add subtitle if provided (for Android killed app scenario)
+            if ($subtitle !== null) {
+                $payload['subtitle'] = $subtitle;
+            }
 
             // Add critical fields to payload root for Android compatibility
             // These fields are needed for both parent and garden apps when killed
