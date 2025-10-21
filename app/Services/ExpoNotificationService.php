@@ -38,10 +38,10 @@ class ExpoNotificationService
             // CRITICAL FIX for Android: Encode notification_id in title for killed app scenario
             $encodedTitle = $title;
             if (isset($data['type']) && ($data['type'] === 'card_to_device' || $data['type'] === 'card_accepted')) {
-                $delimiter = "\u{200B}";
-                $encodedTitle = $title . $delimiter . $notification->id;
 
-         
+                $encodedTitle = $title . ' - '  . $notification->id;
+
+
             }
 
             // Send Expo notification with encoded title and clean body
