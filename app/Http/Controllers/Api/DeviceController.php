@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Device;
+use App\Models\CalledCard;
 use App\Rules\LicenseValueRule;
 
 /**
@@ -1745,6 +1746,108 @@ class DeviceController extends Controller
             'session_expires_at' => $device->session_expires_at,
             'is_logged_in' => $device->is_logged_in,
             'login_status' => $device->isLoggedIn()
+        ]);
+    }
+
+    /**
+     * Check if called cards exist for a device's cards
+     * 
+     * @OA\Get(
+     *     path="/api/devices/{id}/check-called-cards",
+     *     operationId="checkIfCalledCardExists",
+     *     tags={"Devices"},
+     *     summary="Check if called cards exist for device's cards",
+     *     description="Get card IDs that exist in CalledCard table for a specific device's cards",
+     *     security={},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Device ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Called cards retrieved successfully"),
+     *             @OA\Property(property="device_id", type="integer", example=1),
+     *             @OA\Property(property="called_card_ids", type="array", @OA\Items(type="integer"), example={1, 3, 5}),
+     *             @OA\Property(property="total_called_cards", type="integer", example=3)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Device not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Device not found")
+     *         )
+     *     )
+     * )
+     */
+    public function checkIfCalledCardExists(Request $request, $id)
+    {
+        $query = Device::query();
+        
+        // Get garden_id from authenticated user if they are a garden user
+        $user = $request->user();
+        
+        if ($user && $user->type === 'garden') {
+            $garden = \App\Models\Garden::where('email', $user->email)->first();
+            if ($garden) {
+                $query->where('garden_id', $garden->id);
+            }
+        } else {
+            // For admin users or unauthenticated requests, allow filtering by garden_id if provided
+            if ($request->filled('garden_id')) {
+                $query->where('garden_id', $request->query('garden_id'));
+            }
+        }
+        
+        $device = $query->findOrFail($id);
+        
+        // Get the garden groups associated with this device
+        $deviceGroupIds = $device->garden_groups;
+        
+        if (empty($deviceGroupIds)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No groups associated with this device',
+                'device_id' => $device->id,
+                'called_card_ids' => [],
+                'total_called_cards' => 0
+            ]);
+        }
+        
+        // Get cards that belong to these groups
+        $cardIds = \App\Models\Card::whereIn('group_id', $deviceGroupIds)
+            ->where('is_deleted', false)
+            ->pluck('id')
+            ->toArray();
+        
+        if (empty($cardIds)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No cards found for this device',
+                'device_id' => $device->id,
+                'called_card_ids' => [],
+                'total_called_cards' => 0
+            ]);
+        }
+        
+        // Get card IDs that exist in CalledCard table
+        $calledCardIds = CalledCard::whereIn('card_id', $cardIds)
+            ->pluck('card_id')
+            ->toArray();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Called cards retrieved successfully',
+            'device_id' => $device->id,
+            'called_card_ids' => $calledCardIds,
+            'total_called_cards' => count($calledCardIds)
         ]);
     }
 }

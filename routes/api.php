@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\PaymentGatewayController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\BogPaymentController;
+use App\Http\Controllers\Api\CalledCardController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/person-types', [PersonTypeController::class, 'index']);
@@ -89,6 +90,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::patch('/devices/{id}/status', [DeviceController::class, 'updateStatus']);
         Route::post('/devices/{id}/regenerate-code', [DeviceController::class, 'regenerateCode']);
         Route::post('/devices/delete-devices', [DeviceController::class, 'bulkDestroy']);
+        
 
         Route::apiResource('garden-groups', GardenGroupController::class);
         Route::post('/garden-groups/bulk-delete', [GardenGroupController::class, 'bulkDestroy']);
@@ -159,4 +161,12 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     // Garden OTP routes (no authentication required)
     Route::post('/gardens/send-otp', [GardenController::class, 'sendOtp']);
     Route::post('/gardens/verify-otp', [GardenController::class, 'verifyOtp']);
+    
+    // Called Cards routes (no authentication required)
+    Route::post('/called-cards', [CalledCardController::class, 'store']);
+    Route::delete('/called-cards/card/{cardId}', [CalledCardController::class, 'deleteByCardId']);
+    Route::get('/called-cards/exists/{cardId}', [CalledCardController::class, 'exists']);
+    
+    // Device called cards check (no authentication required)
+    Route::get('/devices/{id}/check-called-cards', [DeviceController::class, 'checkIfCalledCardExists']);
 });

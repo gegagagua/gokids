@@ -149,6 +149,11 @@ class Card extends Model
         return $this->belongsTo(\App\Models\PersonType::class);
     }
 
+    public function calledCards()
+    {
+        return $this->hasMany(CalledCard::class);
+    }
+
     /**
      * Get garden images through group relationship with full URLs
      */
