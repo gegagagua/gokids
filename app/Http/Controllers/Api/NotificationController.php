@@ -456,8 +456,8 @@ class NotificationController extends Controller
 
 
         // Delete existing called card records for this card
-        CalledCard::where('card_id', $card->id)->delete();
-        \Log::info('NotificationController::sendCardToAllDevices - Deleted existing called card records for card ' . $card->id);
+        CalledCard::where('card_id', $cardToNotify->id)->delete();
+        \Log::info('NotificationController::sendCardToAllDevices - Deleted existing called card records for card ' . $cardToNotify->id);
 
         // Wait half a second before sending notification
         usleep(300000); // 500,000 microseconds = 0.5 seconds
