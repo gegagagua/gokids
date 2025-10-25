@@ -698,12 +698,12 @@ class NotificationController extends Controller
             ]);
 
             // Get all notifications with status 'pending' for this card_id and set their status to 'success'
-            $pendingNotifications = \App\Models\Notification::where('card_id', $notification->card_id)
+            $pendingNotifications = \App\Models\Notification::where('card_id', $card->id)
                 ->where('status', 'pending')
                 ->get();
 
             foreach ($pendingNotifications as $pendingNotification) {
-                $pendingNotification->status = 'success';
+                $pendingNotification->status = 'accepted';
                 $pendingNotification->save();
             }
         }
