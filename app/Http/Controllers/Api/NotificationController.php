@@ -454,6 +454,13 @@ class NotificationController extends Controller
             $cardToNotify = $sourceEntity->card;
         }
 
+
+        // Delete existing called card records for this card
+        CalledCard::where('card_id', $card->id)->delete();
+
+        // Wait half a second before sending notification
+        usleep(300000); // 500,000 microseconds = 0.5 seconds
+
         $results = $expoService->sendCardToAllDevices(
             $cardToNotify, 
             $validated['title'], 
@@ -475,9 +482,6 @@ class NotificationController extends Controller
             $callType = $isFromPeople ? 'people_to_all_devices' : 'card_to_all_devices';
             \App\Models\CardNotificationCall::recordCall($sourceId, $callType);
         }
-
-        // Delete existing called card records for this card
-        CalledCard::where('card_id', $card->id)->delete();
 
         // Get remaining calls for response
         $remainingCalls = null;
