@@ -2061,11 +2061,6 @@ class CardController extends Controller
                 Card::where('phone', $user->phone)
                     ->where('spam', '!=', 1)
                     ->update(['expo_token' => $request->expo_token]);
-                
-                \Log::info('CardController::me - Updated expo_token for cards', [
-                    'phone' => $user->phone,
-                    'expo_token' => $request->expo_token
-                ]);
             }
 
             // Get ALL cards with this phone number (same as verifyOtp)
@@ -2076,10 +2071,6 @@ class CardController extends Controller
 
             // If no cards found, try to find in People table
             if ($cards->isEmpty()) {
-                \Log::info('CardController::me - No cards found for phone, checking People table', [
-                    'phone' => $user->phone
-                ]);
-                
                 $people = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
                     ->where('phone', $user->phone)
                     ->get();
