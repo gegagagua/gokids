@@ -654,13 +654,10 @@ class NotificationController extends Controller
         if ($notification->card_id) {
             $card = Card::find($notification->card_id);
 
-            // Create called card record when notification is accepted
-            CalledCard::create([
-                'card_id' => $notification->card_id,
-                'create_date' => now()
-            ]);
-
-            if ($card && $card->expo_token) {
+            // Check if card already exists in CalledCard table
+            $cardAlreadyCalled = CalledCard::where('card_id', $notification->card_id)->exists();
+            
+            if ($card && $card->expo_token && !$cardAlreadyCalled) {
                 
                 $cardOwnerData = [
                     'type' => 'card_notification_accepted',
@@ -693,6 +690,12 @@ class NotificationController extends Controller
                     ];
                 }
             }
+
+            // Create called card record when notification is accepted
+            CalledCard::create([
+                'card_id' => $notification->card_id,
+                'create_date' => now()
+            ]);
         }
 
         // Reload the notification to get updated data
