@@ -1789,24 +1789,8 @@ class DeviceController extends Controller
      */
     public function checkIfCalledCardExists(Request $request, $id)
     {
-        $query = Device::query();
-        
-        // Get garden_id from authenticated user if they are a garden user
-        $user = $request->user();
-        
-        if ($user && $user->type === 'garden') {
-            $garden = \App\Models\Garden::where('email', $user->email)->first();
-            if ($garden) {
-                $query->where('garden_id', $garden->id);
-            }
-        } else {
-            // For admin users or unauthenticated requests, allow filtering by garden_id if provided
-            if ($request->filled('garden_id')) {
-                $query->where('garden_id', $request->query('garden_id'));
-            }
-        }
-        
-        $device = $query->findOrFail($id);
+        // Find device by ID only
+        $device = Device::findOrFail($id);
         
         // Get the garden groups associated with this device
         $deviceGroupIds = $device->garden_groups;
