@@ -701,7 +701,7 @@ class NotificationController extends Controller
             // Get all other pending notifications for this card_id and set their status to 'accepted'
             $pendingNotifications = \App\Models\Notification::where('card_id', $notification->card_id)
                 ->where('id', '!=', $notification->id) // Exclude the current notification
-                ->where('status', 'pending')
+                ->where('status', 'sent')
                 ->get();
 
             foreach ($pendingNotifications as $pendingNotification) {
