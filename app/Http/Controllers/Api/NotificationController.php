@@ -677,8 +677,8 @@ class NotificationController extends Controller
 
                 $cardOwnerResult = $expoService->sendToCardOwner(
                     $card,
-                    'Notification Accepted',
-                    "Your notification was accepted at {$gardenName}",
+                    "{$gardenName}",
+                    'OK',
                     $cardOwnerData
                 );
                 
