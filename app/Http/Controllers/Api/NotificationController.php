@@ -470,6 +470,14 @@ class NotificationController extends Controller
         // Otherwise fallback to card's expo_token
         $senderExpoToken = $notificationData['sender_expo_token'] ?? $cardToNotify->expo_token;
 
+        \Log::info('Sending notification with sender info', [
+            'card_id' => $cardToNotify->id,
+            'is_from_people' => $isFromPeople,
+            'sender_expo_token_from_request' => isset($notificationData['sender_expo_token']) ? substr($notificationData['sender_expo_token'], 0, 20) . '...' : 'NOT_PROVIDED',
+            'final_sender_expo_token' => $senderExpoToken ? substr($senderExpoToken, 0, 20) . '...' : 'NULL',
+            'card_expo_token' => $cardToNotify->expo_token ? substr($cardToNotify->expo_token, 0, 20) . '...' : 'NULL'
+        ]);
+
         if ($isFromPeople) {
             // Notification sent by shared parent (People)
             $notificationData['sender_expo_token'] = $senderExpoToken;
