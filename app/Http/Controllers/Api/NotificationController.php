@@ -466,17 +466,19 @@ class NotificationController extends Controller
         $notificationData = $validated['data'] ?? [];
 
         // Include sender's expo_token directly in notification data
-        // This way we don't need to query for it later when accepting
+        // Use the expo_token from request if provided (frontend sends actual sender's token)
+        // Otherwise fallback to card's expo_token
+        $senderExpoToken = $notificationData['sender_expo_token'] ?? $cardToNotify->expo_token;
+
         if ($isFromPeople) {
             // Notification sent by shared parent (People)
-            // Shared parents use the same device/expo_token as the main parent
-            $notificationData['sender_expo_token'] = $cardToNotify->expo_token;
+            $notificationData['sender_expo_token'] = $senderExpoToken;
             $notificationData['sender_type'] = 'people';
             $notificationData['sender_people_id'] = $sourceEntity->id;
             $notificationData['sender_name'] = $sourceEntity->name;
         } else {
             // Notification sent by main parent (Card)
-            $notificationData['sender_expo_token'] = $cardToNotify->expo_token;
+            $notificationData['sender_expo_token'] = $senderExpoToken;
             $notificationData['sender_type'] = 'card';
             $notificationData['sender_name'] = $cardToNotify->parent_name;
         }
