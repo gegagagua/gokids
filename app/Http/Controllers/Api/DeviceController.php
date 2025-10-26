@@ -1493,15 +1493,21 @@ class DeviceController extends Controller
         ]);
 
         $device = Device::findOrFail($validated['device_id']);
+        $expoToken = $validated['expo_token'];
 
         // CRITICAL FIX: Remove this expo_token from all other devices first
         // This prevents duplicate notifications when the same physical device
         // is registered to multiple gardens
         Device::where('id', '!=', $device->id)
-            ->where('expo_token', $validated['expo_token'])
+            ->where('expo_token', $expoToken)
             ->update(['expo_token' => null]);
 
-        $device->update(['expo_token' => $validated['expo_token']]);
+        // CRITICAL FIX: Also clear this expo_token from all cards
+        // This prevents conflicts when same physical device switches between parent/garden apps
+        \App\Models\Card::where('expo_token', $expoToken)
+            ->update(['expo_token' => null]);
+
+        $device->update(['expo_token' => $expoToken]);
 
         return response()->json([
             'message' => 'Expo token updated successfully',

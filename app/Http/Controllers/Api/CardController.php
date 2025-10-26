@@ -1685,7 +1685,17 @@ class CardController extends Controller
 
             // If expo_token is provided, save it to all cards with this phone
             if ($request->expo_token) {
-                $updateData['expo_token'] = $request->expo_token;
+                $expoToken = $request->expo_token;
+                $updateData['expo_token'] = $expoToken;
+
+                // CRITICAL FIX: Clear this expo_token from all devices first
+                \App\Models\Device::where('expo_token', $expoToken)
+                    ->update(['expo_token' => null]);
+
+                // CRITICAL FIX: Clear this expo_token from all cards with different phone numbers
+                Card::where('phone', '!=', $request->phone)
+                    ->where('expo_token', $expoToken)
+                    ->update(['expo_token' => null]);
             }
 
             Card::where('phone', $request->phone)
@@ -2058,9 +2068,22 @@ class CardController extends Controller
 
             // Update expo_token if provided (like in verifyOtp)
             if ($request->has('expo_token') && $request->expo_token) {
+                $expoToken = $request->expo_token;
+
+                // CRITICAL FIX: Clear this expo_token from all devices first
+                // This prevents conflicts when same physical device switches between parent/garden apps
+                \App\Models\Device::where('expo_token', $expoToken)
+                    ->update(['expo_token' => null]);
+
+                // CRITICAL FIX: Clear this expo_token from all cards with different phone numbers
+                // Then update only cards with matching phone number
+                Card::where('phone', '!=', $user->phone)
+                    ->where('expo_token', $expoToken)
+                    ->update(['expo_token' => null]);
+
                 Card::where('phone', $user->phone)
                     ->where('spam', '!=', 1)
-                    ->update(['expo_token' => $request->expo_token]);
+                    ->update(['expo_token' => $expoToken]);
             }
 
             // Get ALL cards with this phone number (same as verifyOtp)
