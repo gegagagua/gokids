@@ -72,16 +72,19 @@ class ExpoNotificationService
     public function sendToMultipleDevices($devices, string $title, string $body, array $data = [], ?Card $card = null)
     {
         $results = [];
-        
+
         // Handle both Collection and array
         if (is_array($devices)) {
-            $deviceArray = $devices;
+            $deviceArray = collect($devices);
         } else {
             // Keep as Collection to preserve Device objects
             $deviceArray = $devices;
         }
-        
-        foreach ($deviceArray as $device) {
+
+        // CRITICAL FIX: Deduplicate by expo_token to prevent duplicate notifications
+        $uniqueDevices = $deviceArray->unique('expo_token');
+
+        foreach ($uniqueDevices as $device) {
             $results[] = $this->sendToDevice($device, $title, $body, $data, $card);
         }
 
@@ -161,19 +164,23 @@ class ExpoNotificationService
 
         // Get all devices that have this card's group in their active_garden_groups
         $targetGroupId = $card->group_id;
-        
+
         $devices = Device::where('status', 'active')
             ->whereNotNull('expo_token')
             ->whereJsonContains('active_garden_groups', $targetGroupId)
             ->get();
 
-        if ($devices->isEmpty()) {
+        // CRITICAL FIX: Deduplicate by expo_token to prevent duplicate notifications
+        // Group by expo_token and keep only the first device for each unique token
+        $uniqueDevices = $devices->unique('expo_token');
+
+        if ($uniqueDevices->isEmpty()) {
             return false;
         }
 
         // Load necessary relationships for card data
         $card->load(['personType', 'group.garden.images']);
-        
+
         // Find the active garden image
         $activeGardenImage = null;
         if ($card->active_garden_image && $card->group?->garden?->images) {
@@ -183,8 +190,8 @@ class ExpoNotificationService
         $results = [];
         $successCount = 0;
         $failureCount = 0;
-        
-        foreach ($devices as $device) {
+
+        foreach ($uniqueDevices as $device) {
             // Create comprehensive card data
             $deviceData = array_merge($data, [
                 'type' => 'card_to_device',
