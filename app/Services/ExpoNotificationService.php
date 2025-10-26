@@ -272,37 +272,6 @@ class ExpoNotificationService
                 'channelId' => 'default',
             ];
 
-            // Add critical fields to payload root for Android compatibility
-            // These fields are needed for both parent and garden apps when killed
-            if (isset($data['type'])) {
-                $payload['type'] = $data['type'];
-            }
-            if (isset($data['card_id'])) {
-                $payload['card_id'] = $data['card_id'];
-            }
-            if (isset($data['notification_id'])) {
-                $payload['notification_id'] = $data['notification_id'];
-            }
-            if (isset($data['child_name'])) {
-                $payload['child_name'] = $data['child_name'];
-            }
-            if (isset($data['parent_name'])) {
-                $payload['parent_name'] = $data['parent_name'];
-            }
-            if (isset($data['garden_name'])) {
-                $payload['garden_name'] = $data['garden_name'];
-            }
-            if (isset($data['card_phone'])) {
-                $payload['card_phone'] = $data['card_phone'];
-            }
-            if (isset($data['image_url'])) {
-                $payload['image_url'] = $data['image_url'];
-            }
-            if (isset($data['active_garden_image'])) {
-                // Send active_garden_image as JSON string for Android compatibility
-                $payload['active_garden_image_json'] = json_encode($data['active_garden_image']);
-            }
-
             // Add image support - use active_garden_image if available, fallback to card image
             $imageUrl = null;
             if (isset($data['active_garden_image']['image_url']) && !empty($data['active_garden_image']['image_url'])) {
