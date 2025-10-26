@@ -125,6 +125,7 @@ class ExpoNotificationService
             'type' => 'child_call',
             'notification_id' => null, // Will be set after notification is created
             'card_id' => (string) $card->id,
+            'group_id' => (string) $card->group_id, // Add group_id for frontend filtering
             'call_time' => $callTime->toISOString(),
             'device_id' => (string) $device->id,
             'card_phone' => $card->phone,
@@ -197,6 +198,7 @@ class ExpoNotificationService
                 'type' => 'card_to_device',
                 'device_id' => (string) $device->id,
                 'card_id' => (string) $card->id,
+                'group_id' => (string) $card->group_id, // CRITICAL: Add group_id for frontend filtering
                 'card_phone' => $card->phone,
                 'card_status' => $card->status,
                 'card_group_name' => $card->group?->name ?? 'Unknown Group',

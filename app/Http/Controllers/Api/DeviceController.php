@@ -1493,6 +1493,14 @@ class DeviceController extends Controller
         ]);
 
         $device = Device::findOrFail($validated['device_id']);
+
+        // CRITICAL FIX: Remove this expo_token from all other devices first
+        // This prevents duplicate notifications when the same physical device
+        // is registered to multiple gardens
+        Device::where('id', '!=', $device->id)
+            ->where('expo_token', $validated['expo_token'])
+            ->update(['expo_token' => null]);
+
         $device->update(['expo_token' => $validated['expo_token']]);
 
         return response()->json([
