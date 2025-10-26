@@ -461,11 +461,31 @@ class NotificationController extends Controller
         // Wait half a second before sending notification
         usleep(300000); // 500,000 microseconds = 0.5 seconds
 
+        // CRITICAL: Add sender information to notification data
+        // This allows acceptance notification to route back to the correct parent
+        $notificationData = $validated['data'] ?? [];
+
+        // Include sender's expo_token directly in notification data
+        // This way we don't need to query for it later when accepting
+        if ($isFromPeople) {
+            // Notification sent by shared parent (People)
+            // Shared parents use the same device/expo_token as the main parent
+            $notificationData['sender_expo_token'] = $cardToNotify->expo_token;
+            $notificationData['sender_type'] = 'people';
+            $notificationData['sender_people_id'] = $sourceEntity->id;
+            $notificationData['sender_name'] = $sourceEntity->name;
+        } else {
+            // Notification sent by main parent (Card)
+            $notificationData['sender_expo_token'] = $cardToNotify->expo_token;
+            $notificationData['sender_type'] = 'card';
+            $notificationData['sender_name'] = $cardToNotify->parent_name;
+        }
+
         $results = $expoService->sendCardToAllDevices(
-            $cardToNotify, 
-            $validated['title'], 
-            $validated['body'] ?? '', 
-            $validated['data'] ?? []
+            $cardToNotify,
+            $validated['title'],
+            $validated['body'] ?? '',
+            $notificationData
         );
 
         $successCount = is_array($results) ? count(array_filter($results)) : 0;
@@ -650,44 +670,53 @@ class NotificationController extends Controller
             }
         }
 
-        // Send notification to the card owner
+        // Send acceptance notification to the correct parent (main or shared)
         if ($notification->card_id) {
             $card = Card::find($notification->card_id);
 
             // Check if card already exists in CalledCard table
             $cardAlreadyCalled = CalledCard::where('card_id', $notification->card_id)->exists();
 
-            if ($card && $card->expo_token && !$cardAlreadyCalled) {
-                
-                $cardOwnerData = [
-                    'type' => 'card_notification_accepted',
-                    'card_id' => (string) $card->id,
-                    'card_phone' => $card->phone,
-                    'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
-                    'garden_name' => $gardenName,
-                    'accepted_at' => now()->toISOString(),
-                    'accepted_by_device' => $senderDeviceName,
-                    'sender_device_id' => (string) $senderDeviceId,
-                    'notification_id' => (string) $notification->id,
-                    'image_url' => $card->image_url,
-                ];
+            if ($card && !$cardAlreadyCalled) {
+                // CRITICAL FIX: Get sender's expo_token from notification data
+                $notificationData = $notification->data ?? [];
+                $senderExpoToken = $notificationData['sender_expo_token'] ?? $card->expo_token; // Fallback to card for old notifications
+                $senderType = $notificationData['sender_type'] ?? 'card';
+                $senderName = $notificationData['sender_name'] ?? $card->parent_name;
 
-                $cardOwnerResult = $expoService->sendToCardOwner(
-                    $card,
-                    "{$gardenName}",
-                    'OK',
-                    $cardOwnerData
-                );
-
-                if ($cardOwnerResult) {
-                    $totalNotificationsSent++;
-                    $notificationResults[] = [
-                        'type' => 'card_owner_notification',
-                        'card_id' => $card->id,
+                // Send acceptance notification if we have a valid expo_token
+                if ($senderExpoToken) {
+                    $cardOwnerData = [
+                        'type' => 'card_notification_accepted',
+                        'card_id' => (string) $card->id,
                         'card_phone' => $card->phone,
-                        'card_name' => $card->parent_name,
-                        'notification_sent' => true
+                        'child_name' => $card->child_first_name . ' ' . $card->child_last_name,
+                        'garden_name' => $gardenName,
+                        'accepted_at' => now()->toISOString(),
+                        'accepted_by_device' => $senderDeviceName,
+                        'sender_device_id' => (string) $senderDeviceId,
+                        'notification_id' => (string) $notification->id,
+                        'image_url' => $card->image_url,
                     ];
+
+                    // Send to the correct parent using their expo_token
+                    $response = $expoService->sendExpoNotificationDirect(
+                        $senderExpoToken,
+                        "{$gardenName}",
+                        'OK',
+                        $cardOwnerData
+                    );
+
+                    if ($response['success']) {
+                        $totalNotificationsSent++;
+                        $notificationResults[] = [
+                            'type' => 'acceptance_notification',
+                            'sent_to' => $senderType,
+                            'sent_to_name' => $senderName,
+                            'card_id' => $card->id,
+                            'notification_sent' => true
+                        ];
+                    }
                 }
             }
 

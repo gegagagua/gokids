@@ -266,6 +266,23 @@ class ExpoNotificationService
     }
 
     /**
+     * Send notification directly to any expo token (for routing to correct parent)
+     */
+    public function sendExpoNotificationDirect(string $expoToken, string $title, string $body, array $data = [])
+    {
+        if (!$expoToken) {
+            return ['success' => false, 'response' => null];
+        }
+
+        try {
+            // Send Expo notification
+            return $this->sendExpoNotification($expoToken, $title, $body, $data);
+        } catch (\Exception $e) {
+            return ['success' => false, 'response' => null];
+        }
+    }
+
+    /**
      * Send actual Expo notification
      */
     protected function sendExpoNotification(string $expoToken, string $title, string $body, array $data = [])
