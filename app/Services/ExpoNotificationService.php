@@ -279,6 +279,25 @@ class ExpoNotificationService
                 'channelId' => 'default',
             ];
 
+               if (isset($data['type'])) {
+                $payload['type'] = $data['type'];
+              }
+              if (isset($data['card_id'])) {
+                $payload['card_id'] = $data['card_id'];
+              }
+              if (isset($data['notification_id'])) {
+                $payload['notification_id'] = $data['notification_id'];
+              }
+              if (isset($data['card_phone'])) {
+                $payload['card_phone'] = $data['card_phone'];
+              }
+              if (isset($data['image_url'])) {
+                $payload['image_url'] = $data['image_url'];
+              }
+             if (isset($data['active_garden_image'])) {
+               // Send active_garden_image as JSON string for Android compatibility
+                  $payload['active_garden_image_json'] = json_encode($data['active_garden_image']);
+              }
             // Add image support - use active_garden_image if available, fallback to card image
             $imageUrl = null;
             if (isset($data['active_garden_image']['image_url']) && !empty($data['active_garden_image']['image_url'])) {
