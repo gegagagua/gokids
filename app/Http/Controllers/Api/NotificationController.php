@@ -457,7 +457,6 @@ class NotificationController extends Controller
 
         // Delete existing called card records for this card
         CalledCard::where('card_id', $cardToNotify->id)->delete();
-        \Log::info('NotificationController::sendCardToAllDevices - Deleted existing called card records for card ' . $cardToNotify->id);
 
         // Wait half a second before sending notification
         usleep(300000); // 500,000 microseconds = 0.5 seconds
@@ -658,13 +657,6 @@ class NotificationController extends Controller
             // Check if card already exists in CalledCard table
             $cardAlreadyCalled = CalledCard::where('card_id', $notification->card_id)->exists();
 
-            \Log::info('NotificationController::acceptNotification - Checking if parent notification should be sent', [
-                'card_id' => $notification->card_id,
-                'has_expo_token' => !empty($card->expo_token),
-                'card_already_called' => $cardAlreadyCalled,
-                'will_send_notification' => ($card && $card->expo_token && !$cardAlreadyCalled)
-            ]);
-
             if ($card && $card->expo_token && !$cardAlreadyCalled) {
                 
                 $cardOwnerData = [
@@ -687,11 +679,6 @@ class NotificationController extends Controller
                     $cardOwnerData
                 );
 
-                \Log::info('NotificationController::acceptNotification - Parent notification result', [
-                    'card_id' => $card->id,
-                    'result' => $cardOwnerResult ? 'success' : 'failed'
-                ]);
-
                 if ($cardOwnerResult) {
                     $totalNotificationsSent++;
                     $notificationResults[] = [
@@ -702,10 +689,6 @@ class NotificationController extends Controller
                         'notification_sent' => true
                     ];
                 }
-            } else {
-                \Log::warning('NotificationController::acceptNotification - Skipped sending parent notification', [
-                    'reason' => !$card ? 'card_not_found' : (!$card->expo_token ? 'no_expo_token' : 'card_already_called')
-                ]);
             }
 
             // Create called card record when notification is accepted
