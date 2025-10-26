@@ -684,6 +684,14 @@ class NotificationController extends Controller
                 $senderType = $notificationData['sender_type'] ?? 'card';
                 $senderName = $notificationData['sender_name'] ?? $card->parent_name;
 
+                \Log::info('Acceptance notification debug', [
+                    'notification_id' => $notification->id,
+                    'sender_expo_token' => $senderExpoToken ? substr($senderExpoToken, 0, 20) . '...' : 'NULL',
+                    'sender_type' => $senderType,
+                    'sender_name' => $senderName,
+                    'notification_data_keys' => array_keys($notificationData)
+                ]);
+
                 // Send acceptance notification if we have a valid expo_token
                 if ($senderExpoToken) {
                     $cardOwnerData = [
@@ -706,6 +714,12 @@ class NotificationController extends Controller
                         'OK',
                         $cardOwnerData
                     );
+
+                    \Log::info('Acceptance notification send result', [
+                        'notification_id' => $notification->id,
+                        'success' => $response['success'] ?? false,
+                        'response' => $response
+                    ]);
 
                     if ($response['success']) {
                         $totalNotificationsSent++;
