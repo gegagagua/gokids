@@ -234,6 +234,7 @@ class ExpoNotificationService
     public function sendToCardOwner(Card $card, string $title, string $body, array $data = [])
     {
         if (!$card->expo_token) {
+            \Log::warning('ExpoNotificationService::sendToCardOwner - No expo token for card', ['card_id' => $card->id]);
             return false;
         }
 
@@ -242,16 +243,38 @@ class ExpoNotificationService
             if (!isset($data['icon']) && $card->image_url) {
                 $data['icon'] = $card->image_url;
             }
-            
+
+            \Log::info('ExpoNotificationService::sendToCardOwner - Sending notification', [
+                'card_id' => $card->id,
+                'expo_token' => substr($card->expo_token, 0, 20) . '...',
+                'title' => $title,
+                'data_type' => $data['type'] ?? 'unknown',
+                'payload_size' => strlen(json_encode($data))
+            ]);
+
             // Send Expo notification
             $response = $this->sendExpoNotification($card->expo_token, $title, $body, $data);
-            
+
+            \Log::info('ExpoNotificationService::sendToCardOwner - Response from Expo', [
+                'card_id' => $card->id,
+                'success' => $response['success'],
+                'response' => $response['response']
+            ]);
+
             if ($response['success']) {
                 return true;
             } else {
+                \Log::error('ExpoNotificationService::sendToCardOwner - Failed to send', [
+                    'card_id' => $card->id,
+                    'response' => $response
+                ]);
                 return false;
             }
         } catch (\Exception $e) {
+            \Log::error('ExpoNotificationService::sendToCardOwner - Exception', [
+                'card_id' => $card->id,
+                'error' => $e->getMessage()
+            ]);
             return false;
         }
     }
