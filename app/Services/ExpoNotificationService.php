@@ -317,12 +317,12 @@ class ExpoNotificationService
                // Send active_garden_image as JSON string for Android compatibility
                   $payload['active_garden_image_json'] = json_encode($data['active_garden_image']);
               }
-            // Add image support - use active_garden_image if available, fallback to card image
+            // Add image support - use card image if available, fallback to active_garden_image
             $imageUrl = null;
-            if (isset($data['active_garden_image']['image_url']) && !empty($data['active_garden_image']['image_url'])) {
-                $imageUrl = $data['active_garden_image']['image_url'];
-            } elseif (isset($data['image_url']) && !empty($data['image_url'])) {
+            if (isset($data['image_url']) && !empty($data['image_url'])) {
                 $imageUrl = $data['image_url'];
+            } elseif (isset($data['active_garden_image']['image_url']) && !empty($data['active_garden_image']['image_url'])) {
+                $imageUrl = $data['active_garden_image']['image_url'];
             }
 
             if ($imageUrl) {
