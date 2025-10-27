@@ -659,6 +659,13 @@ class NotificationController extends Controller
         // Update notification status to accepted
         $notification->status = 'accepted';
         $notification->accepted_at = now();
+
+        // CRITICAL: Update notification data to include accepted_at timestamp
+        // This ensures mobile apps can check if notification has expired
+        $notificationData = is_array($notification->data) ? $notification->data : json_decode($notification->data, true);
+        $notificationData['accepted_at'] = now()->toISOString();
+        $notification->data = $notificationData;
+
         $notification->save();
 
         // Get the sender device information
@@ -763,6 +770,12 @@ class NotificationController extends Controller
             foreach ($pendingNotifications as $pendingNotification) {
                 $pendingNotification->status = 'accepted';
                 $pendingNotification->accepted_at = now();
+
+                // CRITICAL: Also update data field with accepted_at timestamp
+                $pendingData = is_array($pendingNotification->data) ? $pendingNotification->data : json_decode($pendingNotification->data, true);
+                $pendingData['accepted_at'] = now()->toISOString();
+                $pendingNotification->data = $pendingData;
+
                 $pendingNotification->save();
             }
         }
