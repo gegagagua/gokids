@@ -717,10 +717,14 @@ class NotificationController extends Controller
                         'image_url' => $card->image_url,
                     ];
 
+                    // CRITICAL FIX: Encode card_id in title for Android background scenario
+                    // Android strips custom data when app is in background, but title/body are preserved
+                    $acceptanceTitle = "{$gardenName} - {$card->id}";
+
                     // Send to the correct parent using their expo_token
                     $response = $expoService->sendExpoNotificationDirect(
                         $senderExpoToken,
-                        "{$gardenName}",
+                        $acceptanceTitle,
                         'OK',
                         $cardOwnerData
                     );
