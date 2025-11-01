@@ -736,7 +736,7 @@ class NotificationController extends Controller
 
         // Get notifications for this card from the last 20 minutes
         $twentyMinutesAgo = now()->subMinutes(20);
-        
+
         $notifications = Notification::where('card_id', $cardId)
             ->where('created_at', '>=', $twentyMinutesAgo)
             ->with(['device:id,name', 'card:id,phone,status'])
@@ -744,6 +744,121 @@ class NotificationController extends Controller
             ->get();
 
         return response()->json($notifications);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/notifications/parent/{parentPhone}/history",
+     *     operationId="getParentCardHistoryByPhone",
+     *     tags={"Notifications"},
+     *     summary="Get notification history for all cards attached to a parent",
+     *     description="Retrieve all notifications for all cards associated with a parent (identified by phone number) from the last 20 minutes. This endpoint returns recent notifications across multiple cards, ordered by creation date (newest first). No authentication required.",
+     *     @OA\Parameter(
+     *         name="parentPhone",
+     *         in="path",
+     *         required=true,
+     *         description="The phone number of the parent to retrieve card notification history for",
+     *         @OA\Schema(type="string", example="+995555123456")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation - Returns array of notifications from last 20 minutes across all parent's cards",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="parent_phone", type="string", example="+995555123456", description="Phone number of the parent"),
+     *             @OA\Property(property="cards_count", type="integer", example=2, description="Number of cards associated with this parent"),
+     *             @OA\Property(property="cards", type="array", description="List of cards for this parent",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="phone", type="string", example="+995555123456"),
+     *                     @OA\Property(property="parent_name", type="string", example="John Doe"),
+     *                     @OA\Property(property="child_first_name", type="string", example="Alice"),
+     *                     @OA\Property(property="child_last_name", type="string", example="Doe"),
+     *                     @OA\Property(property="status", type="string", example="active")
+     *                 )
+     *             ),
+     *             @OA\Property(property="notifications", type="array", description="Notifications from all cards (newest first)",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1, description="Notification ID"),
+     *                     @OA\Property(property="title", type="string", example="Parent Call", description="Notification title"),
+     *                     @OA\Property(property="body", type="string", example="A parent is calling from card", description="Notification body/content"),
+     *                     @OA\Property(property="data", type="object", description="Additional notification data (JSON object)"),
+     *                     @OA\Property(property="status", type="string", example="sent", description="Notification status"),
+     *                     @OA\Property(property="device_id", type="integer", example=1, description="ID of the device that received the notification"),
+     *                     @OA\Property(property="card_id", type="integer", example=1, description="ID of the associated card"),
+     *                     @OA\Property(property="sent_at", type="string", format="date-time", nullable=true, example="2024-01-15T10:30:00.000000Z", description="Timestamp when notification was sent"),
+     *                     @OA\Property(property="accepted_at", type="string", format="date-time", nullable=true, example="2024-01-15T10:35:00.000000Z", description="Timestamp when notification was accepted"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-15T10:30:00.000000Z", description="Timestamp when notification was created"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-15T10:30:00.000000Z", description="Timestamp when notification was last updated"),
+     *                     @OA\Property(property="device", type="object", nullable=true, description="Device information",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="name", type="string", example="Garden Device 1")
+     *                     ),
+     *                     @OA\Property(property="card", type="object", nullable=true, description="Card information",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="phone", type="string", example="+995555123456"),
+     *                         @OA\Property(property="status", type="string", example="active")
+     *                     )
+     *                 )
+     *             ),
+     *             @OA\Property(property="total_notifications", type="integer", example=5, description="Total number of notifications across all cards")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="No cards found for the given parent phone number",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="No cards found for the provided parent phone number"),
+     *             @OA\Property(property="parent_phone", type="string", example="+995555123456")
+     *         )
+     *     )
+     * )
+     */
+    public function getParentCardHistoryByPhone(string $parentPhone)
+    {
+        // Find all cards associated with this parent phone number
+        $cards = Card::where('phone', $parentPhone)
+            ->where('is_deleted', false)
+            ->get();
+
+        if ($cards->isEmpty()) {
+            return response()->json([
+                'message' => 'No cards found for the provided parent phone number',
+                'parent_phone' => $parentPhone
+            ], 404);
+        }
+
+        // Extract card IDs
+        $cardIds = $cards->pluck('id')->toArray();
+
+        // Get notifications for all these cards from the last 20 minutes
+        $twentyMinutesAgo = now()->subMinutes(20);
+
+        $notifications = Notification::whereIn('card_id', $cardIds)
+            ->where('created_at', '>=', $twentyMinutesAgo)
+            ->with(['device:id,name', 'card:id,phone,status'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'parent_phone' => $parentPhone,
+            'cards_count' => $cards->count(),
+            'cards' => $cards->map(function($card) {
+                return [
+                    'id' => $card->id,
+                    'phone' => $card->phone,
+                    'parent_name' => $card->parent_name,
+                    'child_first_name' => $card->child_first_name,
+                    'child_last_name' => $card->child_last_name,
+                    'status' => $card->status
+                ];
+            }),
+            'notifications' => $notifications,
+            'total_notifications' => $notifications->count()
+        ]);
     }
 
 
