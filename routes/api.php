@@ -150,6 +150,8 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     // Additional notification routes
     Route::post('/notifications/card-to-all-devices', [NotificationController::class, 'sendCardToAllDevices']);
     Route::get('/notifications/device/{deviceId}', [NotificationController::class, 'getDeviceNotifications']);
+    Route::get('/notifications/device/{deviceId}/history', [NotificationController::class, 'getDeviceHistory']);
+    Route::get('/notifications/card/{cardId}/history', [NotificationController::class, 'getCardHistory']);
     Route::post('/notifications/{notificationId}/accept', [NotificationController::class, 'acceptNotification']);
     
     // BOG Payment additional routes

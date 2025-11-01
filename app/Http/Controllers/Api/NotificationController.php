@@ -597,6 +597,155 @@ class NotificationController extends Controller
         return response()->json($notifications);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/notifications/device/{deviceId}/history",
+     *     operationId="getDeviceHistory",
+     *     tags={"Notifications"},
+     *     summary="Get device notification history",
+     *     description="Retrieve all notifications for a specific device that have been successfully sent (status: 'sent'). This endpoint returns the complete history of sent notifications for the device, ordered by creation date (newest first). No authentication required.",
+     *     @OA\Parameter(
+     *         name="deviceId",
+     *         in="path",
+     *         required=true,
+     *         description="The ID of the device to retrieve notification history for",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation - Returns array of sent notifications",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1, description="Notification ID"),
+     *                 @OA\Property(property="title", type="string", example="Card Updated", description="Notification title"),
+     *                 @OA\Property(property="body", type="string", example="Card +995555123456 has been updated", description="Notification body/content"),
+     *                 @OA\Property(property="data", type="object", description="Additional notification data (JSON object)"),
+     *                 @OA\Property(property="status", type="string", example="sent", description="Notification status (always 'sent' for this endpoint)"),
+     *                 @OA\Property(property="device_id", type="integer", example=1, description="ID of the device that received the notification"),
+     *                 @OA\Property(property="card_id", type="integer", example=1, nullable=true, description="ID of the associated card (if any)"),
+     *                 @OA\Property(property="sent_at", type="string", format="date-time", nullable=true, example="2024-01-15T10:30:00.000000Z", description="Timestamp when notification was sent"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-15T10:30:00.000000Z", description="Timestamp when notification was created"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-15T10:30:00.000000Z", description="Timestamp when notification was last updated"),
+     *                 @OA\Property(property="device", type="object", nullable=true, description="Device information",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Garden Device 1")
+     *                 ),
+     *                 @OA\Property(property="card", type="object", nullable=true, description="Card information (if associated)",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="phone", type="string", example="+995555123456"),
+     *                     @OA\Property(property="status", type="string", example="active")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Device not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Device not found")
+     *         )
+     *     )
+     * )
+     */
+    public function getDeviceHistory(string $deviceId)
+    {
+        // Verify device exists
+        $device = Device::find($deviceId);
+        if (!$device) {
+            return response()->json([
+                'message' => 'Device not found'
+            ], 404);
+        }
+
+        // Get all notifications for this device with status 'sent'
+        $notifications = Notification::where('device_id', $deviceId)
+            ->where('status', 'sent')
+            ->with(['device:id,name', 'card:id,phone,status'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($notifications);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/notifications/card/{cardId}/history",
+     *     operationId="getCardHistory",
+     *     tags={"Notifications"},
+     *     summary="Get card notification history",
+     *     description="Retrieve all notifications for a specific card from the last 20 minutes. This endpoint returns recent notifications associated with the card, ordered by creation date (newest first). No authentication required.",
+     *     @OA\Parameter(
+     *         name="cardId",
+     *         in="path",
+     *         required=true,
+     *         description="The ID of the card to retrieve notification history for",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation - Returns array of notifications from last 20 minutes",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1, description="Notification ID"),
+     *                 @OA\Property(property="title", type="string", example="Parent Call", description="Notification title"),
+     *                 @OA\Property(property="body", type="string", example="A parent is calling from card", description="Notification body/content"),
+     *                 @OA\Property(property="data", type="object", description="Additional notification data (JSON object)"),
+     *                 @OA\Property(property="status", type="string", example="sent", description="Notification status"),
+     *                 @OA\Property(property="device_id", type="integer", example=1, description="ID of the device that received the notification"),
+     *                 @OA\Property(property="card_id", type="integer", example=1, description="ID of the associated card"),
+     *                 @OA\Property(property="sent_at", type="string", format="date-time", nullable=true, example="2024-01-15T10:30:00.000000Z", description="Timestamp when notification was sent"),
+     *                 @OA\Property(property="accepted_at", type="string", format="date-time", nullable=true, example="2024-01-15T10:35:00.000000Z", description="Timestamp when notification was accepted"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-15T10:30:00.000000Z", description="Timestamp when notification was created"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-15T10:30:00.000000Z", description="Timestamp when notification was last updated"),
+     *                 @OA\Property(property="device", type="object", nullable=true, description="Device information",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Garden Device 1")
+     *                 ),
+     *                 @OA\Property(property="card", type="object", nullable=true, description="Card information",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="phone", type="string", example="+995555123456"),
+     *                     @OA\Property(property="status", type="string", example="active")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Card not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Card not found")
+     *         )
+     *     )
+     * )
+     */
+    public function getCardHistory(string $cardId)
+    {
+        // Verify card exists
+        $card = Card::find($cardId);
+        if (!$card) {
+            return response()->json([
+                'message' => 'Card not found'
+            ], 404);
+        }
+
+        // Get notifications for this card from the last 20 minutes
+        $twentyMinutesAgo = now()->subMinutes(20);
+        
+        $notifications = Notification::where('card_id', $cardId)
+            ->where('created_at', '>=', $twentyMinutesAgo)
+            ->with(['device:id,name', 'card:id,phone,status'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($notifications);
+    }
+
 
     /**
      * @OA\Post(
