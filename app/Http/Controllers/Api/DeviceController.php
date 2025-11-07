@@ -381,41 +381,29 @@ class DeviceController extends Controller
             }
         }
         
-        // CRITICAL FIX: Store the previous groups BEFORE updating
-        $previousGroups = $device->garden_groups ?? [];
-
         $device->update($validated);
-
-        // CRITICAL FIX: Refresh device from database to get updated garden_groups
-        $device->refresh();
-
+        
         // If garden_groups was updated, automatically add new groups to active_garden_groups
         if (isset($validated['garden_groups'])) {
             $currentActiveGroups = $device->active_garden_groups ?? [];
-            $newGroups = $device->garden_groups; // Use refreshed data from database
-
+            $newGroups = $validated['garden_groups'];
+            
             // Find groups that are new (not currently active)
             $groupsToAdd = array_diff($newGroups, $currentActiveGroups);
-
+            
             if (!empty($groupsToAdd)) {
                 // Add new groups to active_garden_groups
                 $updatedActiveGroups = array_merge($currentActiveGroups, $groupsToAdd);
                 $device->update(['active_garden_groups' => $updatedActiveGroups]);
-
-                // Refresh again to get the final state
-                $device->refresh();
-
+                
                 \Log::info("Automatically added new groups to active_garden_groups", [
                     'device_id' => $device->id,
-                    'device_code' => $device->code,
-                    'previous_groups' => $previousGroups,
                     'new_groups' => $groupsToAdd,
-                    'all_assigned_groups' => $newGroups,
-                    'updated_active_groups' => $device->active_garden_groups
+                    'updated_active_groups' => $updatedActiveGroups
                 ]);
             }
         }
-
+        
         return response()->json($device);
     }
 
