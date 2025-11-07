@@ -167,6 +167,7 @@ class ExpoNotificationService
         $targetGroupId = $card->group_id;
 
         $devices = Device::where('status', 'active')
+            ->where('is_logged_in', true)
             ->whereNotNull('expo_token')
             ->whereJsonContains('active_garden_groups', $targetGroupId)
             ->get();
