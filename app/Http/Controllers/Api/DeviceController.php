@@ -196,12 +196,13 @@ class DeviceController extends Controller
         if ($gardenGroups != count($validated['garden_groups'])) {
             return response()->json(['message' => 'Some groups do not belong to your garden'], 403);
         }
-        
+
         $device = Device::create([
             'name' => $validated['name'],
             'status' => $validated['status'],
             'garden_id' => $validated['garden_id'],
             'garden_groups' => $validated['garden_groups'],
+            'active_garden_groups' => $validated['garden_groups'], // Auto-activate all groups on creation
         ]);
         return response()->json($device, 201);
     }
@@ -372,24 +373,25 @@ class DeviceController extends Controller
         
         $device->update($validated);
         
-        // If garden_groups was updated, automatically add new groups to active_garden_groups
+        // CRITICAL FIX: If garden_groups was updated, automatically add new groups to active_garden_groups
         if (isset($validated['garden_groups'])) {
             $currentActiveGroups = $device->active_garden_groups ?? [];
             $newGroups = $validated['garden_groups'];
-            
+
             // Find groups that are new (not currently active)
             $groupsToAdd = array_diff($newGroups, $currentActiveGroups);
-            
-            if (!empty($groupsToAdd)) {
-                // Add new groups to active_garden_groups
-                $updatedActiveGroups = array_merge($currentActiveGroups, $groupsToAdd);
+            // Find groups that were removed (in active but not in new groups)
+            $groupsToRemove = array_diff($currentActiveGroups, $newGroups);
+
+            if (!empty($groupsToAdd) || !empty($groupsToRemove)) {
+                // Update active_garden_groups by adding new ones and removing old ones
+                $updatedActiveGroups = array_diff($currentActiveGroups, $groupsToRemove);
+                $updatedActiveGroups = array_merge($updatedActiveGroups, $groupsToAdd);
+                // Ensure it's a clean array without duplicates
+                $updatedActiveGroups = array_unique(array_values($updatedActiveGroups));
+
                 $device->update(['active_garden_groups' => $updatedActiveGroups]);
-                
-                \Log::info("Automatically added new groups to active_garden_groups", [
-                    'device_id' => $device->id,
-                    'new_groups' => $groupsToAdd,
-                    'updated_active_groups' => $updatedActiveGroups
-                ]);
+
             }
         }
         
