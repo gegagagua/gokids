@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Device;
 use App\Models\CalledCard;
 use App\Rules\LicenseValueRule;
+use App\Services\ExpoNotificationService;
 
 /**
  * @OA\Tag(
@@ -715,10 +716,10 @@ class DeviceController extends Controller
     public function destroy(Request $request, $id)
     {
         $query = Device::query();
-        
+
         // Get garden_id from authenticated user if they are a garden user
         $user = $request->user();
-        
+
         if ($user->type === 'garden') {
             $garden = \App\Models\Garden::where('email', $user->email)->first();
             if ($garden) {
@@ -739,8 +740,40 @@ class DeviceController extends Controller
                 $query->where('garden_id', $request->query('garden_id'));
             }
         }
-        
+
         $device = $query->findOrFail($id);
+
+        // Send device_deleted notification before deleting the device
+        if ($device->expo_token) {
+            try {
+                $notificationService = new ExpoNotificationService();
+                $notificationData = [
+                    'type' => 'device_deleted',
+                    'device_id' => (string) $device->id,
+                    'device_name' => $device->name,
+                    'message' => 'This device has been deleted by administrator',
+                ];
+
+                $notificationService->sendToDevice(
+                    $device,
+                    'Device Deleted',
+                    'This device has been removed from the system',
+                    $notificationData
+                );
+
+                \Log::info('device_deleted notification sent', [
+                    'device_id' => $device->id,
+                    'device_code' => $device->code,
+                    'device_name' => $device->name,
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send device_deleted notification', [
+                    'device_id' => $device->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
         $device->delete();
         return response()->json(['message' => 'Device deleted']);
     }
@@ -792,16 +825,16 @@ class DeviceController extends Controller
 
         // First check if all devices exist
         $existingDevices = Device::whereIn('id', $ids)->get();
-        
+
         if ($existingDevices->isEmpty()) {
             return response()->json(['message' => 'No devices found with provided IDs'], 404);
         }
 
         $query = Device::whereIn('id', $ids);
-        
+
         // Get garden_id from authenticated user if they are a garden user
         $user = $request->user();
-        
+
         if ($user->type === 'garden') {
             $garden = \App\Models\Garden::where('email', $user->email)->first();
             if ($garden) {
@@ -824,13 +857,40 @@ class DeviceController extends Controller
         }
 
         $devices = $query->get();
-        
+
         if ($devices->isEmpty()) {
             return response()->json(['message' => 'No devices found to delete based on your permissions'], 403);
         }
 
         $deletedCount = 0;
+        $notificationService = new ExpoNotificationService();
+
         foreach ($devices as $device) {
+            // Send device_deleted notification before deleting the device
+            if ($device->expo_token) {
+                try {
+                    $notificationData = [
+                        'type' => 'device_deleted',
+                        'device_id' => (string) $device->id,
+                        'device_name' => $device->name,
+                        'message' => 'This device has been deleted by administrator',
+                    ];
+
+                    $notificationService->sendToDevice(
+                        $device,
+                        'Device Deleted',
+                        'This device has been removed from the system',
+                        $notificationData
+                    );
+
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send device_deleted notification', [
+                        'device_id' => $device->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
             $device->delete();
             $deletedCount++;
         }
