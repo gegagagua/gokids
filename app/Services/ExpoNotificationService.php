@@ -284,56 +284,6 @@ class ExpoNotificationService
     }
 
     /**
-     * Send dismissal request directly to Expo to remove notification from notification center
-     * This is a background operation that works even when app is closed
-     */
-    public function dismissNotificationOnDevice(string $expoToken, string $cardId)
-    {
-        if (!$expoToken) {
-            return ['success' => false, 'response' => null];
-        }
-
-        try {
-            // Send a very high priority silent notification that signals to the device to dismiss
-            // The dismissTag tells the native code which notification tag to dismiss
-            $dismissalPayload = [
-                'to' => $expoToken,
-                'title' => '',
-                'body' => '',
-                'data' => [
-                    'type' => 'dismiss_card_silent',
-                    'card_id' => (string) $cardId,
-                    'dismiss_tag' => 'card_' . $cardId,
-                ],
-                'priority' => 'high',
-                'mutableContent' => true, // Allow notification service extension to handle
-                'channelId' => 'default',
-                'badge' => 0, // Clear badge
-            ];
-
-            $response = Http::withHeaders([
-                'Accept' => 'application/json',
-                'Accept-encoding' => 'gzip, deflate',
-                'Content-Type' => 'application/json',
-            ])->post($this->expoApiUrl, [$dismissalPayload]);
-
-            if ($response->successful()) {
-                $responseData = $response->json();
-
-                if (isset($responseData['data'][0]['status']) && $responseData['data'][0]['status'] === 'ok') {
-                    return ['success' => true, 'response' => $responseData];
-                } elseif (isset($responseData[0]['status']) && $responseData[0]['status'] === 'ok') {
-                    return ['success' => true, 'response' => $responseData];
-                }
-            }
-
-            return ['success' => false, 'response' => null];
-        } catch (\Exception $e) {
-            return ['success' => false, 'response' => null];
-        }
-    }
-
-    /**
      * Send actual Expo notification
      */
     protected function sendExpoNotification(string $expoToken, string $title, string $body, array $data = [])
@@ -348,12 +298,6 @@ class ExpoNotificationService
                 'priority' => 'high',
                 'channelId' => 'default',
             ];
-
-            // CRITICAL: Add tag for card notifications to enable dismissal by ID
-            // This allows other devices to dismiss this notification when it's accepted elsewhere
-            if (isset($data['card_id'])) {
-                $payload['tag'] = 'card_' . $data['card_id']; // Tag enables native dismissal by card_id
-            }
 
             // CRITICAL: Add categoryId and channelId for card notifications to enable action buttons (Accept/Dismiss)
             // This allows users to accept notifications without opening the app
