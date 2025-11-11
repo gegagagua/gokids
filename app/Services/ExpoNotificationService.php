@@ -295,19 +295,24 @@ class ExpoNotificationService
         }
 
         try {
-            // CRITICAL: Send SILENT data-only notification
-            // iOS/Android: Will be handled by app's notification listener, not shown to user
-            // This is a true "silent push" that triggers background processing
+            // CRITICAL: Send notification that triggers Notification Service Extension
+            // Must have title/body to trigger extension, but extension will make it invisible
+            // The extension will also dismiss the old card notifications
             $dismissalPayload = [
                 'to' => $expoToken,
+                'title' => ' ',  // Single space - will be hidden by extension
+                'body' => ' ',   // Single space - will be hidden by extension  
+                'sound' => null,
+                'badge' => 0,
+                'priority' => 'high',
+                'channelId' => 'default',
+                'mutableContent' => true,       // CRITICAL: Triggers Notification Service Extension
                 'data' => [
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
                     'action' => 'dismiss',
                     'timestamp' => now()->toISOString(),
                 ],
-                'priority' => 'high',
-                'contentAvailable' => true,  // Background delivery
             ];
 
             $response = Http::withHeaders([
