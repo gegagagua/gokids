@@ -296,11 +296,11 @@ class ExpoNotificationService
 
         try {
             // CRITICAL: Send notification that triggers Notification Service Extension
-            // Even when app is killed, the extension will process it and dismiss matching notifications
+            // Extension will modify it to be invisible before delivery
             $dismissalPayload = [
                 'to' => $expoToken,
-                'title' => ' ',  // Minimal space to ensure delivery
-                'body' => ' ',   // Minimal space to ensure delivery
+                'title' => '_dismiss_',  // Will be cleared by extension
+                'body' => '_dismiss_',   // Will be cleared by extension
                 'data' => [
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
@@ -312,7 +312,8 @@ class ExpoNotificationService
                 'priority' => 'high',
                 'sound' => null,         // No sound
                 'badge' => 0,            // No badge
-                'mutableContent' => true, // CRITICAL: Triggers Notification Service Extension even when app is killed
+                'mutableContent' => true, // CRITICAL: Triggers Notification Service Extension
+                'contentAvailable' => true, // Also try content-available for background delivery
             ];
 
             $response = Http::withHeaders([
