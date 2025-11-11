@@ -284,6 +284,75 @@ class ExpoNotificationService
     }
 
     /**
+     * Send dismissal request to trigger native module dismissal
+     * This signals the device's native code to dismiss the notification
+     * Works even when app is closed on Android and iOS
+     */
+    public function dismissNotificationOnDevice(string $expoToken, string $cardId)
+    {
+        if (!$expoToken) {
+            return ['success' => false, 'response' => null];
+        }
+
+        try {
+            // Send a high-priority notification that will trigger native dismissal
+            // The notification data contains the card_id which the native module will use
+            $dismissalPayload = [
+                'to' => $expoToken,
+                'title' => 'dismissing',
+                'body' => 'dismissing',
+                'data' => [
+                    'type' => 'dismiss_card_silent',
+                    'card_id' => (string) $cardId,
+                    'dismiss_tag' => 'card_' . $cardId,
+                    'native_dismiss' => 'true',
+                ],
+                'priority' => 'high',
+                'mutableContent' => true,
+                'channelId' => 'default',
+                'badge' => 0,
+                'tag' => 'card_' . $cardId, // Tag for native dismissal
+            ];
+
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Accept-encoding' => 'gzip, deflate',
+                'Content-Type' => 'application/json',
+            ])->post($this->expoApiUrl, [$dismissalPayload]);
+
+            if ($response->successful()) {
+                $responseData = $response->json();
+
+                if (isset($responseData['data'][0]['status']) && $responseData['data'][0]['status'] === 'ok') {
+                    \Log::info('Dismissal notification sent successfully', [
+                        'card_id' => $cardId,
+                        'expo_token' => substr($expoToken, 0, 20) . '...',
+                    ]);
+                    return ['success' => true, 'response' => $responseData];
+                } elseif (isset($responseData[0]['status']) && $responseData[0]['status'] === 'ok') {
+                    \Log::info('Dismissal notification sent successfully', [
+                        'card_id' => $cardId,
+                        'expo_token' => substr($expoToken, 0, 20) . '...',
+                    ]);
+                    return ['success' => true, 'response' => $responseData];
+                }
+            }
+
+            \Log::warning('Failed to send dismissal notification', [
+                'card_id' => $cardId,
+                'expo_token' => substr($expoToken, 0, 20) . '...',
+            ]);
+            return ['success' => false, 'response' => null];
+        } catch (\Exception $e) {
+            \Log::error('Error sending dismissal notification', [
+                'card_id' => $cardId,
+                'error' => $e->getMessage(),
+            ]);
+            return ['success' => false, 'response' => null];
+        }
+    }
+
+    /**
      * Send actual Expo notification
      */
     protected function sendExpoNotification(string $expoToken, string $title, string $body, array $data = [])
