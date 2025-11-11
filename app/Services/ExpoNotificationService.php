@@ -283,70 +283,7 @@ class ExpoNotificationService
         }
     }
 
-    /**
-     * Send a data-only (silent) notification to trigger native dismissal
-     * This works even when the app is completely closed/killed
-     * The notification service extension will process it and dismiss by tag
-     */
-    public function dismissNotificationOnDevice(string $expoToken, string $cardId)
-    {
-        if (!$expoToken) {
-            return ['success' => false, 'response' => null];
-        }
-
-        try {
-            // CRITICAL: Send data-only notification (no title/body = silent)
-            // This triggers the notification handler even when app is killed
-            // The handler will dismiss notifications with matching card_id
-            $dismissalPayload = [
-                'to' => $expoToken,
-                'data' => [
-                    'type' => 'card_accepted_elsewhere',
-                    'card_id' => (string) $cardId,
-                    'action' => 'dismiss',
-                    'timestamp' => now()->toISOString(),
-                ],
-                'priority' => 'high',
-                'contentAvailable' => true, // CRITICAL for iOS background delivery
-            ];
-
-            $response = Http::withHeaders([
-                'Accept' => 'application/json',
-                'Accept-encoding' => 'gzip, deflate',
-                'Content-Type' => 'application/json',
-            ])->post($this->expoApiUrl, [$dismissalPayload]);
-
-            if ($response->successful()) {
-                $responseData = $response->json();
-
-                if (isset($responseData['data'][0]['status']) && $responseData['data'][0]['status'] === 'ok') {
-                    \Log::info('Silent dismissal notification sent successfully', [
-                        'card_id' => $cardId,
-                        'expo_token' => substr($expoToken, 0, 20) . '...',
-                    ]);
-                    return ['success' => true, 'response' => $responseData];
-                } elseif (isset($responseData[0]['status']) && $responseData[0]['status'] === 'ok') {
-                    \Log::info('Silent dismissal notification sent successfully', [
-                        'card_id' => $cardId,
-                        'expo_token' => substr($expoToken, 0, 20) . '...',
-                    ]);
-                    return ['success' => true, 'response' => $responseData];
-                }
-            }
-
-            \Log::warning('Failed to send silent dismissal notification', [
-                'card_id' => $cardId,
-                'expo_token' => substr($expoToken, 0, 20) . '...',
-            ]);
-            return ['success' => false, 'response' => null];
-        } catch (\Exception $e) {
-            \Log::error('Error sending silent dismissal notification', [
-                'card_id' => $cardId,
-                'error' => $e->getMessage(),
-            ]);
-            return ['success' => false, 'response' => null];
-        }
-    }
+ 
 
     /**
      * Send actual Expo notification

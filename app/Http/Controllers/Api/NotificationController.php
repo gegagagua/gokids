@@ -1048,51 +1048,7 @@ class NotificationController extends Controller
         // Reload the notification to get updated data
         $notification->refresh();
 
-        // CRITICAL: WhatsApp-like notification dismissal behavior
-        // Send silent push notification to all other devices to dismiss from notification tray
-        // This works even when the app is completely closed/killed
-        if ($notification->card_id) {
-            try {
-                $card = Card::find($notification->card_id);
-                if ($card && $card->group) {
-                    // Get all devices that have this card's group active
-                    $otherDevices = Device::where('status', 'active')
-                        ->where('is_logged_in', true)
-                        ->whereNotNull('expo_token')
-                        ->where('id', '!=', $senderDeviceId) // Exclude the device that accepted
-                        ->whereJsonContains('active_garden_groups', $card->group_id)
-                        ->get();
-
-                    if ($otherDevices->isNotEmpty()) {
-                        // Send silent dismissal notification to each device
-                        foreach ($otherDevices as $device) {
-                            $dismissResult = $expoService->dismissNotificationOnDevice(
-                                $device->expo_token,
-                                (string) $card->id
-                            );
-
-                            \Log::debug('Silent dismissal sent to device', [
-                                'device_id' => $device->id,
-                                'card_id' => $card->id,
-                                'success' => $dismissResult['success'] ?? false
-                            ]);
-                        }
-
-                        \Log::info('Silent dismissal notifications sent', [
-                            'card_id' => $card->id,
-                            'notification_id' => $notification->id,
-                            'accepted_by_device' => $senderDeviceId,
-                            'devices_notified' => $otherDevices->count()
-                        ]);
-                    }
-                }
-            } catch (\Exception $e) {
-                \Log::warning('Error sending dismissal notifications', [
-                    'notification_id' => $notification->id,
-                    'error' => $e->getMessage()
-                ]);
-            }
-        }
+       
 
         return response()->json([
             'message' => 'Notification accepted successfully',
