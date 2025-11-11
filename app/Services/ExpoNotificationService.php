@@ -295,24 +295,19 @@ class ExpoNotificationService
         }
 
         try {
-            // CRITICAL: Send notification that triggers background handlers on both iOS and Android
-            // iOS: Notification Service Extension will intercept and make it invisible
-            // Android: FirebaseMessagingService will handle the data message in background
+            // CRITICAL: Send SILENT data-only notification
+            // iOS/Android: Will be handled by app's notification listener, not shown to user
+            // This is a true "silent push" that triggers background processing
             $dismissalPayload = [
                 'to' => $expoToken,
-                'title' => '_dismiss_',  // Special marker - will be intercepted by extension
-                'body' => '_dismiss_',   // Special marker - will be intercepted by extension
-                'sound' => null,
-                'badge' => 0,
-                'priority' => 'high',
-                'channelId' => 'default',
-                'mutableContent' => true,       // CRITICAL for iOS: Triggers Notification Service Extension
                 'data' => [
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
                     'action' => 'dismiss',
                     'timestamp' => now()->toISOString(),
                 ],
+                'priority' => 'high',
+                'contentAvailable' => true,  // Background delivery
             ];
 
             $response = Http::withHeaders([
