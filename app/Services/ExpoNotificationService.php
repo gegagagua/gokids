@@ -296,26 +296,23 @@ class ExpoNotificationService
 
         try {
             // CRITICAL: Send notification that triggers background handlers on both iOS and Android
-            // iOS: Notification Service Extension will modify it to be invisible before delivery
+            // iOS: Notification Service Extension will intercept and make it invisible
             // Android: FirebaseMessagingService will handle the data message in background
             $dismissalPayload = [
                 'to' => $expoToken,
-                'title' => '_dismiss_',  // Will be cleared by iOS extension, not shown on Android
-                'body' => '_dismiss_',   // Will be cleared by iOS extension, not shown on Android
+                'title' => '_dismiss_',  // Special marker - will be intercepted by extension
+                'body' => '_dismiss_',   // Special marker - will be intercepted by extension
+                'sound' => null,
+                'badge' => 0,
+                'priority' => 'high',
+                'channelId' => 'default',
+                'mutableContent' => true,       // CRITICAL for iOS: Triggers Notification Service Extension
                 'data' => [
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
                     'action' => 'dismiss',
                     'timestamp' => now()->toISOString(),
                 ],
-                'type' => 'card_accepted_elsewhere',  // Also at root level for both platforms
-                'card_id' => (string) $cardId,        // Also at root level for both platforms
-                'priority' => 'high',           // High priority for immediate delivery
-                'sound' => null,                // No sound
-                'badge' => 0,                   // No badge
-                'mutable-content' => 1,         // CRITICAL for iOS: Triggers Notification Service Extension (must be hyphenated!)
-                'content-available' => 1,       // CRITICAL for both: Background delivery when app is killed (must be hyphenated!)
-                'channelId' => 'default',       // Android notification channel
             ];
 
             $response = Http::withHeaders([
