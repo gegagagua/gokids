@@ -295,12 +295,13 @@ class ExpoNotificationService
         }
 
         try {
-            // Send a high-priority notification that will trigger native dismissal
-            // The notification data contains the card_id which the native module will use
+            // Send a SILENT high-priority notification that will trigger native dismissal
+            // Silent means: empty title, empty body - so it doesn't show in notification center
+            // But it still triggers the notification handler to dismiss by tag
             $dismissalPayload = [
                 'to' => $expoToken,
-                'title' => 'dismissing',
-                'body' => 'dismissing',
+                'title' => '',  // CRITICAL: Empty title makes it silent
+                'body' => '',   // CRITICAL: Empty body makes it silent
                 'data' => [
                     'type' => 'dismiss_card_silent',
                     'card_id' => (string) $cardId,
@@ -311,7 +312,8 @@ class ExpoNotificationService
                 'mutableContent' => true,
                 'channelId' => 'default',
                 'badge' => 0,
-                'tag' => 'card_' . $cardId, // Tag for native dismissal
+                'sound' => '',  // No sound
+                'tag' => 'card_' . $cardId, // Tag for native dismissal - critical for Android
             ];
 
             $response = Http::withHeaders([
