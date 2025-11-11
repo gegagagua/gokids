@@ -295,21 +295,24 @@ class ExpoNotificationService
         }
 
         try {
-            // CRITICAL: Must include title AND body for notification to be delivered when app is killed
-            // But we make it invisible/silent so user doesn't see it
+            // CRITICAL: Send notification that triggers Notification Service Extension
+            // Even when app is killed, the extension will process it and dismiss matching notifications
             $dismissalPayload = [
                 'to' => $expoToken,
-                'title' => '',  // Empty but present
-                'body' => '',   // Empty but present
+                'title' => ' ',  // Minimal space to ensure delivery
+                'body' => ' ',   // Minimal space to ensure delivery
                 'data' => [
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
                     'action' => 'dismiss',
                     'timestamp' => now()->toISOString(),
                 ],
+                'type' => 'card_accepted_elsewhere',  // Also at root level for iOS
+                'card_id' => (string) $cardId,        // Also at root level for iOS
                 'priority' => 'high',
-                'sound' => null,  // No sound
-                'badge' => 0,     // No badge
+                'sound' => null,         // No sound
+                'badge' => 0,            // No badge
+                'mutableContent' => true, // CRITICAL: Triggers Notification Service Extension even when app is killed
             ];
 
             $response = Http::withHeaders([
