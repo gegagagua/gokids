@@ -295,25 +295,27 @@ class ExpoNotificationService
         }
 
         try {
-            // CRITICAL: Send notification that triggers Notification Service Extension
-            // Extension will modify it to be invisible before delivery
+            // CRITICAL: Send notification that triggers background handlers on both iOS and Android
+            // iOS: Notification Service Extension will modify it to be invisible before delivery
+            // Android: FirebaseMessagingService will handle the data message in background
             $dismissalPayload = [
                 'to' => $expoToken,
-                'title' => '_dismiss_',  // Will be cleared by extension
-                'body' => '_dismiss_',   // Will be cleared by extension
+                'title' => '_dismiss_',  // Will be cleared by iOS extension, not shown on Android
+                'body' => '_dismiss_',   // Will be cleared by iOS extension, not shown on Android
                 'data' => [
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
                     'action' => 'dismiss',
                     'timestamp' => now()->toISOString(),
                 ],
-                'type' => 'card_accepted_elsewhere',  // Also at root level for iOS
-                'card_id' => (string) $cardId,        // Also at root level for iOS
-                'priority' => 'high',
-                'sound' => null,         // No sound
-                'badge' => 0,            // No badge
-                'mutableContent' => true, // CRITICAL: Triggers Notification Service Extension
-                'contentAvailable' => true, // Also try content-available for background delivery
+                'type' => 'card_accepted_elsewhere',  // Also at root level for both platforms
+                'card_id' => (string) $cardId,        // Also at root level for both platforms
+                'priority' => 'high',           // High priority for immediate delivery
+                'sound' => null,                // No sound
+                'badge' => 0,                   // No badge
+                'mutable-content' => 1,         // CRITICAL for iOS: Triggers Notification Service Extension (must be hyphenated!)
+                'content-available' => 1,       // CRITICAL for both: Background delivery when app is killed (must be hyphenated!)
+                'channelId' => 'default',       // Android notification channel
             ];
 
             $response = Http::withHeaders([
