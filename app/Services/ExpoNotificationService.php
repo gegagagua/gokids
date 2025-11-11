@@ -284,9 +284,9 @@ class ExpoNotificationService
     }
 
     /**
-     * Send dismissal request to trigger native module dismissal
-     * This signals the device's native code to dismiss the notification
-     * Works even when app is closed on Android and iOS
+     * Send a data-only (silent) notification to trigger native dismissal
+     * This works even when the app is completely closed/killed
+     * The notification service extension will process it and dismiss by tag
      */
     public function dismissNotificationOnDevice(string $expoToken, string $cardId)
     {
@@ -295,26 +295,19 @@ class ExpoNotificationService
         }
 
         try {
-            // Send a high-priority data-only notification to trigger native dismissal
-            // This notification is handled silently via mutableContent and suppressed on frontend
-            // But the notification handler still executes to trigger native dismissal
+            // CRITICAL: Send data-only notification (no title/body = silent)
+            // This triggers the notification handler even when app is killed
+            // The handler will dismiss notifications with matching card_id
             $dismissalPayload = [
                 'to' => $expoToken,
-                'title' => ' ',  // Single space - minimal but ensures delivery
-                'body' => ' ',   // Single space - minimal but ensures delivery
                 'data' => [
-                    'type' => 'dismiss_card_silent',
+                    'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
-                    'dismiss_tag' => 'card_' . $cardId,
-                    'native_dismiss' => 'true',
-                    'silent' => 'true', // Flag to suppress on frontend
+                    'action' => 'dismiss',
+                    'timestamp' => now()->toISOString(),
                 ],
                 'priority' => 'high',
-                'mutableContent' => true,  // Allow handler to suppress it
-                'channelId' => 'default',
-                'badge' => 0,
-                'sound' => null,  // Explicitly null for no sound
-                'tag' => 'card_' . $cardId, // Tag for native dismissal
+                'contentAvailable' => true, // CRITICAL for iOS background delivery
             ];
 
             $response = Http::withHeaders([
@@ -327,13 +320,13 @@ class ExpoNotificationService
                 $responseData = $response->json();
 
                 if (isset($responseData['data'][0]['status']) && $responseData['data'][0]['status'] === 'ok') {
-                    \Log::info('Dismissal notification sent successfully', [
+                    \Log::info('Silent dismissal notification sent successfully', [
                         'card_id' => $cardId,
                         'expo_token' => substr($expoToken, 0, 20) . '...',
                     ]);
                     return ['success' => true, 'response' => $responseData];
                 } elseif (isset($responseData[0]['status']) && $responseData[0]['status'] === 'ok') {
-                    \Log::info('Dismissal notification sent successfully', [
+                    \Log::info('Silent dismissal notification sent successfully', [
                         'card_id' => $cardId,
                         'expo_token' => substr($expoToken, 0, 20) . '...',
                     ]);
@@ -341,13 +334,13 @@ class ExpoNotificationService
                 }
             }
 
-            \Log::warning('Failed to send dismissal notification', [
+            \Log::warning('Failed to send silent dismissal notification', [
                 'card_id' => $cardId,
                 'expo_token' => substr($expoToken, 0, 20) . '...',
             ]);
             return ['success' => false, 'response' => null];
         } catch (\Exception $e) {
-            \Log::error('Error sending dismissal notification', [
+            \Log::error('Error sending silent dismissal notification', [
                 'card_id' => $cardId,
                 'error' => $e->getMessage(),
             ]);

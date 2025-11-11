@@ -1047,9 +1047,9 @@ class NotificationController extends Controller
         // Reload the notification to get updated data
         $notification->refresh();
 
-        // CRITICAL: Send native dismissal to all other garden devices for this card
-        // This ensures that if one device accepts a card, all other devices dismiss it from notification center
-        // Works even when app is closed by using native notification dismissal
+        // CRITICAL: WhatsApp-like notification dismissal behavior
+        // Send silent push notification to all other devices to dismiss from notification tray
+        // This works even when the app is completely closed/killed
         if ($notification->card_id) {
             try {
                 $card = Card::find($notification->card_id);
@@ -1063,32 +1063,26 @@ class NotificationController extends Controller
                         ->get();
 
                     if ($otherDevices->isNotEmpty()) {
-                        // Collect all expo tokens from other devices
-                        $otherDeviceTokens = $otherDevices->pluck('expo_token')->filter()->values()->toArray();
+                        // Send silent dismissal notification to each device
+                        foreach ($otherDevices as $device) {
+                            $dismissResult = $expoService->dismissNotificationOnDevice(
+                                $device->expo_token,
+                                (string) $card->id
+                            );
 
-                        if (!empty($otherDeviceTokens)) {
-                            // Send native dismissal requests to remove notifications from notification center
-                            // This works even when app is closed via native modules
-                            foreach ($otherDeviceTokens as $expoToken) {
-                                $dismissResult = $expoService->dismissNotificationOnDevice(
-                                    $expoToken,
-                                    (string) $card->id
-                                );
-
-                                \Log::debug('Native dismissal sent to device', [
-                                    'card_id' => $card->id,
-                                    'notification_id' => $notification->id,
-                                    'success' => $dismissResult['success'] ?? false
-                                ]);
-                            }
-
-                            \Log::info('Dismissal notifications sent to other garden devices', [
+                            \Log::debug('Silent dismissal sent to device', [
+                                'device_id' => $device->id,
                                 'card_id' => $card->id,
-                                'notification_id' => $notification->id,
-                                'accepted_by_device' => $senderDeviceId,
-                                'other_devices_count' => count($otherDeviceTokens)
+                                'success' => $dismissResult['success'] ?? false
                             ]);
                         }
+
+                        \Log::info('Silent dismissal notifications sent', [
+                            'card_id' => $card->id,
+                            'notification_id' => $notification->id,
+                            'accepted_by_device' => $senderDeviceId,
+                            'devices_notified' => $otherDevices->count()
+                        ]);
                     }
                 }
             } catch (\Exception $e) {
