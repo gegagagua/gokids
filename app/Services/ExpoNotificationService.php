@@ -284,9 +284,9 @@ class ExpoNotificationService
     }
 
     /**
-     * Send a data-only (silent) notification to trigger native dismissal
-     * This works even when the app is completely closed/killed
-     * The notification service extension will process it and dismiss by tag
+     * Send a silent notification to trigger dismissal on other devices
+     * Uses minimal content to ensure delivery even when app is closed
+     * The frontend will detect and dismiss matching notifications
      */
     public function dismissNotificationOnDevice(string $expoToken, string $cardId)
     {
@@ -295,11 +295,12 @@ class ExpoNotificationService
         }
 
         try {
-            // CRITICAL: Send data-only notification (no title/body = silent)
-            // This triggers the notification handler even when app is killed
-            // The handler will dismiss notifications with matching card_id
+            // CRITICAL: Must include title AND body for notification to be delivered when app is killed
+            // But we make it invisible/silent so user doesn't see it
             $dismissalPayload = [
                 'to' => $expoToken,
+                'title' => '',  // Empty but present
+                'body' => '',   // Empty but present
                 'data' => [
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
@@ -307,7 +308,8 @@ class ExpoNotificationService
                     'timestamp' => now()->toISOString(),
                 ],
                 'priority' => 'high',
-                'contentAvailable' => true, // CRITICAL for iOS background delivery
+                'sound' => null,  // No sound
+                'badge' => 0,     // No badge
             ];
 
             $response = Http::withHeaders([
