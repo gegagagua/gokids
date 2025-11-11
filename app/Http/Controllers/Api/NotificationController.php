@@ -660,9 +660,10 @@ class NotificationController extends Controller
             ], 404);
         }
 
-        // Get all notifications for this device with status 'sent'
+        // Get all notifications for this device with status 'sent' from the last 5 minutes
         $notifications = Notification::where('device_id', $deviceId)
             ->where('status', 'sent')
+            ->where('created_at', '>=', now()->subMinutes(5))
             ->with(['device:id,name', 'card:id,phone,status'])
             ->orderBy('created_at', 'desc')
             ->get();
