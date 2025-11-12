@@ -285,17 +285,38 @@ class ExpoNotificationService
 
     /**
      * Send a silent notification to trigger dismissal on other devices
-     * Uses minimal content to ensure delivery even when app is closed
-     * The frontend will detect and dismiss matching notifications
+     * IMPORTANT: This only sends to iOS devices via Expo.
+     * Android notifications CANNOT be dismissed after being displayed in the notification tray.
+     * This is a limitation of Android's notification system - Expo cannot remove already-displayed notifications.
+     *
+     * For Android: The notification will remain visible but won't be processed by the app.
+     * For iOS: The Notification Service Extension will intercept and remove the notification.
+     *
+     * @param string $expoToken The Expo token of the device
+     * @param string $cardId The card ID to dismiss
+     * @param string $platform The device platform ('ios' or 'android'). Only iOS will receive the dismiss.
      */
-    public function dismissNotificationOnDevice(string $expoToken, string $cardId)
+    public function dismissNotificationOnDevice(string $expoToken, string $cardId, string $platform = 'ios')
     {
         if (!$expoToken) {
             return ['success' => false, 'response' => null];
         }
 
+        // CRITICAL: Only send dismiss notifications to iOS devices
+        // Android cannot dismiss notifications that are already displayed to the user
+        // Sending a notification to Android won't help - the notification stays in the tray
+        if (strtolower($platform) === 'android') {
+            \Log::info('Skipping dismissal notification for Android device (Android limitation)', [
+                'card_id' => $cardId,
+                'platform' => $platform,
+                'expo_token' => substr($expoToken, 0, 20) . '...',
+            ]);
+            // Return success so the backend doesn't log errors
+            return ['success' => true, 'response' => null];
+        }
+
         try {
-            // CRITICAL: Send notification that triggers Notification Service Extension
+            // CRITICAL: Send notification that triggers Notification Service Extension on iOS
             // Even when app is killed, the extension will process it and dismiss matching notifications
             $dismissalPayload = [
                 'to' => $expoToken,
@@ -325,13 +346,13 @@ class ExpoNotificationService
                 $responseData = $response->json();
 
                 if (isset($responseData['data'][0]['status']) && $responseData['data'][0]['status'] === 'ok') {
-                    \Log::info('Silent dismissal notification sent successfully', [
+                    \Log::info('Silent dismissal notification sent successfully to iOS', [
                         'card_id' => $cardId,
                         'expo_token' => substr($expoToken, 0, 20) . '...',
                     ]);
                     return ['success' => true, 'response' => $responseData];
                 } elseif (isset($responseData[0]['status']) && $responseData[0]['status'] === 'ok') {
-                    \Log::info('Silent dismissal notification sent successfully', [
+                    \Log::info('Silent dismissal notification sent successfully to iOS', [
                         'card_id' => $cardId,
                         'expo_token' => substr($expoToken, 0, 20) . '...',
                     ]);
@@ -339,13 +360,13 @@ class ExpoNotificationService
                 }
             }
 
-            \Log::warning('Failed to send silent dismissal notification', [
+            \Log::warning('Failed to send silent dismissal notification to iOS', [
                 'card_id' => $cardId,
                 'expo_token' => substr($expoToken, 0, 20) . '...',
             ]);
             return ['success' => false, 'response' => null];
         } catch (\Exception $e) {
-            \Log::error('Error sending silent dismissal notification', [
+            \Log::error('Error sending silent dismissal notification to iOS', [
                 'card_id' => $cardId,
                 'error' => $e->getMessage(),
             ]);
