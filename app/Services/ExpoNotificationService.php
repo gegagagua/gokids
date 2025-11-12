@@ -295,14 +295,20 @@ class ExpoNotificationService
         }
 
         try {
-            // CRITICAL: Different payload for iOS vs Android
-            // iOS: Needs title/body to trigger Notification Service Extension
-            // Android: Pure data message to trigger FCM service without showing notification
+            // CRITICAL: Both iOS AND Android need title/body to trigger background services
+            // - iOS: Needs mutableContent to trigger Notification Service Extension
+            // - Android: FCM data-only messages DON'T trigger onMessageReceived when app is killed
+            //            We MUST send title/body for FirebaseMessagingService to be called
             
-            // For iOS: Send with mutableContent to trigger extension
+            // Send dismissal notification with minimal title/body
             $dismissalPayload = [
                 'to' => $expoToken,
+                'title' => '_dismiss_',  // CRITICAL: Required for Android FCM to trigger service
+                'body' => '_dismiss_',   // CRITICAL: Required for Android FCM to trigger service
                 'priority' => 'high',
+                'sound' => null,
+                'badge' => 0,
+                'channelId' => 'default',
                 'data' => [
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
@@ -311,17 +317,16 @@ class ExpoNotificationService
                 ],
             ];
             
-            // Add iOS-specific fields if needed (Expo will route to iOS)
-            // For iOS, we need title/body to trigger the extension
-            if (strpos($expoToken, 'ExponentPushToken') === 0) {
-                // This is an Expo token, add minimal title/body for iOS extension
-                $dismissalPayload['title'] = ' ';
-                $dismissalPayload['body'] = ' ';
-                $dismissalPayload['sound'] = null;
-                $dismissalPayload['badge'] = 0;
-                $dismissalPayload['mutableContent'] = true; // Triggers iOS Notification Service Extension
-                $dismissalPayload['channelId'] = 'default';
-            }
+            // Add type and card_id at root level for easier access in native code
+            $dismissalPayload['type'] = 'card_accepted_elsewhere';
+            $dismissalPayload['card_id'] = (string) $cardId;
+            
+            // For iOS: Add mutableContent to trigger Notification Service Extension
+            $dismissalPayload['mutableContent'] = true;
+            $dismissalPayload['contentAvailable'] = true;
+            
+            // The native services (iOS NSE and Android FCM) will detect these markers
+            // and suppress the notification from showing while dismissing old notifications
 
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
