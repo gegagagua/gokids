@@ -303,8 +303,8 @@ class ExpoNotificationService
             // Send dismissal notification with minimal title/body
             $dismissalPayload = [
                 'to' => $expoToken,
-                'title' => '_dismiss_',  // CRITICAL: Required for Android FCM to trigger service
-                'body' => '_dismiss_',   // CRITICAL: Required for Android FCM to trigger service
+                'title' => '',  // CRITICAL: Required for Android FCM to trigger service
+                'body' => '',   // CRITICAL: Required for Android FCM to trigger service
                 'priority' => 'high',
                 'sound' => null,
                 'badge' => 0,
