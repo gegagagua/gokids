@@ -1381,6 +1381,7 @@ class DeviceController extends Controller
     {
         $request->validate([
             'code' => 'required|string|size:6',
+            'platform' => 'nullable|string|in:ios,android', // Capture platform during login
         ]);
 
         $device = Device::with(['garden'])
@@ -1405,6 +1406,14 @@ class DeviceController extends Controller
         if ($device->isSessionExpired()) {
             $device->endSession();
         }
+
+        // Update platform if provided during login
+        if ($request->filled('platform')) {
+            $device->platform = $request->platform;
+        } else {
+            $device->platform = $device->platform ?? 'android';
+        }
+        $device->save();
 
         // Start a new session (unlimited duration)
         $device->startSession();
