@@ -300,26 +300,23 @@ class ExpoNotificationService
             // - Android: FCM data-only messages DON'T trigger onMessageReceived when app is killed
             //            We MUST send title/body for FirebaseMessagingService to be called
             
-            // Send dismissal notification with minimal title/body
+            // Send dismissal notification as data-only with empty title/body
+            // CRITICAL: Both iOS and Android native services check for empty title/body + type
             $dismissalPayload = [
                 'to' => $expoToken,
-                'title' => '',  // CRITICAL: Required for Android FCM to trigger service
-                'body' => '',   // CRITICAL: Required for Android FCM to trigger service
                 'priority' => 'high',
                 'sound' => null,
                 'badge' => 0,
-                'channelId' => 'dismissal',
+                'channelId' => 'dismissal',  // Use low-priority dismissal channel
                 'data' => [
+                    'title' => '',  // Empty string - won't show in notification
+                    'body' => '',   // Empty string - won't show in notification
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
                     'action' => 'dismiss',
                     'timestamp' => now()->toISOString(),
                 ],
             ];
-            
-            // Add type and card_id at root level for easier access in native code
-            $dismissalPayload['type'] = 'card_accepted_elsewhere';
-            $dismissalPayload['card_id'] = (string) $cardId;
             
             // For iOS: Add mutableContent to trigger Notification Service Extension
             $dismissalPayload['mutableContent'] = true;
@@ -372,10 +369,15 @@ class ExpoNotificationService
     protected function sendExpoNotification(string $expoToken, string $title, string $body, array $data = [])
     {
         try {
+            // CRITICAL: For Android to intercept notifications when app is killed,
+            // we must send data-only messages (title/body inside data, not at root)
+            // iOS already expects this format in NotificationService.m
+            $data['title'] = $title;
+            $data['body'] = $body;
+            
             $payload = [
                 'to' => $expoToken,
-                'title' => $title,
-                'body' => $body,
+                // NO title/body at root level - moved to data for Android FCM
                 'data' => $data,
                 'sound' => 'default',
                 'priority' => 'high',
