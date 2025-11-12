@@ -285,37 +285,49 @@ class ExpoNotificationService
 
     /**
      * Send a silent notification to trigger dismissal on other devices
+     * IMPORTANT: This only sends to iOS devices. Android notifications cannot be dismissed
+     * after being displayed, so we skip sending dismiss notifications for Android.
      * Uses minimal content to ensure delivery even when app is closed
-     * The frontend will detect and dismiss matching notifications
+     * The frontend will detect and dismiss matching notifications on iOS
      */
-    public function dismissNotificationOnDevice(string $expoToken, string $cardId)
+    public function dismissNotificationOnDevice(string $expoToken, string $cardId, string $platform = 'ios')
     {
         if (!$expoToken) {
             return ['success' => false, 'response' => null];
         }
 
+        // Only send dismiss notifications for iOS
+        // Android cannot dismiss notifications after they've been displayed to the user
+        if (strtolower($platform) !== 'ios') {
+            \Log::info('Skipping dismissal notification for non-iOS platform', [
+                'platform' => $platform,
+                'card_id' => $cardId,
+                'expo_token' => substr($expoToken, 0, 20) . '...',
+            ]);
+            return ['success' => true, 'response' => null]; // Return success to avoid error handling
+        }
+
         try {
-            // CRITICAL: Send notification that triggers background handlers on both iOS and Android
+            // CRITICAL: Send notification that triggers iOS Notification Service Extension
             // iOS: Notification Service Extension will modify it to be invisible before delivery
-            // Android: FirebaseMessagingService will handle the data message in background
             $dismissalPayload = [
                 'to' => $expoToken,
-                'title' => '_dismiss_',  // Will be cleared by iOS extension, not shown on Android
-                'body' => '_dismiss_',   // Will be cleared by iOS extension, not shown on Android
+                'title' => '_dismiss_',  // Will be cleared by iOS extension, not shown to user
+                'body' => '_dismiss_',   // Will be cleared by iOS extension, not shown to user
                 'data' => [
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
                     'action' => 'dismiss',
                     'timestamp' => now()->toISOString(),
                 ],
-                'type' => 'card_accepted_elsewhere',  // Also at root level for both platforms
-                'card_id' => (string) $cardId,        // Also at root level for both platforms
+                'type' => 'card_accepted_elsewhere',  // Also at root level for iOS
+                'card_id' => (string) $cardId,        // Also at root level for iOS
                 'priority' => 'high',           // High priority for immediate delivery
                 'sound' => null,                // No sound
                 'badge' => 0,                   // No badge
                 'mutableContent' => true,       // CRITICAL for iOS: Triggers Notification Service Extension
-                'contentAvailable' => true,     // CRITICAL for both: Background delivery when app is killed
-                'channelId' => 'default',       // Android notification channel
+                'contentAvailable' => true,     // For iOS: Background delivery when app is killed
+                'channelId' => 'default',       // Notification channel
             ];
 
             $response = Http::withHeaders([
@@ -328,13 +340,13 @@ class ExpoNotificationService
                 $responseData = $response->json();
 
                 if (isset($responseData['data'][0]['status']) && $responseData['data'][0]['status'] === 'ok') {
-                    \Log::info('Silent dismissal notification sent successfully', [
+                    \Log::info('Silent dismissal notification sent successfully to iOS', [
                         'card_id' => $cardId,
                         'expo_token' => substr($expoToken, 0, 20) . '...',
                     ]);
                     return ['success' => true, 'response' => $responseData];
                 } elseif (isset($responseData[0]['status']) && $responseData[0]['status'] === 'ok') {
-                    \Log::info('Silent dismissal notification sent successfully', [
+                    \Log::info('Silent dismissal notification sent successfully to iOS', [
                         'card_id' => $cardId,
                         'expo_token' => substr($expoToken, 0, 20) . '...',
                     ]);
@@ -342,13 +354,13 @@ class ExpoNotificationService
                 }
             }
 
-            \Log::warning('Failed to send silent dismissal notification', [
+            \Log::warning('Failed to send silent dismissal notification to iOS', [
                 'card_id' => $cardId,
                 'expo_token' => substr($expoToken, 0, 20) . '...',
             ]);
             return ['success' => false, 'response' => null];
         } catch (\Exception $e) {
-            \Log::error('Error sending silent dismissal notification', [
+            \Log::error('Error sending silent dismissal notification to iOS', [
                 'card_id' => $cardId,
                 'error' => $e->getMessage(),
             ]);

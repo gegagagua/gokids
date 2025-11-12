@@ -1065,14 +1065,18 @@ class NotificationController extends Controller
 
                     if ($otherDevices->isNotEmpty()) {
                         // Send silent dismissal notification to each device
+                        // Note: Only iOS devices receive dismiss notifications (Android cannot dismiss displayed notifications)
                         foreach ($otherDevices as $device) {
+                            $platform = $device->platform ?? 'ios'; // Default to 'ios' if not specified
                             $dismissResult = $expoService->dismissNotificationOnDevice(
                                 $device->expo_token,
-                                (string) $card->id
+                                (string) $card->id,
+                                $platform
                             );
 
                             \Log::debug('Silent dismissal sent to device', [
                                 'device_id' => $device->id,
+                                'platform' => $platform,
                                 'card_id' => $card->id,
                                 'success' => $dismissResult['success'] ?? false
                             ]);
