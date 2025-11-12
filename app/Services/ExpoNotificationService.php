@@ -295,35 +295,28 @@ class ExpoNotificationService
         }
 
         try {
-            // CRITICAL: Both iOS AND Android need title/body to trigger background services
-            // - iOS: Needs mutableContent to trigger Notification Service Extension
-            // - Android: FCM data-only messages DON'T trigger onMessageReceived when app is killed
-            //            We MUST send title/body for FirebaseMessagingService to be called
-            
-            // Send dismissal notification as data-only with empty title/body
-            // CRITICAL: Both iOS and Android native services check for empty title/body + type
+            // CRITICAL: Send notification that triggers background handlers on both iOS and Android
+            // iOS: Notification Service Extension will modify it to be invisible before delivery
+            // Android: FirebaseMessagingService will handle the data message in background
             $dismissalPayload = [
                 'to' => $expoToken,
-                'priority' => 'high',
-                'sound' => null,
-                'badge' => 0,
-                'channelId' => 'dismissal',  // Use low-priority dismissal channel
+                'title' => '_dismiss_',  // Will be cleared by iOS extension, not shown on Android
+                'body' => '_dismiss_',   // Will be cleared by iOS extension, not shown on Android
                 'data' => [
-                    'title' => '',  // Empty string - won't show in notification
-                    'body' => '',   // Empty string - won't show in notification
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
                     'action' => 'dismiss',
                     'timestamp' => now()->toISOString(),
                 ],
+                'type' => 'card_accepted_elsewhere',  // Also at root level for both platforms
+                'card_id' => (string) $cardId,        // Also at root level for both platforms
+                'priority' => 'high',           // High priority for immediate delivery
+                'sound' => null,                // No sound
+                'badge' => 0,                   // No badge
+                'mutableContent' => true,       // CRITICAL for iOS: Triggers Notification Service Extension
+                'contentAvailable' => true,     // CRITICAL for both: Background delivery when app is killed
+                'channelId' => 'default',       // Android notification channel
             ];
-            
-            // For iOS: Add mutableContent to trigger Notification Service Extension
-            $dismissalPayload['mutableContent'] = true;
-            $dismissalPayload['contentAvailable'] = true;
-            
-            // The native services (iOS NSE and Android FCM) will detect these markers
-            // and suppress the notification from showing while dismissing old notifications
 
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
@@ -369,15 +362,10 @@ class ExpoNotificationService
     protected function sendExpoNotification(string $expoToken, string $title, string $body, array $data = [])
     {
         try {
-            // CRITICAL: For Android to intercept notifications when app is killed,
-            // we must send data-only messages (title/body inside data, not at root)
-            // iOS already expects this format in NotificationService.m
-            $data['title'] = $title;
-            $data['body'] = $body;
-            
             $payload = [
                 'to' => $expoToken,
-                // NO title/body at root level - moved to data for Android FCM
+                'title' => $title,
+                'body' => $body,
                 'data' => $data,
                 'sound' => 'default',
                 'priority' => 'high',
