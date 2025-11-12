@@ -295,18 +295,14 @@ class ExpoNotificationService
         }
 
         try {
-            // CRITICAL: Send notification that triggers Notification Service Extension
-            // Must have title/body to trigger extension, but extension will make it invisible
-            // The extension will also dismiss the old card notifications
+            // CRITICAL: Different payload for iOS vs Android
+            // iOS: Needs title/body to trigger Notification Service Extension
+            // Android: Pure data message to trigger FCM service without showing notification
+            
+            // For iOS: Send with mutableContent to trigger extension
             $dismissalPayload = [
                 'to' => $expoToken,
-                'title' => ' ',  // Single space - will be hidden by extension
-                'body' => ' ',   // Single space - will be hidden by extension  
-                'sound' => null,
-                'badge' => 0,
                 'priority' => 'high',
-                'channelId' => 'default',
-                'mutableContent' => true,       // CRITICAL: Triggers Notification Service Extension
                 'data' => [
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
@@ -314,6 +310,18 @@ class ExpoNotificationService
                     'timestamp' => now()->toISOString(),
                 ],
             ];
+            
+            // Add iOS-specific fields if needed (Expo will route to iOS)
+            // For iOS, we need title/body to trigger the extension
+            if (strpos($expoToken, 'ExponentPushToken') === 0) {
+                // This is an Expo token, add minimal title/body for iOS extension
+                $dismissalPayload['title'] = ' ';
+                $dismissalPayload['body'] = ' ';
+                $dismissalPayload['sound'] = null;
+                $dismissalPayload['badge'] = 0;
+                $dismissalPayload['mutableContent'] = true; // Triggers iOS Notification Service Extension
+                $dismissalPayload['channelId'] = 'default';
+            }
 
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
