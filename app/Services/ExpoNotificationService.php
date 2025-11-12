@@ -308,7 +308,7 @@ class ExpoNotificationService
                 'priority' => 'high',
                 'sound' => null,
                 'badge' => 0,
-                'channelId' => 'default',
+                'channelId' => 'dismissal',
                 'data' => [
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
