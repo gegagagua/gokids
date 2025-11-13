@@ -6,11 +6,19 @@ use Illuminate\Support\Facades\Http;
 
 class SmsService
 {
-    private $apiKey = '706ee5fb74ece6ddd994e0905c1141fc791bae17@';
+    private $apiKey = '706ee5fb74ece6ddd994e0905c1141fc791bae17';
     private $baseUrl = 'https://api.ubill.dev/v1/sms/send';
 
     public function sendOtp($phone, $otp)
     {   
+        // Skip sending SMS to blocked numbers (597887736 and 995597887736 both normalize to 995597887736)
+        if ($cleanPhone === '995597887736') {
+            return [
+                'success' => true,
+                'response' => 'SMS skipped for blocked number',
+                'http_code' => 200
+            ];
+        }
         // add phone to storage/logs/laravel.log
         \Log::info('Sending OTP to phone: ' . $phone);
         // Clean phone number and remove null bytes
@@ -28,14 +36,6 @@ class SmsService
             $cleanPhone = '995' . $cleanPhone;
         }
 
-        // Skip sending SMS to blocked numbers (597887736 and 995597887736 both normalize to 995597887736)
-        if ($cleanPhone === '995597887736') {
-            return [
-                'success' => true,
-                'response' => 'SMS skipped for blocked number',
-                'http_code' => 200
-            ];
-        }
 
         $data = [
             'brandID' => 1,
