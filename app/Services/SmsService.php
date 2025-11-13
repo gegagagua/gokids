@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Http;
 
 class SmsService
 {
-    private $apiKey = '706ee5fb74ece6ddd994e0905c1141fc791bae17';
+    private $apiKey = '706ee5fb74ece6ddd994e0905c1141fc791bae17@';
     private $baseUrl = 'https://api.ubill.dev/v1/sms/send';
 
     public function sendOtp($phone, $otp)
