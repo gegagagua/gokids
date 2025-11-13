@@ -10,7 +10,9 @@ class SmsService
     private $baseUrl = 'https://api.ubill.dev/v1/sms/send';
 
     public function sendOtp($phone, $otp)
-    {
+    {   
+        // add phone to storage/logs/laravel.log
+        \Log::info('Sending OTP to phone: ' . $phone);
         // Clean phone number and remove null bytes
         $phone = str_replace("\0", '', $phone); // Remove null bytes
         $phone = trim($phone); // Remove whitespace
@@ -41,6 +43,7 @@ class SmsService
             'text' => "OTP is {$otp}",
         ];
 
+        \Log::info('Sending OTP service to phone: ' . $phone);
         try {
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
