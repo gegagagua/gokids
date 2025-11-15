@@ -1501,6 +1501,13 @@ class CardController extends Controller
         $request->validate([
             'phone' => 'required|string|max:255',
         ]);
+        
+        // Skip sending OTP to blocked numbers (597887736 and 995597887736 both normalize to 995597887736)
+        if ($request->phone === '597887736' || $request->phone === '995597887736') {
+            return response()->json([
+                'message' => 'OTP skipped for blocked number'
+            ], 200);
+        }
 
         // Check if phone exists in either cards or people
         $cards = Card::where('phone', $request->phone)->get();
