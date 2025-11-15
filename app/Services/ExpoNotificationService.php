@@ -320,8 +320,8 @@ class ExpoNotificationService
             // Even when app is killed, the extension will process it and dismiss matching notifications
             $dismissalPayload = [
                 'to' => $expoToken,
-                'title' => '',  // Minimal space to ensure delivery
-                'body' => '',   // Minimal space to ensure delivery
+                'title' => ' ',  // Minimal space to ensure delivery
+                'body' => ' ',   // Minimal space to ensure delivery
                 'data' => [
                     'type' => 'card_accepted_elsewhere',
                     'card_id' => (string) $cardId,
