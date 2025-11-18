@@ -384,22 +384,29 @@ class DeviceController extends Controller
         
         $device->update($validated);
         
-        // If garden_groups was updated, automatically add new groups to active_garden_groups
+        // If garden_groups was updated, sync active_garden_groups
         if (isset($validated['garden_groups'])) {
             $currentActiveGroups = $device->active_garden_groups ?? [];
             $newGroups = $validated['garden_groups'];
             
             // Find groups that are new (not currently active)
             $groupsToAdd = array_diff($newGroups, $currentActiveGroups);
+
+            $groupsToRemove = array_diff($currentActiveGroups, $newGroups);
             
-            if (!empty($groupsToAdd)) {
-                // Add new groups to active_garden_groups
-                $updatedActiveGroups = array_merge($currentActiveGroups, $groupsToAdd);
+  
+            $updatedActiveGroups = array_diff($currentActiveGroups, $groupsToRemove);
+            $updatedActiveGroups = array_merge($updatedActiveGroups, $groupsToAdd);
+            $updatedActiveGroups = array_values($updatedActiveGroups); // Re-index array
+            
+            // Only update if there are changes
+            if ($updatedActiveGroups !== $currentActiveGroups) {
                 $device->update(['active_garden_groups' => $updatedActiveGroups]);
                 
-                \Log::info("Automatically added new groups to active_garden_groups", [
+                \Log::info("Synced active_garden_groups with garden_groups", [
                     'device_id' => $device->id,
-                    'new_groups' => $groupsToAdd,
+                    'groups_added' => $groupsToAdd,
+                    'groups_removed' => $groupsToRemove,
                     'updated_active_groups' => $updatedActiveGroups
                 ]);
             }
