@@ -514,13 +514,13 @@ class DeviceController extends Controller
      *     operationId="updateDeviceActiveGardenGroups",
      *     tags={"Devices"},
      *     summary="Update device active garden groups",
-     *     description="Update the active garden groups for a specific device. Active garden groups must be a subset of the device's assigned garden groups. A device can deactivate all its groups (including setting active_garden_groups to an empty array), as long as each removed group remains active on at least one other logged-in device in the same garden.",
+     *     description="Update the active garden groups for a specific device. Active garden groups must be a subset of the device's assigned garden groups. Groups can only be removed if at least one other device in the same garden has those groups active.",
      *     @OA\Parameter(name="id", in="path", required=true, description="Device ID", @OA\Schema(type="integer")),
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             required={"active_garden_groups"},
-     *             @OA\Property(property="active_garden_groups", type="array", @OA\Items(type="integer"), example={1,2}, description="Array of garden group IDs to set as active. Can be an empty array to deactivate all groups (if other devices have them active).")
+     *             @OA\Property(property="active_garden_groups", type="array", @OA\Items(type="integer"), example={1,2}, description="Array of garden group IDs to set as active")
      *         )
      *     ),
      *     @OA\Response(
@@ -555,9 +555,9 @@ class DeviceController extends Controller
      *     ),
      *     @OA\Response(
      *         response=422,
-     *         description="Cannot remove groups that are not active on other logged-in devices",
+     *         description="Cannot remove groups that are not active on other devices",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Cannot remove group 1 as it is not active on any other logged in device in the same garden")
+     *             @OA\Property(property="message", type="string", example="Cannot remove groups that are not active on any other device in the same garden")
      *         )
      *     ),
      *     @OA\Response(
@@ -595,20 +595,22 @@ class DeviceController extends Controller
         $removedGroups = array_diff($currentActiveGroups, $activeGroups);
         
         // Check if any of the removed groups are still active on other devices
-        // For each group being removed, ensure at least one other device has it active
+        // Only allow removal if at least one other device has these groups active
         if (!empty($removedGroups)) {
-            foreach ($removedGroups as $groupId) {
-                $otherDeviceHasGroupActive = Device::where('id', '!=', $device->id)
-                    ->where('garden_id', $device->garden_id)
-                    ->where('is_logged_in', true) // Only consider logged in devices
-                    ->whereJsonContains('active_garden_groups', $groupId)
-                    ->exists();
-                
-                if (!$otherDeviceHasGroupActive) {
-                    return response()->json([
-                        'message' => "Cannot remove groups that are not active on any other logged in device in the same garden"
-                    ], 422);
-                }
+            $otherDevicesWithActiveGroups = Device::where('id', '!=', $device->id)
+                ->where('garden_id', $device->garden_id)
+                ->where('is_logged_in', true) // Only consider logged in devices
+                ->where(function ($query) use ($removedGroups) {
+                    foreach ($removedGroups as $groupId) {
+                        $query->orWhereJsonContains('active_garden_groups', $groupId);
+                    }
+                })
+                ->exists();
+            
+            if (!$otherDevicesWithActiveGroups) {
+                return response()->json([
+                    'message' => 'Cannot remove groups that are not active on any other logged in device in the same garden'
+                ], 422);
             }
         }
         
@@ -622,15 +624,10 @@ class DeviceController extends Controller
         $removedGroups = array_diff($currentActiveGroups, $activeGroups);
         
         // Get full cards information for all active groups
-        $cardsInActiveGroups = [];
-        if (!empty($activeGroups)) {
-            $cardsInActiveGroups = \App\Models\Card::whereIn('group_id', $activeGroups)
-                ->where('is_deleted', false)
-                ->with(['personType', 'group.garden.images', 'group'])
-                ->get();
-        } else {
-            $cardsInActiveGroups = collect([]);
-        }
+        $cardsInActiveGroups = \App\Models\Card::whereIn('group_id', $activeGroups)
+            ->where('is_deleted', false)
+            ->with(['personType', 'group.garden.images', 'group'])
+            ->get();
         
         // Format cards data with full information
         $cardsData = $cardsInActiveGroups->map(function($card) {
