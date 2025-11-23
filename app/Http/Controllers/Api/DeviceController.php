@@ -574,7 +574,7 @@ class DeviceController extends Controller
         $device = Device::findOrFail($id);
         
         $validated = $request->validate([
-            'active_garden_groups' => 'required|array',
+            'active_garden_groups' => 'array',
             'active_garden_groups.*' => 'integer|exists:garden_groups,id',
         ]);
         
