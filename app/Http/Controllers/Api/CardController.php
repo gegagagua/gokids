@@ -27,13 +27,14 @@ class CardController extends Controller
      *     operationId="getCards",
      *     tags={"Cards"},
      *     summary="Get all cards",
-     *     description="Retrieve a paginated list of all child cards with their associated group and person type information. Supports filtering by search (child's or parent's name fields), phone, status, group_id, person_type_id, parent_code, garden_id, country_id, city_id.",
+     *     description="Retrieve a paginated list of all child cards with their associated group and person type information. Supports filtering by search (child's or parent's name fields), phone, status, group_id, person_type_id, parent_code, garden_id, garden_name, country_id, city_id.",
      *     security={{"sanctum":{}}},
      *     @OA\Parameter(name="search", in="query", required=false, description="Search in child's and parent's name fields", @OA\Schema(type="string")),
      *     @OA\Parameter(name="phone", in="query", required=false, description="Filter by phone", @OA\Schema(type="string")),
      *     @OA\Parameter(name="status", in="query", required=false, description="Filter by status", @OA\Schema(type="string", enum={"pending","active","inactive"})),
      *     @OA\Parameter(name="group_id", in="query", required=false, description="Filter by group ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="garden_id", in="query", required=false, description="Filter by garden ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="garden_name", in="query", required=false, description="Filter by garden name (partial match)", @OA\Schema(type="string")),
      *     @OA\Parameter(name="country_id", in="query", required=false, description="Filter by country ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="city_id", in="query", required=false, description="Filter by city ID", @OA\Schema(type="integer")),
      *     @OA\Parameter(name="person_type_id", in="query", required=false, description="Filter by person type ID", @OA\Schema(type="integer")),
@@ -156,6 +157,12 @@ class CardController extends Controller
         if ($request->filled('garden_id')) {
             $query->whereHas('group', function ($q) use ($request) {
                 $q->where('garden_id', $request->query('garden_id'));
+            });
+        }
+        if ($request->filled('garden_name')) {
+            $gardenName = $request->query('garden_name');
+            $query->whereHas('group.garden', function ($q) use ($gardenName) {
+                $q->where('name', 'like', "%$gardenName%");
             });
         }
         if ($request->filled('country_id')) {
