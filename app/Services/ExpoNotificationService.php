@@ -392,10 +392,12 @@ class ExpoNotificationService
 
             // CRITICAL: Add categoryId and channelId for card notifications to enable action buttons (Accept/Dismiss)
             // This allows users to accept notifications without opening the app
-            if (isset($data['type']) && $data['type'] === 'card_to_device') {
+            // Also use custom notification sound for card_info and card_to_device notifications
+            if (isset($data['type']) && ($data['type'] === 'card_to_device' || $data['type'] === 'card_info')) {
                 $payload['categoryId'] = 'card_notification'; // For iOS
                 $payload['categoryIdentifier'] = 'card_notification'; // For iOS compatibility
                 $payload['channelId'] = 'card_notification'; // CRITICAL: For Android - use specific channel with actions
+                $payload['sound'] = 'notificationsoundfordevices.wav'; // Custom sound for card notifications
             }
 
                if (isset($data['type'])) {
