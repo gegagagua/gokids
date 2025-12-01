@@ -601,10 +601,16 @@ class GardenController extends Controller
         // Hash the password if it's being updated
         if (isset($validated['password'])) {
             $validated['password'] = bcrypt($validated['password']);
+
+            // Also update the associated user's password
+            $user = User::where('email', $garden->email)->where('type', 'garden')->first();
+            if ($user) {
+                $user->update(['password' => $validated['password']]);
+            }
         }
 
         $garden->update($validated);
-        
+
         // Load relationships and make referral_code visible
         $garden->load(['city', 'countryData', 'images']);
         $garden->makeVisible('referral_code');
