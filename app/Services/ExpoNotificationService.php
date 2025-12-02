@@ -398,6 +398,11 @@ class ExpoNotificationService
                 $payload['categoryIdentifier'] = 'card_notification'; // For iOS compatibility
                 $payload['channelId'] = 'card_notification'; // CRITICAL: For Android - use specific channel with actions
                 $payload['sound'] = 'notificationsoundfordevices.wav'; // Custom sound for card notifications
+
+                // CRITICAL: Use fixed collapseId so new notifications REPLACE old ones instead of creating new ones
+                // This stops the old notification sound while keeping the notification visible (just updated)
+                // For iOS: uses 'collapseId', For Android: uses notification 'tag'
+                $payload['collapseId'] = 'card_notification_' . ($data['device_id'] ?? 'default');
             }
 
                if (isset($data['type'])) {
