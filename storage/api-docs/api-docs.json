@@ -2033,7 +2033,7 @@
                     "Cards"
                 ],
                 "summary": "Get all cards",
-                "description": "Retrieve a paginated list of all child cards with their associated group and person type information. Supports filtering by search (child's or parent's name fields), phone, status, group_id, person_type_id, parent_code, garden_id, country_id, city_id.",
+                "description": "Retrieve a paginated list of all child cards with their associated group and person type information. Supports filtering by search (child's or parent's name fields), phone, status, group_id, person_type_id, parent_code, garden_id, garden_name, country_id, city_id.",
                 "operationId": "getCards",
                 "parameters": [
                     {
@@ -2084,6 +2084,15 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "garden_name",
+                        "in": "query",
+                        "description": "Filter by garden name (partial match)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {
@@ -4758,19 +4767,148 @@
                 ]
             }
         },
+        "/api/cards/{id}/payment-amount": {
+            "get": {
+                "tags": [
+                    "Cards"
+                ],
+                "summary": "Get card payment amount in local currency",
+                "description": "Returns the payment amount for a card converted to the garden's country currency based on NBG exchange rates. For example, if the garden's country is Germany (EUR) with a 10 GEL tariff, it will return approximately 3.18 EUR based on current exchange rates.",
+                "operationId": "getCardPaymentAmount",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Card ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment amount retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "card_id": {
+                                            "type": "integer",
+                                            "example": 123
+                                        },
+                                        "country": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 21
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Germany"
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "EUR"
+                                                },
+                                                "tariff": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 10
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "payment_amount": {
+                                            "properties": {
+                                                "amount": {
+                                                    "description": "Payment amount in local currency",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 3.18
+                                                },
+                                                "currency": {
+                                                    "description": "Currency code",
+                                                    "type": "string",
+                                                    "example": "EUR"
+                                                },
+                                                "original_tariff": {
+                                                    "description": "Original tariff in GEL",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 10
+                                                },
+                                                "exchange_rate": {
+                                                    "description": "Exchange rate (1 currency unit = X GEL)",
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 3.1461
+                                                },
+                                                "rate_date": {
+                                                    "description": "Date of exchange rate",
+                                                    "type": "string",
+                                                    "example": "2025-12-06T00:00:00.000Z"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "free_calls_remaining": {
+                                            "description": "Number of free calls remaining",
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "license": {
+                                            "description": "License information",
+                                            "type": "object",
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Card not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/cards/me": {
             "get": {
                 "tags": [
                     "Cards"
                 ],
                 "summary": "Get authenticated card data",
-                "description": "Get card data using token authentication and optional phone validation",
-                "operationId": "getCardMe",
+                "description": "Returns all cards associated with the authenticated phone number",
+                "operationId": "getAuthenticatedCardData",
                 "parameters": [
                     {
                         "name": "phone",
                         "in": "query",
-                        "description": "Phone number to validate against the authenticated card",
+                        "description": "Phone number (optional, must match authenticated card)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -4780,11 +4918,10 @@
                     {
                         "name": "expo_token",
                         "in": "query",
-                        "description": "Expo push notification token to update for this card",
+                        "description": "Expo push notification token (optional)",
                         "required": false,
                         "schema": {
-                            "type": "string",
-                            "example": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+                            "type": "string"
                         }
                     }
                 ],
@@ -4799,149 +4936,156 @@
                                             "type": "string",
                                             "example": "Card data retrieved successfully"
                                         },
-                                        "card": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "child_first_name": {
-                                                    "type": "string",
-                                                    "example": "John"
-                                                },
-                                                "child_last_name": {
-                                                    "type": "string",
-                                                    "example": "Doe"
-                                                },
-                                                "parent_name": {
-                                                    "type": "string",
-                                                    "example": "Jane Doe"
-                                                },
-                                                "phone": {
-                                                    "type": "string",
-                                                    "example": "+995599123456"
-                                                },
-                                                "status": {
-                                                    "type": "string",
-                                                    "example": "active"
-                                                },
-                                                "parent_code": {
-                                                    "type": "string",
-                                                    "example": "ABC123"
-                                                },
-                                                "image_url": {
-                                                    "type": "string",
-                                                    "example": "http://localhost/storage/cards/abc123.jpg",
-                                                    "nullable": true
-                                                },
-                                                "parent_verification": {
-                                                    "type": "boolean",
-                                                    "example": true
-                                                },
-                                                "license": {
-                                                    "type": "object",
-                                                    "nullable": true
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                },
-                                                "group": {
-                                                    "type": "object",
-                                                    "nullable": true
-                                                },
-                                                "personType": {
-                                                    "type": "object",
-                                                    "nullable": true
-                                                },
-                                                "parents": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "object"
-                                                    }
-                                                },
-                                                "people": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "object"
-                                                    }
-                                                },
-                                                "garden_images": {
-                                                    "type": "array",
-                                                    "items": {
+                                        "cards": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "child_first_name": {
+                                                        "type": "string",
+                                                        "example": "John"
+                                                    },
+                                                    "child_last_name": {
+                                                        "type": "string",
+                                                        "example": "Doe"
+                                                    },
+                                                    "parent_name": {
+                                                        "type": "string",
+                                                        "example": "Jane Doe"
+                                                    },
+                                                    "phone": {
+                                                        "type": "string",
+                                                        "example": "+995599123456"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "active"
+                                                    },
+                                                    "parent_code": {
+                                                        "type": "string",
+                                                        "example": "ABC123"
+                                                    },
+                                                    "image_url": {
+                                                        "type": "string",
+                                                        "example": "http://localhost/storage/cards/abc123.jpg",
+                                                        "nullable": true
+                                                    },
+                                                    "parent_verification": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "license": {
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "group": {
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "personType": {
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "parents": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "people": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "garden_images": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "title": {
+                                                                    "type": "string",
+                                                                    "example": "Main Entrance"
+                                                                },
+                                                                "image": {
+                                                                    "type": "string",
+                                                                    "example": "garden_images/abc123.jpg"
+                                                                },
+                                                                "image_url": {
+                                                                    "type": "string",
+                                                                    "example": "http://localhost/storage/garden_images/abc123.jpg"
+                                                                },
+                                                                "index": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "created_at": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
+                                                                },
+                                                                "updated_at": {
+                                                                    "type": "string",
+                                                                    "format": "date-time"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "garden": {
                                                         "properties": {
                                                             "id": {
                                                                 "type": "integer",
                                                                 "example": 1
                                                             },
-                                                            "title": {
+                                                            "name": {
                                                                 "type": "string",
-                                                                "example": "Main Entrance"
+                                                                "example": "Sunshine Garden"
                                                             },
-                                                            "image": {
+                                                            "address": {
                                                                 "type": "string",
-                                                                "example": "garden_images/abc123.jpg"
+                                                                "example": "123 Main Street"
                                                             },
-                                                            "image_url": {
+                                                            "phone": {
                                                                 "type": "string",
-                                                                "example": "http://localhost/storage/garden_images/abc123.jpg"
+                                                                "example": "+995599123456"
                                                             },
-                                                            "index": {
-                                                                "type": "integer",
-                                                                "example": 1
+                                                            "email": {
+                                                                "type": "string",
+                                                                "example": "garden@example.com"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "active"
                                                             },
                                                             "created_at": {
                                                                 "type": "string",
                                                                 "format": "date-time"
-                                                            },
-                                                            "updated_at": {
-                                                                "type": "string",
-                                                                "format": "date-time"
                                                             }
                                                         },
-                                                        "type": "object"
+                                                        "type": "object",
+                                                        "nullable": true
                                                     }
                                                 },
-                                                "garden": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "integer",
-                                                            "example": 1
-                                                        },
-                                                        "name": {
-                                                            "type": "string",
-                                                            "example": "Sunshine Garden"
-                                                        },
-                                                        "address": {
-                                                            "type": "string",
-                                                            "example": "123 Main Street"
-                                                        },
-                                                        "phone": {
-                                                            "type": "string",
-                                                            "example": "+995599123456"
-                                                        },
-                                                        "email": {
-                                                            "type": "string",
-                                                            "example": "garden@example.com"
-                                                        },
-                                                        "status": {
-                                                            "type": "string",
-                                                            "example": "active"
-                                                        },
-                                                        "created_at": {
-                                                            "type": "string",
-                                                            "format": "date-time"
-                                                        }
-                                                    },
-                                                    "type": "object",
-                                                    "nullable": true
-                                                }
-                                            },
-                                            "type": "object"
+                                                "type": "object"
+                                            }
+                                        },
+                                        "user_type": {
+                                            "type": "string",
+                                            "example": "card"
                                         }
                                     },
                                     "type": "object"
@@ -7037,6 +7181,92 @@
                         "sanctum": []
                     }
                 ]
+            }
+        },
+        "/api/currency/exchange-rate": {
+            "get": {
+                "tags": [
+                    "Currency"
+                ],
+                "summary": "Get currency exchange rate from NBG",
+                "description": "Fetches the exchange rate of a given currency relative to GEL from National Bank of Georgia. Default currency is USD. Results are cached for 1 hour.",
+                "operationId": "getExchangeRate",
+                "parameters": [
+                    {
+                        "name": "currency",
+                        "in": "query",
+                        "description": "Currency code (e.g., USD, EUR, GBP). Default is USD",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "USD",
+                            "example": "USD"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Exchange rate retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "currency": {
+                                            "type": "string",
+                                            "example": "USD"
+                                        },
+                                        "currency_name": {
+                                            "type": "string",
+                                            "example": "US Dollar"
+                                        },
+                                        "rate": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 2.785
+                                        },
+                                        "quantity": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "date": {
+                                            "type": "string",
+                                            "example": "2025-12-07"
+                                        },
+                                        "cached": {
+                                            "type": "boolean",
+                                            "example": false
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid currency code or error fetching data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Currency not found or invalid currency code"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/devices": {
@@ -9491,11 +9721,7 @@
                         }
                     }
                 },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                "security": []
             }
         },
         "/api/disters": {
@@ -15223,6 +15449,505 @@
                 ]
             }
         },
+        "/api/notifications/device/{deviceId}/history": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Get device notification history",
+                "description": "Retrieve all notifications for a specific device that have been successfully sent (status: 'sent'). This endpoint returns the complete history of sent notifications for the device, ordered by creation date (newest first). No authentication required.",
+                "operationId": "getDeviceHistory",
+                "parameters": [
+                    {
+                        "name": "deviceId",
+                        "in": "path",
+                        "description": "The ID of the device to retrieve notification history for",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation - Returns array of sent notifications",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "description": "Notification ID",
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "title": {
+                                                "description": "Notification title",
+                                                "type": "string",
+                                                "example": "Card Updated"
+                                            },
+                                            "body": {
+                                                "description": "Notification body/content",
+                                                "type": "string",
+                                                "example": "Card +995555123456 has been updated"
+                                            },
+                                            "data": {
+                                                "description": "Additional notification data (JSON object)",
+                                                "type": "object"
+                                            },
+                                            "status": {
+                                                "description": "Notification status (always 'sent' for this endpoint)",
+                                                "type": "string",
+                                                "example": "sent"
+                                            },
+                                            "device_id": {
+                                                "description": "ID of the device that received the notification",
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "card_id": {
+                                                "description": "ID of the associated card (if any)",
+                                                "type": "integer",
+                                                "example": 1,
+                                                "nullable": true
+                                            },
+                                            "sent_at": {
+                                                "description": "Timestamp when notification was sent",
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-01-15T10:30:00.000000Z",
+                                                "nullable": true
+                                            },
+                                            "created_at": {
+                                                "description": "Timestamp when notification was created",
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-01-15T10:30:00.000000Z"
+                                            },
+                                            "updated_at": {
+                                                "description": "Timestamp when notification was last updated",
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-01-15T10:30:00.000000Z"
+                                            },
+                                            "device": {
+                                                "description": "Device information",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Garden Device 1"
+                                                    }
+                                                },
+                                                "type": "object",
+                                                "nullable": true
+                                            },
+                                            "card": {
+                                                "description": "Card information (if associated)",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "phone": {
+                                                        "type": "string",
+                                                        "example": "+995555123456"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "active"
+                                                    }
+                                                },
+                                                "type": "object",
+                                                "nullable": true
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Device not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Device not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/notifications/card/{cardId}/history": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Get card notification history",
+                "description": "Retrieve all notifications for a specific card from the last 20 minutes. This endpoint returns recent notifications associated with the card, ordered by creation date (newest first). No authentication required.",
+                "operationId": "getCardHistory",
+                "parameters": [
+                    {
+                        "name": "cardId",
+                        "in": "path",
+                        "description": "The ID of the card to retrieve notification history for",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation - Returns array of notifications from last 20 minutes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "description": "Notification ID",
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "title": {
+                                                "description": "Notification title",
+                                                "type": "string",
+                                                "example": "Parent Call"
+                                            },
+                                            "body": {
+                                                "description": "Notification body/content",
+                                                "type": "string",
+                                                "example": "A parent is calling from card"
+                                            },
+                                            "data": {
+                                                "description": "Additional notification data (JSON object)",
+                                                "type": "object"
+                                            },
+                                            "status": {
+                                                "description": "Notification status",
+                                                "type": "string",
+                                                "example": "sent"
+                                            },
+                                            "device_id": {
+                                                "description": "ID of the device that received the notification",
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "card_id": {
+                                                "description": "ID of the associated card",
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "sent_at": {
+                                                "description": "Timestamp when notification was sent",
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-01-15T10:30:00.000000Z",
+                                                "nullable": true
+                                            },
+                                            "accepted_at": {
+                                                "description": "Timestamp when notification was accepted",
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-01-15T10:35:00.000000Z",
+                                                "nullable": true
+                                            },
+                                            "created_at": {
+                                                "description": "Timestamp when notification was created",
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-01-15T10:30:00.000000Z"
+                                            },
+                                            "updated_at": {
+                                                "description": "Timestamp when notification was last updated",
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-01-15T10:30:00.000000Z"
+                                            },
+                                            "device": {
+                                                "description": "Device information",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Garden Device 1"
+                                                    }
+                                                },
+                                                "type": "object",
+                                                "nullable": true
+                                            },
+                                            "card": {
+                                                "description": "Card information",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "phone": {
+                                                        "type": "string",
+                                                        "example": "+995555123456"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "active"
+                                                    }
+                                                },
+                                                "type": "object",
+                                                "nullable": true
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Card not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Card not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/notifications/parent/{parentPhone}/history": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Get notification history for all cards attached to a parent",
+                "description": "Retrieve all notifications for all cards associated with a parent (identified by phone number) from the last 20 minutes. This endpoint returns recent notifications across multiple cards, ordered by creation date (newest first). No authentication required.",
+                "operationId": "getParentCardHistoryByPhone",
+                "parameters": [
+                    {
+                        "name": "parentPhone",
+                        "in": "path",
+                        "description": "The phone number of the parent to retrieve card notification history for",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "+995555123456"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation - Returns array of notifications from last 20 minutes across all parent's cards",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "parent_phone": {
+                                            "description": "Phone number of the parent",
+                                            "type": "string",
+                                            "example": "+995555123456"
+                                        },
+                                        "cards_count": {
+                                            "description": "Number of cards associated with this parent",
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "cards": {
+                                            "description": "List of cards for this parent",
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "phone": {
+                                                        "type": "string",
+                                                        "example": "+995555123456"
+                                                    },
+                                                    "parent_name": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    },
+                                                    "child_first_name": {
+                                                        "type": "string",
+                                                        "example": "Alice"
+                                                    },
+                                                    "child_last_name": {
+                                                        "type": "string",
+                                                        "example": "Doe"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "active"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "notifications": {
+                                            "description": "Notifications from all cards (newest first)",
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "description": "Notification ID",
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "title": {
+                                                        "description": "Notification title",
+                                                        "type": "string",
+                                                        "example": "Parent Call"
+                                                    },
+                                                    "body": {
+                                                        "description": "Notification body/content",
+                                                        "type": "string",
+                                                        "example": "A parent is calling from card"
+                                                    },
+                                                    "data": {
+                                                        "description": "Additional notification data (JSON object)",
+                                                        "type": "object"
+                                                    },
+                                                    "status": {
+                                                        "description": "Notification status",
+                                                        "type": "string",
+                                                        "example": "sent"
+                                                    },
+                                                    "device_id": {
+                                                        "description": "ID of the device that received the notification",
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "card_id": {
+                                                        "description": "ID of the associated card",
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "sent_at": {
+                                                        "description": "Timestamp when notification was sent",
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-01-15T10:30:00.000000Z",
+                                                        "nullable": true
+                                                    },
+                                                    "accepted_at": {
+                                                        "description": "Timestamp when notification was accepted",
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-01-15T10:35:00.000000Z",
+                                                        "nullable": true
+                                                    },
+                                                    "created_at": {
+                                                        "description": "Timestamp when notification was created",
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-01-15T10:30:00.000000Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "description": "Timestamp when notification was last updated",
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-01-15T10:30:00.000000Z"
+                                                    },
+                                                    "device": {
+                                                        "description": "Device information",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Garden Device 1"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    },
+                                                    "card": {
+                                                        "description": "Card information",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "phone": {
+                                                                "type": "string",
+                                                                "example": "+995555123456"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "example": "active"
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total_notifications": {
+                                            "description": "Total number of notifications across all cards",
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No cards found for the given parent phone number",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No cards found for the provided parent phone number"
+                                        },
+                                        "parent_phone": {
+                                            "type": "string",
+                                            "example": "+995555123456"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/notifications/{notificationId}/accept": {
             "post": {
                 "tags": [
@@ -17717,6 +18442,10 @@
         {
             "name": "Called Cards",
             "description": "Called Cards"
+        },
+        {
+            "name": "Currency",
+            "description": "Currency"
         },
         {
             "name": "Notifications",

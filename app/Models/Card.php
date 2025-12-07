@@ -32,6 +32,7 @@ class Card extends Model
         'spam_comment',
         'is_deleted',
         'deleted_at',
+        'free_calls_remaining',
     ];
 
     protected $casts = [
@@ -40,6 +41,7 @@ class Card extends Model
         'spam' => 'boolean',
         'is_deleted' => 'boolean',
         'deleted_at' => 'datetime',
+        'free_calls_remaining' => 'integer',
     ];
 
     protected static function boot()
@@ -328,5 +330,114 @@ class Card extends Model
     {
         return $query->where('is_deleted', true)
                     ->where('deleted_at', '>=', now()->subDays(20));
+    }
+
+    /**
+     * Get the country tariff for this card's garden
+     */
+    public function getCountryTariff()
+    {
+        if (!$this->group || !$this->group->garden || !$this->group->garden->countryData) {
+            return 0;
+        }
+        
+        return $this->group->garden->countryData->tariff ?? 0;
+    }
+
+    /**
+     * Check if free calls should be managed (country has tariff > 0)
+     */
+    public function shouldManageFreeCalls()
+    {
+        return $this->getCountryTariff() > 0;
+    }
+
+    /**
+     * Decrement free calls remaining (only if country has tariff and no valid license)
+     * Returns true if call is allowed, false otherwise
+     */
+    public function decrementFreeCalls()
+    {
+        // If country is free or has valid license, unlimited calls allowed
+        if (!$this->shouldManageFreeCalls() || $this->hasValidLicense()) {
+            return true;
+        }
+
+        // Check if there are free calls remaining
+        if ($this->free_calls_remaining <= 0) {
+            return false;
+        }
+
+        // Decrement and save
+        $this->decrement('free_calls_remaining');
+        return true;
+    }
+
+    /**
+     * Reset free calls to default (5)
+     */
+    public function resetFreeCalls()
+    {
+        $this->update(['free_calls_remaining' => 5]);
+    }
+
+    /**
+     * Get payment amount in country's currency
+     * Converts GEL tariff to the country's currency using NBG exchange rate
+     * 
+     * @return array|null
+     */
+    public function getPaymentAmountInCurrency()
+    {
+        if (!$this->group || !$this->group->garden || !$this->group->garden->countryData) {
+            return null;
+        }
+
+        $country = $this->group->garden->countryData;
+        $tariff = $country->tariff ?? 0;
+        $currency = $country->currency ?? 'GEL';
+
+        // If tariff is 0 or currency is GEL, return as is
+        if ($tariff == 0 || $currency === 'GEL') {
+            return [
+                'amount' => $tariff,
+                'currency' => 'GEL',
+                'original_tariff' => $tariff
+            ];
+        }
+
+        // Get exchange rate from NBG
+        try {
+            $nbgService = app(\App\Services\NbgCurrencyService::class);
+            $exchangeResult = $nbgService->getExchangeRate($currency);
+
+            if ($exchangeResult['success'] && isset($exchangeResult['rate'])) {
+                $rate = $exchangeResult['rate'];
+                // Convert GEL to foreign currency: amount_in_currency = tariff_in_gel / rate
+                $amountInCurrency = round($tariff / $rate, 2);
+
+                return [
+                    'amount' => $amountInCurrency,
+                    'currency' => $currency,
+                    'original_tariff' => $tariff,
+                    'exchange_rate' => $rate,
+                    'rate_date' => $exchangeResult['date'] ?? null
+                ];
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error getting exchange rate for card payment', [
+                'card_id' => $this->id,
+                'currency' => $currency,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        // Fallback: return tariff in GEL if exchange rate fails
+        return [
+            'amount' => $tariff,
+            'currency' => 'GEL',
+            'original_tariff' => $tariff,
+            'error' => 'Exchange rate not available'
+        ];
     }
 }

@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\BogPaymentController;
 use App\Http\Controllers\Api\CalledCardController;
+use App\Http\Controllers\Api\CurrencyController;
 
 Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::get('/person-types', [PersonTypeController::class, 'index']);
@@ -129,6 +130,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
 
     // Card login routes (no authentication required)
     Route::post('/cards/login', [CardController::class, 'login']);
+    Route::get('/cards/{id}/payment-amount', [CardController::class, 'getPaymentAmount']);
 
     Route::post('/cards/send-otp', [CardController::class, 'sendOtp']);
     Route::post('/cards/verify-otp', [CardController::class, 'verifyOtp']);
@@ -172,4 +174,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     
     // Device called cards check (no authentication required)
     Route::get('/devices/{id}/check-called-cards', [DeviceController::class, 'checkIfCalledCardExists']);
+    
+    // Currency exchange routes (no authentication required)
+    Route::get('/currency/exchange-rate', [CurrencyController::class, 'getExchangeRate']);
 });

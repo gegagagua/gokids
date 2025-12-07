@@ -1764,7 +1764,11 @@ class CardController extends Controller
                 'people' => $card->people,
                 'garden_images' => $card->garden_images,
                 'garden' => $card->garden,
-                'main_parent' => true
+                'main_parent' => true,
+                'license' => $card->license,
+                'country_tariff' => $card->getCountryTariff(),
+                'free_calls_remaining' => $card->free_calls_remaining,
+                'payment_amount' => $card->getPaymentAmountInCurrency()
             ];
         });
 
@@ -1804,7 +1808,10 @@ class CardController extends Controller
                     'parents' => $person->card->parents,
                     'people' => $person->card->people,
                     'garden_images' => $person->card->garden_images,
-                    'garden' => $person->card->garden
+                    'garden' => $person->card->garden,
+                    'country_tariff' => $person->card->getCountryTariff(),
+                    'free_calls_remaining' => $person->card->free_calls_remaining,
+                    'payment_amount' => $person->card->getPaymentAmountInCurrency()
                 ];
 
                 // Merge card data into base data (like JavaScript spread operator)
@@ -2061,6 +2068,181 @@ class CardController extends Controller
      *     )
      * )
      */
+    
+    /**
+     * @OA\Get(
+     *     path="/api/cards/{id}/payment-amount",
+     *     operationId="getCardPaymentAmount",
+     *     tags={"Cards"},
+     *     summary="Get card payment amount in local currency",
+     *     description="Returns the payment amount for a card converted to the garden's country currency based on NBG exchange rates. For example, if the garden's country is Germany (EUR) with a 10 GEL tariff, it will return approximately 3.18 EUR based on current exchange rates.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Card ID",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=123)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment amount retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="card_id", type="integer", example=123),
+     *             @OA\Property(
+     *                 property="country",
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=21),
+     *                 @OA\Property(property="name", type="string", example="Germany"),
+     *                 @OA\Property(property="currency", type="string", example="EUR"),
+     *                 @OA\Property(property="tariff", type="number", format="float", example=10.00)
+     *             ),
+     *             @OA\Property(
+     *                 property="payment_amount",
+     *                 type="object",
+     *                 @OA\Property(property="amount", type="number", format="float", example=3.18, description="Payment amount in local currency"),
+     *                 @OA\Property(property="currency", type="string", example="EUR", description="Currency code"),
+     *                 @OA\Property(property="original_tariff", type="number", format="float", example=10.00, description="Original tariff in GEL"),
+     *                 @OA\Property(property="exchange_rate", type="number", format="float", example=3.1461, description="Exchange rate (1 currency unit = X GEL)"),
+     *                 @OA\Property(property="rate_date", type="string", example="2025-12-06T00:00:00.000Z", description="Date of exchange rate")
+     *             ),
+     *             @OA\Property(property="free_calls_remaining", type="integer", example=5, description="Number of free calls remaining"),
+     *             @OA\Property(property="license", type="object", nullable=true, description="License information")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Card not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Card not found")
+     *         )
+     *     )
+     * )
+     */
+    public function getPaymentAmount($id)
+    {
+        $card = Card::with(['group.garden.countryData'])->find($id);
+        
+        if (!$card) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Card not found'
+            ], 404);
+        }
+
+        $paymentAmount = $card->getPaymentAmountInCurrency();
+        
+        $country = null;
+        if ($card->group && $card->group->garden && $card->group->garden->countryData) {
+            $countryData = $card->group->garden->countryData;
+            $country = [
+                'id' => $countryData->id,
+                'name' => $countryData->name,
+                'currency' => $countryData->currency,
+                'tariff' => $countryData->tariff
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'card_id' => $card->id,
+            'country' => $country,
+            'payment_amount' => $paymentAmount,
+            'free_calls_remaining' => $card->free_calls_remaining,
+            'license' => $card->license
+        ], 200);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/cards/me",
+     *     operationId="getAuthenticatedCardData",
+     *     tags={"Cards"},
+     *     summary="Get authenticated card data",
+     *     description="Returns all cards associated with the authenticated phone number",
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="phone",
+     *         in="query",
+     *         description="Phone number (optional, must match authenticated card)",
+     *         required=false,
+     *         @OA\Schema(type="string", example="+995599123456")
+     *     ),
+     *     @OA\Parameter(
+     *         name="expo_token",
+     *         in="query",
+     *         description="Expo push notification token (optional)",
+     *         required=false,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Card data retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Card data retrieved successfully"),
+     *             @OA\Property(property="cards", type="array", @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="child_first_name", type="string", example="John"),
+     *                 @OA\Property(property="child_last_name", type="string", example="Doe"),
+     *                 @OA\Property(property="parent_name", type="string", example="Jane Doe"),
+     *                 @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                 @OA\Property(property="status", type="string", example="active"),
+     *                 @OA\Property(property="parent_code", type="string", example="ABC123"),
+     *                 @OA\Property(property="image_url", type="string", example="http://localhost/storage/cards/abc123.jpg", nullable=true),
+     *                 @OA\Property(property="parent_verification", type="boolean", example=true),
+     *                 @OA\Property(property="license", type="object", nullable=true),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(property="group", type="object", nullable=true),
+     *                 @OA\Property(property="personType", type="object", nullable=true),
+     *                 @OA\Property(property="parents", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="people", type="array", @OA\Items(type="object")),
+     *                 @OA\Property(property="garden_images", type="array", @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="title", type="string", example="Main Entrance"),
+     *                     @OA\Property(property="image", type="string", example="garden_images/abc123.jpg"),
+     *                     @OA\Property(property="image_url", type="string", example="http://localhost/storage/garden_images/abc123.jpg"),
+     *                     @OA\Property(property="index", type="integer", example=1),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 )),
+     *                 @OA\Property(property="garden", type="object", nullable=true,
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Sunshine Garden"),
+     *                     @OA\Property(property="address", type="string", example="123 Main Street"),
+     *                     @OA\Property(property="phone", type="string", example="+995599123456"),
+     *                     @OA\Property(property="email", type="string", example="garden@example.com"),
+     *                     @OA\Property(property="status", type="string", example="active"),
+     *                     @OA\Property(property="created_at", type="string", format="date-time")
+     *                 )
+     *             )),
+     *             @OA\Property(property="user_type", type="string", example="card")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Unauthenticated")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Phone number mismatch",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Phone number does not match authenticated card")
+     *         )
+     *     )
+     * )
+     */
     public function me(Request $request)
     {
         $user = $request->user();
@@ -2151,7 +2333,11 @@ class CardController extends Controller
                             'people' => $person->card->people,
                             'garden_images' => $person->card->garden_images,
                             'garden' => $person->card->garden,
-                            'main_parent' => false
+                            'main_parent' => false,
+                            'license' => $person->card->license,
+                            'country_tariff' => $person->card->getCountryTariff(),
+                            'free_calls_remaining' => $person->card->free_calls_remaining,
+                            'payment_amount' => $person->card->getPaymentAmountInCurrency()
                         ];
                     }
                     
@@ -2203,7 +2389,11 @@ class CardController extends Controller
                     'people' => $card->people,
                     'garden_images' => $card->garden_images,
                     'garden' => $card->garden,
-                    'main_parent' => true
+                    'main_parent' => true,
+                    'license' => $card->license,
+                    'country_tariff' => $card->getCountryTariff(),
+                    'free_calls_remaining' => $card->free_calls_remaining,
+                    'payment_amount' => $card->getPaymentAmountInCurrency()
                 ];
             });
 
@@ -2243,7 +2433,10 @@ class CardController extends Controller
                         'parents' => $person->card->parents,
                         'people' => $person->card->people,
                         'garden_images' => $person->card->garden_images,
-                        'garden' => $person->card->garden
+                        'garden' => $person->card->garden,
+                        'country_tariff' => $person->card->getCountryTariff(),
+                        'free_calls_remaining' => $person->card->free_calls_remaining,
+                        'payment_amount' => $person->card->getPaymentAmountInCurrency()
                     ];
                     
                     // Merge card data into base data (like JavaScript spread operator)
