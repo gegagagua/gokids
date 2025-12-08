@@ -52,6 +52,10 @@ class Card extends Model
             if (empty($card->parent_code)) {
                 $card->parent_code = self::generateParentCode();
             }
+            // Set default free_calls_remaining to 5 if not set
+            if (!isset($card->free_calls_remaining)) {
+                $card->free_calls_remaining = 5;
+            }
         });
     }
 

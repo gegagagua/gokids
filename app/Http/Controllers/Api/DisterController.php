@@ -105,6 +105,7 @@ class DisterController extends Controller
         if ($request->user() instanceof \App\Models\Dister) {
             // Direct dister authentication - filter by current dister's ID
             $currentDister = $request->user();
+            // Show only disters created by this dister (where main_dister contains this dister's id)
             $query->whereJsonContains('main_dister', ['id' => $currentDister->id]);
         } elseif ($request->user() instanceof \App\Models\User && $request->user()->type === 'dister') {
             // User with dister type - find corresponding dister
@@ -116,7 +117,11 @@ class DisterController extends Controller
                 // Return empty if dister not found
                 return $query->whereRaw('1 = 0')->paginate($request->query('per_page', 15));
             }
+        } elseif ($request->user() instanceof \App\Models\User && $request->user()->type !== 'admin' && $request->user()->type !== 'user') {
+            // If user is not admin and not regular user, return empty (no access)
+            return $query->whereRaw('1 = 0')->paginate($request->query('per_page', 15));
         }
+        // If user is admin (type === 'user' or 'admin'), show all disters (no filter)
         
         if ($request->filled('search')) {
             $search = $request->query('search');

@@ -454,6 +454,23 @@ class NotificationController extends Controller
             $cardToNotify = $sourceEntity->card;
         }
 
+        // Refresh card to get latest free_calls_remaining value
+        $cardToNotify->refresh();
+
+        // Check free_calls_remaining before sending
+        if ($cardToNotify->free_calls_remaining <= 0) {
+            return response()->json([
+                'message' => 'No free calls remaining. You have used all your free calls.',
+                'success' => false,
+                'error_code' => 'NO_FREE_CALLS_REMAINING',
+                'free_calls_remaining' => $cardToNotify->free_calls_remaining,
+                'source_type' => $isFromPeople ? 'people' : 'card',
+                'source_id' => $isFromPeople ? $sourceEntity->id : $cardToNotify->id,
+            ], 403); // HTTP 403 Forbidden
+        }
+
+        // Decrement free_calls_remaining by 1
+        $cardToNotify->decrement('free_calls_remaining');
 
         // Delete existing called card records for this card
         CalledCard::where('card_id', $cardToNotify->id)->delete();
@@ -523,11 +540,15 @@ class NotificationController extends Controller
             $remainingCalls = \App\Models\CardNotificationCall::getRemainingCalls($sourceId, $callType, $callLimit, $since);
         }
 
+        // Refresh card to get updated free_calls_remaining after decrement
+        $cardToNotify->refresh();
+
         return response()->json([
             'message' => ($isFromPeople ? 'People' : 'Card') . ' to all devices notification sent',
             'success' => $totalSuccessCount > 0,
             'devices_count' => $totalSuccessCount,
             'remaining_calls' => $remainingCalls,
+            'free_calls_remaining' => $cardToNotify->free_calls_remaining,
             'source_type' => $isFromPeople ? 'people' : 'card',
             'source_id' => $isFromPeople ? $sourceEntity->id : $cardToNotify->id,
             'card_notified' => $cardToNotify->id,
