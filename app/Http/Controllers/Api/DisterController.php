@@ -108,7 +108,7 @@ class DisterController extends Controller
         if ($user instanceof \App\Models\Dister) {
             // Direct dister authentication - filter by current dister's ID
             $currentDister = $user;
-            // Show only disters created by this dister (where main_dister contains this dister's id)
+            // Show only disters created by this dister (where main_dister.id equals current dister's id)
             $query->whereJsonContains('main_dister', ['id' => $currentDister->id]);
         } elseif ($user instanceof \App\Models\User) {
             // Check if user is admin (can see all disters)
@@ -119,6 +119,7 @@ class DisterController extends Controller
                 $currentDister = \App\Models\Dister::where('email', $user->email)->first();
                 if ($currentDister) {
                     // Look for disters where current dister is in the main_dister array
+                    // Filter: find disters where main_dister.id equals current dister's id
                     $query->whereJsonContains('main_dister', ['id' => $currentDister->id]);
                 } else {
                     // Return empty if dister not found
