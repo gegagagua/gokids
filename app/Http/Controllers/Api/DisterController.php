@@ -103,11 +103,11 @@ class DisterController extends Controller
         
         // Get the authenticated user
         $user = $request->user();
-        
+  
         // If logged-in user is a dister, restrict to only their child disters
         if ($user instanceof \App\Models\Dister) {
-            $currentDister = $user;
-            $query->whereJsonContains('main_dister', ['id' => $currentDister->id]);
+            // return $user;
+            $query->whereJsonContains('main_dister', ['id' => $user->id]);
         }
         
         if ($request->filled('search')) {

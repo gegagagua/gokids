@@ -45,13 +45,10 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     
     // Garden creation (no authentication required)
     Route::post('/gardens', [GardenController::class, 'store']);
-    
-    // Gardens: require auth to enforce per-dister filtering
     Route::apiResource('garden-images', GardenImageController::class);
     Route::apiResource('countries', CountryController::class);
     Route::apiResource('cities', CityController::class);
     Route::apiResource('people', PeopleController::class);
-    Route::apiResource('disters', DisterController::class);
     Route::post('/disters/{id}/transfer-gardens', [DisterController::class, 'transferGardens']);
     Route::apiResource('payments', PaymentController::class);
     Route::apiResource('notifications', NotificationController::class);
@@ -59,6 +56,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
 
     Route::middleware('auth:sanctum')->group(function () {
         // Place specific routes before resource to avoid {garden} binding capturing 'export'
+        Route::apiResource('disters', DisterController::class);
         Route::get('/gardens/export', [GardenController::class, 'export']);
         Route::apiResource('gardens', GardenController::class)->except(['store']);
         Route::get('/me', [AuthController::class, 'me']);
