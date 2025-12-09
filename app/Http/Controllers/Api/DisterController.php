@@ -101,27 +101,37 @@ class DisterController extends Controller
     {
         $query = Dister::with(['country']);
         
+        // Get the authenticated user
+        $user = $request->user();
+        
         // If logged-in user is a dister, restrict to only their child disters
-        if ($request->user() instanceof \App\Models\Dister) {
+        if ($user instanceof \App\Models\Dister) {
             // Direct dister authentication - filter by current dister's ID
-            $currentDister = $request->user();
+            $currentDister = $user;
             // Show only disters created by this dister (where main_dister contains this dister's id)
             $query->whereJsonContains('main_dister', ['id' => $currentDister->id]);
-        } elseif ($request->user() instanceof \App\Models\User && $request->user()->type === 'dister') {
-            // User with dister type - find corresponding dister
-            $currentDister = \App\Models\Dister::where('email', $request->user()->email)->first();
-            if ($currentDister) {
-                // Look for disters where current dister is in the main_dister array
-                $query->whereJsonContains('main_dister', ['id' => $currentDister->id]);
+        } elseif ($user instanceof \App\Models\User) {
+            // Check if user is admin (can see all disters)
+            if ($user->type === 'user' || $user->type === 'admin') {
+                // Admin users can see all disters - no filter applied
+            } elseif ($user->type === 'dister') {
+                // User with dister type - find corresponding dister
+                $currentDister = \App\Models\Dister::where('email', $user->email)->first();
+                if ($currentDister) {
+                    // Look for disters where current dister is in the main_dister array
+                    $query->whereJsonContains('main_dister', ['id' => $currentDister->id]);
+                } else {
+                    // Return empty if dister not found
+                    return $query->whereRaw('1 = 0')->paginate($request->query('per_page', 15));
+                }
             } else {
-                // Return empty if dister not found
+                // If user is not admin and not dister, return empty (no access)
                 return $query->whereRaw('1 = 0')->paginate($request->query('per_page', 15));
             }
-        } elseif ($request->user() instanceof \App\Models\User && $request->user()->type !== 'admin' && $request->user()->type !== 'user') {
-            // If user is not admin and not regular user, return empty (no access)
+        } else {
+            // No authenticated user - return empty
             return $query->whereRaw('1 = 0')->paginate($request->query('per_page', 15));
         }
-        // If user is admin (type === 'user' or 'admin'), show all disters (no filter)
         
         if ($request->filled('search')) {
             $search = $request->query('search');
