@@ -53,15 +53,31 @@ class ExpoNotificationService
                     'sent_at' => now(),
                     'data' => $data,
                 ]);
+                \Log::info('ExpoNotificationService::sendToDevice: SUCCESS', [
+                    'notification_id' => $notification->id,
+                    'device_id' => $deviceId,
+                    'expo_token' => substr($device->expo_token, 0, 20) . '...',
+                ]);
                 return true;
             } else {
                 $notification->update([
                     'status' => 'failed',
                     'data' => $data,
                 ]);
+                \Log::warning('ExpoNotificationService::sendToDevice: FAILED', [
+                    'notification_id' => $notification->id,
+                    'device_id' => $deviceId,
+                    'expo_token' => substr($device->expo_token, 0, 20) . '...',
+                    'response' => $response,
+                ]);
                 return false;
             }
         } catch (\Exception $e) {
+            \Log::error('ExpoNotificationService::sendToDevice: EXCEPTION', [
+                'device_id' => $device->id ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return false;
         }
     }
@@ -159,12 +175,28 @@ class ExpoNotificationService
      */
     public function sendCardToAllDevices(Card $card, string $title, string $body, array $data = [])
     {
+        // LOG: Start of sendCardToAllDevices in ExpoNotificationService
+        \Log::info('ExpoNotificationService::sendCardToAllDevices START', [
+            'card_id' => $card->id,
+            'card_group_id' => $card->group_id,
+            'title' => $title,
+            'body' => $body,
+        ]);
+
         if (!$card->group_id) {
+            \Log::warning('ExpoNotificationService::sendCardToAllDevices: No group_id', [
+                'card_id' => $card->id,
+            ]);
             return false;
         }
 
         // Get all devices that have this card's group in their active_garden_groups
         $targetGroupId = $card->group_id;
+
+        // LOG: Device query
+        \Log::info('ExpoNotificationService::sendCardToAllDevices: Querying devices', [
+            'target_group_id' => $targetGroupId,
+        ]);
 
         $devices = Device::where('status', 'active')
             ->where('is_logged_in', true)
@@ -172,11 +204,35 @@ class ExpoNotificationService
             ->whereJsonContains('active_garden_groups', $targetGroupId)
             ->get();
 
+        // LOG: Devices found before deduplication
+        \Log::info('ExpoNotificationService::sendCardToAllDevices: Devices found (before dedup)', [
+            'count' => $devices->count(),
+            'devices' => $devices->map(function($d) {
+                return [
+                    'id' => $d->id,
+                    'name' => $d->name,
+                    'status' => $d->status,
+                    'is_logged_in' => $d->is_logged_in,
+                    'expo_token' => $d->expo_token ? substr($d->expo_token, 0, 20) . '...' : 'NULL',
+                    'active_garden_groups' => $d->active_garden_groups,
+                ];
+            })->toArray(),
+        ]);
+
         // CRITICAL FIX: Deduplicate by expo_token to prevent duplicate notifications
         // Group by expo_token and keep only the first device for each unique token
         $uniqueDevices = $devices->unique('expo_token');
 
+        // LOG: Devices after deduplication
+        \Log::info('ExpoNotificationService::sendCardToAllDevices: Unique devices (after dedup)', [
+            'unique_count' => $uniqueDevices->count(),
+        ]);
+
         if ($uniqueDevices->isEmpty()) {
+            \Log::warning('ExpoNotificationService::sendCardToAllDevices: No devices found', [
+                'card_id' => $card->id,
+                'target_group_id' => $targetGroupId,
+            ]);
             return false;
         }
 
@@ -225,15 +281,38 @@ class ExpoNotificationService
                 ] : null,
             ]);
 
+            // LOG: Sending to device
+            \Log::info('ExpoNotificationService::sendCardToAllDevices: Sending to device', [
+                'device_id' => $device->id,
+                'device_name' => $device->name,
+                'expo_token' => substr($device->expo_token, 0, 20) . '...',
+                'card_parent_name' => $card->parent_name,
+            ]);
+
             $result = $this->sendToDevice($device, $card->parent_name, $body, $deviceData, $card);
             $results[] = $result;
-            
+
+            // LOG: Device send result
+            \Log::info('ExpoNotificationService::sendCardToAllDevices: Device send result', [
+                'device_id' => $device->id,
+                'result' => $result,
+            ]);
+
             if ($result) {
                 $successCount++;
             } else {
                 $failureCount++;
             }
         }
+
+        // LOG: Final results
+        \Log::info('ExpoNotificationService::sendCardToAllDevices END', [
+            'card_id' => $card->id,
+            'total_devices' => $uniqueDevices->count(),
+            'success_count' => $successCount,
+            'failure_count' => $failureCount,
+            'results' => $results,
+        ]);
 
         return $results;
     }
