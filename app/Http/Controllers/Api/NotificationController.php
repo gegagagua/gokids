@@ -545,17 +545,25 @@ class NotificationController extends Controller
             $cardToNotify = $sourceEntity->card;
         }
 
-        // Refresh card to get latest free_calls_remaining value
+        // Refresh card to get latest free_calls_remaining value and load required relations
         $cardToNotify->refresh();
+        $cardToNotify->load(['group.garden.countryData']);
 
         // LOG STEP 7: Free calls check
         \Log::info('sendCardToAllDevices: Free calls check', [
             'card_to_notify_id' => $cardToNotify->id,
             'free_calls_remaining' => $cardToNotify->free_calls_remaining,
+            'should_manage_free_calls' => $cardToNotify->shouldManageFreeCalls(),
+            'has_valid_license' => $cardToNotify->hasValidLicense(),
+            'country_tariff' => $cardToNotify->getCountryTariff(),
+            'country_name' => $cardToNotify->group?->garden?->countryData?->name ?? 'N/A',
         ]);
 
-        // Check free_calls_remaining before sending
-        if ($cardToNotify->free_calls_remaining <= 0) {
+        // Use the Card model's decrementFreeCalls method which handles all the logic:
+        // - Free countries (tariff = 0): Always allowed, no decrement
+        // - Paid countries with valid license: Always allowed, no decrement
+        // - Paid countries without license: Decrement and check limit
+        if (!$cardToNotify->decrementFreeCalls()) {
             \Log::warning('sendCardToAllDevices: NO_FREE_CALLS_REMAINING', [
                 'card_id' => $cardToNotify->id,
                 'free_calls_remaining' => $cardToNotify->free_calls_remaining,
@@ -570,11 +578,11 @@ class NotificationController extends Controller
             ], 403); // HTTP 403 Forbidden
         }
 
-        // Decrement free_calls_remaining by 1
-        $cardToNotify->decrement('free_calls_remaining');
-        \Log::info('sendCardToAllDevices: Decremented free_calls_remaining', [
+        // Refresh to get updated value after potential decrement
+        $cardToNotify->refresh();
+        \Log::info('sendCardToAllDevices: Free calls check passed', [
             'card_id' => $cardToNotify->id,
-            'new_free_calls_remaining' => $cardToNotify->free_calls_remaining - 1,
+            'free_calls_remaining' => $cardToNotify->free_calls_remaining,
         ]);
 
         // Delete existing called card records for this card
