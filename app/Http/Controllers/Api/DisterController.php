@@ -465,9 +465,23 @@ class DisterController extends Controller
             'balance' => 'nullable|numeric|min:0|max:9999999.99',
             'iban' => 'nullable|string|max:50',
             'status' => 'nullable|string|in:active,inactive,suspended',
+            'password' => 'nullable|string|min:6',
         ]);
 
-        $dister->update($validated);
+        // Handle password update separately if provided
+        if ($request->has('password') && !empty($request->password)) {
+            $dister->update([
+                'password' => Hash::make($request->password)
+            ]);
+            // Remove password from validated array to avoid double hashing
+            unset($validated['password']);
+        }
+
+        // Update other fields
+        if (!empty($validated)) {
+            $dister->update($validated);
+        }
+
         $dister->load(['country']);
 
         return response()->json($dister);
