@@ -403,10 +403,15 @@ class Card extends Model
 
         // If tariff is 0, return as is
         if ($tariff == 0) {
+            // Get exchange_rate from country and convert to boolean
+            $countryExchangeRate = $country->exchange_rate ?? 0;
+            $exchangeRateBoolean = ($countryExchangeRate == 1.0000) ? true : (($countryExchangeRate == 0.0000) ? false : null);
+            
             return [
                 'amount' => $tariff,
                 'currency' => $countryCurrency,
-                'original_tariff' => $tariff
+                'original_tariff' => $tariff,
+                'exchange_rate' => $exchangeRateBoolean,
             ];
         }
 
@@ -416,11 +421,16 @@ class Card extends Model
 
         // If payment gateway currency is the same as country currency, return as is
         if ($paymentGatewayCurrency === $countryCurrency) {
+            // Get exchange_rate from country and convert to boolean
+            $countryExchangeRate = $country->exchange_rate ?? 0;
+            $exchangeRateBoolean = ($countryExchangeRate == 1.0000) ? true : (($countryExchangeRate == 0.0000) ? false : null);
+            
             return [
                 'amount' => $tariff,
                 'currency' => $countryCurrency,
                 'original_tariff' => $tariff,
-                'payment_gateway_currency' => $paymentGatewayCurrency
+                'payment_gateway_currency' => $paymentGatewayCurrency,
+                'exchange_rate' => $exchangeRateBoolean,
             ];
         }
 
@@ -438,15 +448,15 @@ class Card extends Model
                 $paymentGatewayRate = $paymentGatewayRateResult['rate']; // e.g., 2.7 GEL per 1 USD
                 $countryCurrencyRate = $countryCurrencyRateResult['rate']; // e.g., 0.002 GEL per 1 KZT
                 
-                // Convert: tariff_in_payment_currency * (payment_currency_rate / country_currency_rate)
-                // Example: 4 USD * (2.7 / 0.002) = 4 * 1350 = 5400 KZT
                 $amountInCountryCurrency = round($tariff * ($paymentGatewayRate / $countryCurrencyRate), 2);
+                $countryExchangeRate = $country->exchange_rate ?? 0;
 
                 return [
                     'amount' => $amountInCountryCurrency,
                     'currency' => $countryCurrency,
                     'original_tariff' => $tariff,
                     'payment_gateway_currency' => $paymentGatewayCurrency,
+                    'exchange_rate' => $exchangeRateBoolean > 0 : true : false,
                 ];
             }
         } catch (\Exception $e) {
@@ -459,10 +469,15 @@ class Card extends Model
         }
 
         // Fallback: return tariff in payment gateway currency if exchange rate fails
+        // Get exchange_rate from country and convert to boolean
+        $countryExchangeRate = $country->exchange_rate ?? 0;
+        $exchangeRateBoolean = ($countryExchangeRate == 1.0000) ? true : (($countryExchangeRate == 0.0000) ? false : null);
+        
         return [
             'amount' => $tariff,
             'currency' => $paymentGatewayCurrency,
             'original_tariff' => $tariff,
+            'exchange_rate' => $exchangeRateBoolean,
             'error' => 'Exchange rate not available'
         ];
     }
