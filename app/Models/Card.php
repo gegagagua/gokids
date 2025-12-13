@@ -449,14 +449,17 @@ class Card extends Model
                 $countryCurrencyRate = $countryCurrencyRateResult['rate']; // e.g., 0.002 GEL per 1 KZT
                 
                 $amountInCountryCurrency = round($tariff * ($paymentGatewayRate / $countryCurrencyRate), 2);
+
+                // Get exchange_rate from country and convert to boolean
                 $countryExchangeRate = $country->exchange_rate ?? 0;
+                $exchangeRateBoolean = $countryExchangeRate > 0 ? true : false;
 
                 return [
                     'amount' => $amountInCountryCurrency,
                     'currency' => $countryCurrency,
                     'original_tariff' => $tariff,
                     'payment_gateway_currency' => $paymentGatewayCurrency,
-                    'exchange_rate' => $exchangeRateBoolean > 0 : true : false,
+                    'exchange_rate' => $exchangeRateBoolean,
                 ];
             }
         } catch (\Exception $e) {
