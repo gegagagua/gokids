@@ -354,13 +354,6 @@ class NotificationController extends Controller
      */
     public function sendCardToAllDevices(Request $request)
     {
-        // LOG STEP 1: Request received
-        \Log::info('=== sendCardToAllDevices START ===', [
-            'timestamp' => now()->toISOString(),
-            'request_all' => $request->all(),
-            'ip' => $request->ip(),
-        ]);
-
         $validated = $request->validate([
             'card_id' => 'nullable|integer|exists:cards,id',
             'people_id' => 'nullable|integer|exists:people,id',
@@ -369,20 +362,11 @@ class NotificationController extends Controller
             'data' => 'nullable|array',
         ]);
 
-        // LOG STEP 2: Validation passed
-        \Log::info('sendCardToAllDevices: Validation passed', [
-            'validated_data' => $validated,
-        ]);
-
         // Ensure either card_id or people_id is provided, but not both
         $hasCardId = isset($validated['card_id']) && $validated['card_id'];
         $hasPeopleId = isset($validated['people_id']) && $validated['people_id'];
         
         if (!$hasCardId && !$hasPeopleId) {
-            \Log::warning('sendCardToAllDevices: MISSING_IDENTIFIER', [
-                'has_card_id' => $hasCardId,
-                'has_people_id' => $hasPeopleId,
-            ]);
             return response()->json([
                 'message' => 'Either card_id or people_id must be provided',
                 'success' => false,
@@ -395,54 +379,18 @@ class NotificationController extends Controller
         $group = null;
         $isFromPeople = false;
 
-        // LOG STEP 3: Loading source entity
-        \Log::info('sendCardToAllDevices: Loading source entity', [
-            'has_card_id' => $hasCardId,
-            'has_people_id' => $hasPeopleId,
-            'card_id' => $validated['card_id'] ?? null,
-            'people_id' => $validated['people_id'] ?? null,
-        ]);
 
         if ($hasCardId) {
             $sourceEntity = Card::with(['group.garden:id,name,country_id', 'group.garden.countryData', 'personType', 'group.garden.images'])->findOrFail($validated['card_id']);
             $group = $sourceEntity->group;
-
-            // LOG STEP 4a: Card loaded
-            \Log::info('sendCardToAllDevices: Card loaded', [
-                'card_id' => $sourceEntity->id,
-                'card_phone' => $sourceEntity->phone,
-                'card_status' => $sourceEntity->status,
-                'card_is_deleted' => $sourceEntity->is_deleted,
-                'card_group_id' => $sourceEntity->group_id,
-                'card_expo_token' => $sourceEntity->expo_token ? substr($sourceEntity->expo_token, 0, 20) . '...' : 'NULL',
-                'card_free_calls_remaining' => $sourceEntity->free_calls_remaining,
-                'group_exists' => $group ? true : false,
-                'group_id' => $group?->id,
-                'group_name' => $group?->name,
-                'garden_id' => $group?->garden?->id,
-                'garden_name' => $group?->garden?->name,
-            ]);
         } else {
             $people = \App\Models\People::with(['card.group.garden:id,name,country_id', 'card.group.garden.countryData', 'card.personType', 'card.group.garden.images'])->findOrFail($validated['people_id']);
             $sourceEntity = $people;
             $group = $people->card->group;
             $isFromPeople = true;
-
-            // LOG STEP 4b: People loaded
-            \Log::info('sendCardToAllDevices: People loaded', [
-                'people_id' => $people->id,
-                'people_name' => $people->name,
-                'people_card_id' => $people->card?->id,
-                'card_group_id' => $people->card?->group_id,
-                'group_exists' => $group ? true : false,
-            ]);
         }
 
         if (!$group) {
-            \Log::warning('sendCardToAllDevices: NO_GROUP_FOUND', [
-                'source_type' => $isFromPeople ? 'people' : 'card',
-                'source_id' => $isFromPeople ? $sourceEntity->id : $validated['card_id'],
-            ]);
             return response()->json([
                 'message' => 'No group found for the provided identifier',
                 'success' => false,
@@ -456,24 +404,8 @@ class NotificationController extends Controller
             ->with(['group.garden:id,name,country_id', 'group.garden.countryData', 'personType', 'group.garden.images'])
             ->get();
 
-        // LOG STEP 5: Cards in group
-        \Log::info('sendCardToAllDevices: Cards in group query result', [
-            'group_id' => $group->id,
-            'cards_count' => $cardsInGroup->count(),
-            'cards' => $cardsInGroup->map(function($c) {
-                return [
-                    'id' => $c->id,
-                    'phone' => $c->phone,
-                    'status' => $c->status,
-                    'is_deleted' => $c->is_deleted,
-                ];
-            })->toArray(),
-        ]);
 
         if ($cardsInGroup->isEmpty()) {
-            \Log::warning('sendCardToAllDevices: NO_CARDS_IN_GROUP', [
-                'group_id' => $group->id,
-            ]);
             return response()->json([
                 'message' => 'No active cards found in the group',
                 'success' => false,
@@ -486,46 +418,24 @@ class NotificationController extends Controller
 
         // LOG STEP 6: License check
         $canMakeUnlimitedCalls = $card->canMakeUnlimitedCalls();
-        \Log::info('sendCardToAllDevices: License check', [
-            'card_id' => $card->id,
-            'can_make_unlimited_calls' => $canMakeUnlimitedCalls,
-        ]);
 
         // Check if card can make unlimited calls (free garden or has valid license)
         if (!$canMakeUnlimitedCalls) {
-            // Check call limit for paid gardens without license
-            $callLimit = 5; // Maximum 5 calls per day
-            $since = now()->startOfDay();
-
-            // Use the source entity ID for call tracking
-            $sourceId = $isFromPeople ? $sourceEntity->id : $card->id;
-            $callType = $isFromPeople ? 'people_to_all_devices' : 'card_to_all_devices';
-
-            $hasExceededLimit = \App\Models\CardNotificationCall::hasExceededLimit($sourceId, $callType, $callLimit, $since);
-
-            \Log::info('sendCardToAllDevices: Call limit check', [
-                'source_id' => $sourceId,
-                'call_type' => $callType,
-                'call_limit' => $callLimit,
-                'has_exceeded_limit' => $hasExceededLimit,
-            ]);
-
-            if ($hasExceededLimit) {
-                $remainingCalls = \App\Models\CardNotificationCall::getRemainingCalls($sourceId, $callType, $callLimit, $since);
-
-                \Log::warning('sendCardToAllDevices: CALL_LIMIT_EXCEEDED', [
-                    'source_id' => $sourceId,
-                    'remaining_calls' => $remainingCalls,
-                ]);
-
+            // Determine which card to check for free_calls_remaining
+            $cardToCheck = $isFromPeople ? $sourceEntity->card : $sourceEntity;
+            
+            // Refresh card to get latest free_calls_remaining value
+            $cardToCheck->refresh();
+            
+            // Check if free_calls_remaining is 0 or less
+            if ($cardToCheck->free_calls_remaining <= 0) {
                 return response()->json([
-                    'message' => 'Call limit exceeded. You have reached the maximum of ' . $callLimit . ' notification calls per day for paid gardens without a license.',
+                    'message' => 'Call limit exceeded. You have reached the maximum of free calls for paid gardens without a license.',
                     'success' => false,
                     'error_code' => 'CALL_LIMIT_EXCEEDED',
-                    'call_limit' => $callLimit,
-                    'remaining_calls' => $remainingCalls,
+                    'free_calls_remaining' => $cardToCheck->free_calls_remaining,
                     'source_type' => $isFromPeople ? 'people' : 'card',
-                    'source_id' => $sourceId,
+                    'source_id' => $isFromPeople ? $sourceEntity->id : $cardToCheck->id,
                     'group' => $group,
                     'cards_in_group' => $cardsInGroup->count()
                 ], 429); // HTTP 429 Too Many Requests
@@ -549,25 +459,9 @@ class NotificationController extends Controller
         $cardToNotify->refresh();
         $cardToNotify->load(['group.garden.countryData']);
 
-        // LOG STEP 7: Free calls check
-        \Log::info('sendCardToAllDevices: Free calls check', [
-            'card_to_notify_id' => $cardToNotify->id,
-            'free_calls_remaining' => $cardToNotify->free_calls_remaining,
-            'should_manage_free_calls' => $cardToNotify->shouldManageFreeCalls(),
-            'has_valid_license' => $cardToNotify->hasValidLicense(),
-            'country_tariff' => $cardToNotify->getCountryTariff(),
-            'country_name' => $cardToNotify->group?->garden?->countryData?->name ?? 'N/A',
-        ]);
-
-        // Use the Card model's decrementFreeCalls method which handles all the logic:
-        // - Free countries (tariff = 0): Always allowed, no decrement
         // - Paid countries with valid license: Always allowed, no decrement
         // - Paid countries without license: Decrement and check limit
         if (!$cardToNotify->decrementFreeCalls()) {
-            \Log::warning('sendCardToAllDevices: NO_FREE_CALLS_REMAINING', [
-                'card_id' => $cardToNotify->id,
-                'free_calls_remaining' => $cardToNotify->free_calls_remaining,
-            ]);
             return response()->json([
                 'message' => 'No free calls remaining. You have used all your free calls.',
                 'success' => false,
@@ -580,10 +474,6 @@ class NotificationController extends Controller
 
         // Refresh to get updated value after potential decrement
         $cardToNotify->refresh();
-        \Log::info('sendCardToAllDevices: Free calls check passed', [
-            'card_id' => $cardToNotify->id,
-            'free_calls_remaining' => $cardToNotify->free_calls_remaining,
-        ]);
 
         // Delete existing called card records for this card
         CalledCard::where('card_id', $cardToNotify->id)->delete();
@@ -600,14 +490,6 @@ class NotificationController extends Controller
         // Otherwise fallback to card's expo_token
         $senderExpoToken = $notificationData['sender_expo_token'] ?? $cardToNotify->expo_token;
 
-        \Log::info('Sending notification with sender info', [
-            'card_id' => $cardToNotify->id,
-            'is_from_people' => $isFromPeople,
-            'sender_expo_token_from_request' => isset($notificationData['sender_expo_token']) ? substr($notificationData['sender_expo_token'], 0, 20) . '...' : 'NOT_PROVIDED',
-            'final_sender_expo_token' => $senderExpoToken ? substr($senderExpoToken, 0, 20) . '...' : 'NULL',
-            'card_expo_token' => $cardToNotify->expo_token ? substr($cardToNotify->expo_token, 0, 20) . '...' : 'NULL'
-        ]);
-
         if ($isFromPeople) {
             // Notification sent by shared parent (People)
             $notificationData['sender_expo_token'] = $senderExpoToken;
@@ -621,28 +503,12 @@ class NotificationController extends Controller
             $notificationData['sender_name'] = $cardToNotify->parent_name;
         }
 
-        // LOG STEP 8: Before calling ExpoNotificationService
-        \Log::info('sendCardToAllDevices: About to call ExpoNotificationService', [
-            'card_to_notify_id' => $cardToNotify->id,
-            'title' => $validated['title'],
-            'body' => $validated['body'] ?? '',
-            'notification_data_keys' => array_keys($notificationData),
-            'sender_expo_token' => isset($notificationData['sender_expo_token']) ? substr($notificationData['sender_expo_token'], 0, 20) . '...' : 'NOT_SET',
-        ]);
-
         $results = $expoService->sendCardToAllDevices(
             $cardToNotify,
             $validated['title'],
             $validated['body'] ?? '',
             $notificationData
         );
-
-        // LOG STEP 9: ExpoNotificationService results
-        \Log::info('sendCardToAllDevices: ExpoNotificationService returned', [
-            'card_id' => $cardToNotify->id,
-            'results_type' => gettype($results),
-            'results' => $results,
-        ]);
 
         $successCount = is_array($results) ? count(array_filter($results)) : 0;
         $totalSuccessCount = $successCount;
@@ -659,28 +525,14 @@ class NotificationController extends Controller
             \App\Models\CardNotificationCall::recordCall($sourceId, $callType);
         }
 
-        // Get remaining calls for response
-        $remainingCalls = null;
-        if (!$card->canMakeUnlimitedCalls()) {
-            $callLimit = 5;
-            $since = now()->startOfDay();
-            $sourceId = $isFromPeople ? $sourceEntity->id : $card->id;
-            $callType = $isFromPeople ? 'people_to_all_devices' : 'card_to_all_devices';
-            $remainingCalls = \App\Models\CardNotificationCall::getRemainingCalls($sourceId, $callType, $callLimit, $since);
-        }
-
         // Refresh card to get updated free_calls_remaining after decrement
         $cardToNotify->refresh();
 
-        // LOG STEP 10: Final response
-        \Log::info('=== sendCardToAllDevices END ===', [
-            'success' => $totalSuccessCount > 0,
-            'total_success_count' => $totalSuccessCount,
-            'card_notified' => $cardToNotify->id,
-            'free_calls_remaining' => $cardToNotify->free_calls_remaining,
-            'remaining_calls' => $remainingCalls,
-            'notification_results_count' => count($allResults),
-        ]);
+        // Get remaining calls for response (use free_calls_remaining)
+        $remainingCalls = null;
+        if (!$card->canMakeUnlimitedCalls()) {
+            $remainingCalls = $cardToNotify->free_calls_remaining;
+        }
 
         return response()->json([
             'message' => ($isFromPeople ? 'People' : 'Card') . ' to all devices notification sent',
@@ -1126,14 +978,6 @@ class NotificationController extends Controller
                 $senderType = $notificationData['sender_type'] ?? 'card';
                 $senderName = $notificationData['sender_name'] ?? $card->parent_name;
 
-                \Log::info('Acceptance notification debug', [
-                    'notification_id' => $notification->id,
-                    'sender_expo_token' => $senderExpoToken ? substr($senderExpoToken, 0, 20) . '...' : 'NULL',
-                    'sender_type' => $senderType,
-                    'sender_name' => $senderName,
-                    'notification_data_keys' => array_keys($notificationData)
-                ]);
-
                 // Send acceptance notification if we have a valid expo_token
                 if ($senderExpoToken) {
                     $cardOwnerData = [
@@ -1160,12 +1004,6 @@ class NotificationController extends Controller
                         'OK',
                         $cardOwnerData
                     );
-
-                    \Log::info('Acceptance notification send result', [
-                        'notification_id' => $notification->id,
-                        'success' => $response['success'] ?? false,
-                        'response' => $response
-                    ]);
 
                     if ($response['success']) {
                         $totalNotificationsSent++;
@@ -1236,21 +1074,7 @@ class NotificationController extends Controller
                                 (string) $card->id,
                                 $platform
                             );
-
-                            \Log::debug('Dismissal notification handling', [
-                                'device_id' => $device->id,
-                                'platform' => $platform,
-                                'card_id' => $card->id,
-                                'success' => $dismissResult['success'] ?? false
-                            ]);
                         }
-
-                        \Log::info('Silent dismissal notifications sent', [
-                            'card_id' => $card->id,
-                            'notification_id' => $notification->id,
-                            'accepted_by_device' => $senderDeviceId,
-                            'devices_notified' => $otherDevices->count()
-                        ]);
                     }
                 }
             } catch (\Exception $e) {
