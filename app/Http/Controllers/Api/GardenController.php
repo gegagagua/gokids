@@ -465,6 +465,18 @@ class GardenController extends Controller
         }
         
         $garden = Garden::create($gardenData);
+        
+        // If referral is set, add this garden ID to the dister's gardens array
+        if (!empty($gardenData['referral'])) {
+            $dister = \App\Models\Dister::where('referral', $gardenData['referral'])->first();
+            if ($dister) {
+                $disterGardens = $dister->gardens ?? [];
+                if (!in_array($garden->id, $disterGardens)) {
+                    $disterGardens[] = $garden->id;
+                    $dister->update(['gardens' => $disterGardens]);
+                }
+            }
+        }
 
         return response()->json([
             'garden' => $garden,
@@ -589,7 +601,6 @@ class GardenController extends Controller
     public function update(Request $request, $garden)
     {
         $garden = Garden::findOrFail($garden);
-
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
