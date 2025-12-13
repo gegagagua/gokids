@@ -447,10 +447,6 @@ class Card extends Model
                     'currency' => $countryCurrency,
                     'original_tariff' => $tariff,
                     'payment_gateway_currency' => $paymentGatewayCurrency,
-                    'payment_gateway_rate' => $paymentGatewayRate,
-                    'country_currency_rate' => $countryCurrencyRate,
-                    'exchange_rate' => $paymentGatewayRate / $countryCurrencyRate,
-                    'rate_date' => $paymentGatewayRateResult['date'] ?? $countryCurrencyRateResult['date'] ?? null
                 ];
             }
         } catch (\Exception $e) {
