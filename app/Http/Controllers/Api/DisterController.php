@@ -470,9 +470,21 @@ class DisterController extends Controller
 
         // Handle password update separately if provided
         if (isset($validated['password']) && !empty($validated['password'])) {
+            $hashedPassword = Hash::make($validated['password']);
+            
+            // Update password in both dister and user tables
             $dister->update([
-                'password' => Hash::make($validated['password'])
+                'password' => $hashedPassword
             ]);
+
+            // Also update the corresponding user account
+            $user = \App\Models\User::where('email', $dister->email)->first();
+            if ($user) {
+                $user->update([
+                    'password' => $hashedPassword
+                ]);
+            }
+            
             // Remove password from validated array to avoid double hashing
             unset($validated['password']);
         }
