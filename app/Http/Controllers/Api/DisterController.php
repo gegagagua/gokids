@@ -468,6 +468,9 @@ class DisterController extends Controller
             'password' => 'nullable|string|min:6',
         ]);
 
+        // Get old email before update (in case email is being changed)
+        $oldEmail = $dister->email;
+        
         // Handle password update separately if provided
         if (isset($validated['password']) && !empty($validated['password'])) {
             $hashedPassword = Hash::make($validated['password']);
@@ -477,8 +480,8 @@ class DisterController extends Controller
                 'password' => $hashedPassword
             ]);
 
-            // Also update the corresponding user account
-            $user = \App\Models\User::where('email', $dister->email)->first();
+            // Also update the corresponding user account (use old email to find user)
+            $user = \App\Models\User::where('email', $oldEmail)->first();
             if ($user) {
                 $user->update([
                     'password' => $hashedPassword
@@ -492,6 +495,16 @@ class DisterController extends Controller
         // Update other fields
         if (!empty($validated)) {
             $dister->update($validated);
+        }
+        
+        // If email was changed, also update the corresponding user account
+        if (isset($validated['email']) && $validated['email'] !== $oldEmail) {
+            $user = \App\Models\User::where('email', $oldEmail)->first();
+            if ($user) {
+                $user->update([
+                    'email' => $dister->email
+                ]);
+            }
         }
 
         $dister->load(['country']);
