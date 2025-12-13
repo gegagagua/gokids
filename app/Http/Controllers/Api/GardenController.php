@@ -455,6 +455,15 @@ class GardenController extends Controller
         $gardenData = $validated;
         $gardenData['password'] = bcrypt($validated['password']);
         $gardenData['referral_code'] = \App\Models\Garden::generateUniqueReferralCode();
+        
+        // If referral is not provided but country_id is provided, get dister from country
+        if (empty($gardenData['referral']) && !empty($validated['country_id'])) {
+            $country = \App\Models\Country::find($validated['country_id']);
+            if ($country && $country->dister) {
+                $gardenData['referral'] = $country->dister;
+            }
+        }
+        
         $garden = Garden::create($gardenData);
 
         return response()->json([
