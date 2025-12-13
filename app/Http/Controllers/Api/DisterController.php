@@ -469,9 +469,9 @@ class DisterController extends Controller
         ]);
 
         // Handle password update separately if provided
-        if ($request->has('password') && !empty($request->password)) {
+        if (isset($validated['password']) && !empty($validated['password'])) {
             $dister->update([
-                'password' => Hash::make($request->password)
+                'password' => Hash::make($validated['password'])
             ]);
             // Remove password from validated array to avoid double hashing
             unset($validated['password']);
