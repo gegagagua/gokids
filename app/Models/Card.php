@@ -387,7 +387,7 @@ class Card extends Model
 
     /**
      * Get payment amount in country's currency
-     * Converts GEL tariff to the country's currency using NBG exchange rate
+     * Converts payment gateway currency tariff to the country's currency using NBG exchange rate
      * 
      * @return array|null
      */
@@ -399,47 +399,73 @@ class Card extends Model
 
         $country = $this->group->garden->countryData;
         $tariff = $country->tariff ?? 0;
-        $currency = $country->currency ?? 'GEL';
+        $countryCurrency = $country->currency ?? 'GEL';
 
-        // If tariff is 0 or currency is GEL, return as is
-        if ($tariff == 0 || $currency === 'GEL') {
+        // If tariff is 0, return as is
+        if ($tariff == 0) {
             return [
                 'amount' => $tariff,
-                'currency' => 'GEL',
+                'currency' => $countryCurrency,
                 'original_tariff' => $tariff
             ];
         }
 
-        // Get exchange rate from NBG
+        // Get payment gateway currency
+        $paymentGateway = $country->paymentGateway;
+        $paymentGatewayCurrency = $paymentGateway ? ($paymentGateway->currency ?? 'GEL') : 'GEL';
+
+        // If payment gateway currency is the same as country currency, return as is
+        if ($paymentGatewayCurrency === $countryCurrency) {
+            return [
+                'amount' => $tariff,
+                'currency' => $countryCurrency,
+                'original_tariff' => $tariff,
+                'payment_gateway_currency' => $paymentGatewayCurrency
+            ];
+        }
+
+        // Convert from payment gateway currency to country currency using NBG rates
         try {
             $nbgService = app(\App\Services\NbgCurrencyService::class);
-            $exchangeResult = $nbgService->getExchangeRate($currency);
+            
+            // Get exchange rates for both currencies
+            $paymentGatewayRateResult = $nbgService->getExchangeRate($paymentGatewayCurrency);
+            $countryCurrencyRateResult = $nbgService->getExchangeRate($countryCurrency);
 
-            if ($exchangeResult['success'] && isset($exchangeResult['rate'])) {
-                $rate = $exchangeResult['rate'];
-                // Convert GEL to foreign currency: amount_in_currency = tariff_in_gel / rate
-                $amountInCurrency = round($tariff / $rate, 2);
+            if ($paymentGatewayRateResult['success'] && isset($paymentGatewayRateResult['rate']) &&
+                $countryCurrencyRateResult['success'] && isset($countryCurrencyRateResult['rate'])) {
+                
+                $paymentGatewayRate = $paymentGatewayRateResult['rate']; // e.g., 2.7 GEL per 1 USD
+                $countryCurrencyRate = $countryCurrencyRateResult['rate']; // e.g., 0.002 GEL per 1 KZT
+                
+                // Convert: tariff_in_payment_currency * (payment_currency_rate / country_currency_rate)
+                // Example: 4 USD * (2.7 / 0.002) = 4 * 1350 = 5400 KZT
+                $amountInCountryCurrency = round($tariff * ($paymentGatewayRate / $countryCurrencyRate), 2);
 
                 return [
-                    'amount' => $amountInCurrency,
-                    'currency' => $currency,
+                    'amount' => $amountInCountryCurrency,
+                    'currency' => $countryCurrency,
                     'original_tariff' => $tariff,
-                    'exchange_rate' => $rate,
-                    'rate_date' => $exchangeResult['date'] ?? null
+                    'payment_gateway_currency' => $paymentGatewayCurrency,
+                    'payment_gateway_rate' => $paymentGatewayRate,
+                    'country_currency_rate' => $countryCurrencyRate,
+                    'exchange_rate' => $paymentGatewayRate / $countryCurrencyRate,
+                    'rate_date' => $paymentGatewayRateResult['date'] ?? $countryCurrencyRateResult['date'] ?? null
                 ];
             }
         } catch (\Exception $e) {
             \Log::error('Error getting exchange rate for card payment', [
                 'card_id' => $this->id,
-                'currency' => $currency,
+                'country_currency' => $countryCurrency,
+                'payment_gateway_currency' => $paymentGatewayCurrency,
                 'error' => $e->getMessage()
             ]);
         }
 
-        // Fallback: return tariff in GEL if exchange rate fails
+        // Fallback: return tariff in payment gateway currency if exchange rate fails
         return [
             'amount' => $tariff,
-            'currency' => 'GEL',
+            'currency' => $paymentGatewayCurrency,
             'original_tariff' => $tariff,
             'error' => 'Exchange rate not available'
         ];
