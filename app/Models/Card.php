@@ -56,6 +56,21 @@ class Card extends Model
             if (!isset($card->free_calls_remaining)) {
                 $card->free_calls_remaining = 5;
             }
+
+            // Set the first garden image as active if not already set
+            if (empty($card->active_garden_image) && $card->group_id) {
+                $gardenGroup = GardenGroup::find($card->group_id);
+
+                if ($gardenGroup && $gardenGroup->garden_id) {
+                    $firstGardenImage = GardenImage::where('garden_id', $gardenGroup->garden_id)
+                        ->orderBy('index', 'asc')
+                        ->first();
+
+                    if ($firstGardenImage) {
+                        $card->active_garden_image = $firstGardenImage->id;
+                    }
+                }
+            }
         });
     }
 
