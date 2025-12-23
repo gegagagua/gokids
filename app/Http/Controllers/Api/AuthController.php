@@ -142,8 +142,8 @@ class AuthController extends Controller
             'token' => $token,
         ];
 
-        // Add balance for user type 'user'
-        if ($user->type === 'user') {
+        // Add balance for user type 'user' or 'admin'
+        if ($user->type === 'user' || $user->type === 'admin') {
             $response['user']['balance'] = $user->balance ?? 0.00;
         }
 
@@ -445,8 +445,8 @@ class AuthController extends Controller
             ],
         ];
 
-        // Add balance for user type 'user'
-        if ($user->type === 'user') {
+        // Add balance for user type 'user' or 'admin'
+        if ($user->type === 'user' || $user->type === 'admin') {
             $response['user']['balance'] = $user->balance ?? 0.00;
         }
 
