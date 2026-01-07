@@ -1725,7 +1725,7 @@
                     "BOG Payments"
                 ],
                 "summary": "Handle BOG callback",
-                "description": "Handle payment callback from BOG payment gateway",
+                "description": "Handle payment callback from BOG payment gateway. When payment status is 'success', automatically creates a Payment record in the payments table with all required fields (transaction_number, card_number, amount, status, payment_gateway_id, etc.)",
                 "operationId": "handleBogCallback",
                 "requestBody": {
                     "required": true,
@@ -1734,14 +1734,17 @@
                             "schema": {
                                 "properties": {
                                     "order_id": {
+                                        "description": "BOG order ID",
                                         "type": "string",
                                         "example": "BOG_ABC123_1234567890"
                                     },
                                     "status": {
+                                        "description": "Payment status (success, failed, cancelled)",
                                         "type": "string",
                                         "example": "success"
                                     },
                                     "transaction_id": {
+                                        "description": "BOG transaction ID",
                                         "type": "string",
                                         "example": "bog_123456"
                                     }
@@ -1753,9 +1756,139 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Callback handled successfully"
+                        "description": "Callback handled successfully. If status is 'success', a Payment record is automatically created in the payments table.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Callback handled successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to handle callback",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to handle callback"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
+            }
+        },
+        "/api/bog-payment/bulk": {
+            "post": {
+                "tags": [
+                    "BOG Payments"
+                ],
+                "summary": "Create bulk BOG payments for cards",
+                "description": "Create payments for multiple cards. Garden can pay for their cards. Calculates total amount, creates BOG payments for each card, and automatically processes callbacks with 'completed' status.",
+                "operationId": "createBulkBogPayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "card_ids",
+                                    "garden_id"
+                                ],
+                                "properties": {
+                                    "garden_id": {
+                                        "description": "Garden ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "card_ids": {
+                                        "description": "Array of card IDs to pay for",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "description": {
+                                        "description": "Payment description",
+                                        "type": "string",
+                                        "example": "Bulk payment for cards"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payments created and processed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "total_amount": {
+                                            "description": "Total amount for all cards",
+                                            "type": "number",
+                                            "example": 300
+                                        },
+                                        "payments_count": {
+                                            "description": "Number of payments created",
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "payments": {
+                                            "description": "Array of created payments",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Access denied. Only garden users can use this endpoint."
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Payment creation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/called-cards": {
@@ -13684,6 +13817,381 @@
                 "security": []
             }
         },
+        "/api/gardens/check-otp": {
+            "post": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Check garden OTP (without marking as used)",
+                "description": "Check if the OTP code sent to garden email is valid without marking it as used. This allows checking the OTP multiple times before verification.",
+                "operationId": "checkGardenOtp",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "otp"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "description": "Garden email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "garden@example.com"
+                                    },
+                                    "otp": {
+                                        "description": "6-digit OTP code",
+                                        "type": "string",
+                                        "example": "123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OTP is valid",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "OTP is valid"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "garden@example.com"
+                                        },
+                                        "valid": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "expires_at": {
+                                            "description": "OTP expiration time",
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-12-18T03:00:00.000000Z"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or expired OTP",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid or expired OTP"
+                                        },
+                                        "valid": {
+                                            "type": "boolean",
+                                            "example": false
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Garden not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Garden not found with this email"
+                                        },
+                                        "valid": {
+                                            "type": "boolean",
+                                            "example": false
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "email": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "otp": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/api/gardens/request-password-reset": {
+            "post": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Request garden password reset (send OTP to phone)",
+                "description": "Send OTP code to garden's phone number for password reset. First checks if garden exists with the provided email.",
+                "operationId": "requestGardenPasswordReset",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "description": "Garden email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "garden@example.com"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OTP sent to phone successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "OTP sent to phone."
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "garden@example.com"
+                                        },
+                                        "phone": {
+                                            "description": "Phone number where OTP was sent",
+                                            "type": "string",
+                                            "example": "995555123456"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Garden not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Garden not found with this email."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error or missing phone number",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Garden does not have a phone number."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to send SMS",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to send OTP. Please try again."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/api/gardens/reset-password": {
+            "post": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Reset garden password with OTP",
+                "description": "Reset garden password using email, OTP code sent to phone, new password and confirmation.",
+                "operationId": "resetGardenPassword",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "otp",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "description": "Garden email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "garden@example.com"
+                                    },
+                                    "otp": {
+                                        "description": "6-digit OTP code sent to phone",
+                                        "type": "string",
+                                        "example": "123456"
+                                    },
+                                    "password": {
+                                        "description": "New password",
+                                        "type": "string",
+                                        "minLength": 6,
+                                        "example": "newpassword123"
+                                    },
+                                    "password_confirmation": {
+                                        "description": "Password confirmation",
+                                        "type": "string",
+                                        "minLength": 6,
+                                        "example": "newpassword123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password reset successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Password reset successfully."
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "garden@example.com"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid OTP or expired",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid or expired OTP."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Garden not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Garden not found with this email."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
         "/api/gardens/{id}/referred": {
             "get": {
                 "tags": [
@@ -16885,6 +17393,24 @@
                                                         "example": "bank",
                                                         "nullable": true
                                                     },
+                                                    "amount": {
+                                                        "description": "Payment amount",
+                                                        "type": "number",
+                                                        "example": 100.5,
+                                                        "nullable": true
+                                                    },
+                                                    "status": {
+                                                        "description": "Payment status",
+                                                        "type": "string",
+                                                        "example": "pending",
+                                                        "nullable": true
+                                                    },
+                                                    "payment_gateway_id": {
+                                                        "description": "Payment gateway ID",
+                                                        "type": "integer",
+                                                        "example": 1,
+                                                        "nullable": true
+                                                    },
                                                     "card": {
                                                         "description": "Card information",
                                                         "properties": {
@@ -16899,9 +17425,48 @@
                                                             "status": {
                                                                 "type": "string",
                                                                 "example": "active"
+                                                            },
+                                                            "child_first_name": {
+                                                                "type": "string",
+                                                                "example": "John"
+                                                            },
+                                                            "child_last_name": {
+                                                                "type": "string",
+                                                                "example": "Doe"
+                                                            },
+                                                            "parent_name": {
+                                                                "type": "string",
+                                                                "example": "Jane Doe"
+                                                            },
+                                                            "parent_code": {
+                                                                "type": "string",
+                                                                "example": "ABC123"
                                                             }
                                                         },
                                                         "type": "object"
+                                                    },
+                                                    "payment_gateway": {
+                                                        "description": "Payment gateway information",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Bank of Georgia"
+                                                            },
+                                                            "currency": {
+                                                                "type": "string",
+                                                                "example": "GEL"
+                                                            },
+                                                            "is_active": {
+                                                                "type": "boolean",
+                                                                "example": true
+                                                            }
+                                                        },
+                                                        "type": "object",
+                                                        "nullable": true
                                                     },
                                                     "created_at": {
                                                         "type": "string",
@@ -16979,6 +17544,12 @@
                                         "type": "integer",
                                         "example": 1
                                     },
+                                    "amount": {
+                                        "description": "Payment amount",
+                                        "type": "number",
+                                        "example": 100.5,
+                                        "nullable": true
+                                    },
                                     "currency": {
                                         "description": "Payment currency (defaults to GEL)",
                                         "type": "string",
@@ -16994,6 +17565,18 @@
                                         "description": "Payment type - choose one of: bank, garden_balance, agent_balance, garden_card_change",
                                         "type": "string",
                                         "example": "bank",
+                                        "nullable": true
+                                    },
+                                    "status": {
+                                        "description": "Payment status (defaults to pending)",
+                                        "type": "string",
+                                        "example": "pending",
+                                        "nullable": true
+                                    },
+                                    "payment_gateway_id": {
+                                        "description": "Payment gateway ID",
+                                        "type": "integer",
+                                        "example": 1,
                                         "nullable": true
                                     }
                                 },
@@ -17029,6 +17612,11 @@
                                             "type": "integer",
                                             "example": 1
                                         },
+                                        "amount": {
+                                            "type": "number",
+                                            "example": 100.5,
+                                            "nullable": true
+                                        },
                                         "currency": {
                                             "type": "string",
                                             "example": "GEL"
@@ -17041,6 +17629,73 @@
                                         "type": {
                                             "type": "string",
                                             "example": "bank",
+                                            "nullable": true
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "pending",
+                                            "nullable": true
+                                        },
+                                        "payment_gateway_id": {
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
+                                        "card": {
+                                            "description": "Card information",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "+995555123456"
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "active"
+                                                },
+                                                "child_first_name": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "child_last_name": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                },
+                                                "parent_name": {
+                                                    "type": "string",
+                                                    "example": "Jane Doe"
+                                                },
+                                                "parent_code": {
+                                                    "type": "string",
+                                                    "example": "ABC123"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "payment_gateway": {
+                                            "description": "Payment gateway information",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Bank of Georgia"
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "GEL"
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object",
                                             "nullable": true
                                         },
                                         "created_at": {
@@ -17141,6 +17796,12 @@
                                             "type": "integer",
                                             "example": 1
                                         },
+                                        "amount": {
+                                            "description": "Payment amount",
+                                            "type": "number",
+                                            "example": 100.5,
+                                            "nullable": true
+                                        },
                                         "currency": {
                                             "description": "Payment currency",
                                             "type": "string",
@@ -17158,6 +17819,18 @@
                                             "example": "bank",
                                             "nullable": true
                                         },
+                                        "status": {
+                                            "description": "Payment status",
+                                            "type": "string",
+                                            "example": "pending",
+                                            "nullable": true
+                                        },
+                                        "payment_gateway_id": {
+                                            "description": "Payment gateway ID",
+                                            "type": "integer",
+                                            "example": 1,
+                                            "nullable": true
+                                        },
                                         "card": {
                                             "description": "Card information",
                                             "properties": {
@@ -17172,6 +17845,22 @@
                                                 "status": {
                                                     "type": "string",
                                                     "example": "active"
+                                                },
+                                                "child_first_name": {
+                                                    "type": "string",
+                                                    "example": "John"
+                                                },
+                                                "child_last_name": {
+                                                    "type": "string",
+                                                    "example": "Doe"
+                                                },
+                                                "parent_name": {
+                                                    "type": "string",
+                                                    "example": "Jane Doe"
+                                                },
+                                                "parent_code": {
+                                                    "type": "string",
+                                                    "example": "ABC123"
                                                 },
                                                 "group": {
                                                     "description": "Garden group information",
@@ -17203,6 +17892,29 @@
                                                 }
                                             },
                                             "type": "object"
+                                        },
+                                        "payment_gateway": {
+                                            "description": "Payment gateway information",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "Bank of Georgia"
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "GEL"
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean",
+                                                    "example": true
+                                                }
+                                            },
+                                            "type": "object",
+                                            "nullable": true
                                         },
                                         "created_at": {
                                             "type": "string",
@@ -17473,6 +18185,109 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/payments/create-garden-payment": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Create garden balance payment",
+                "description": "Create a payment record to update garden balance. Amount can be positive (add to balance) or negative (subtract from balance).",
+                "operationId": "createGardenPayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "garden_id",
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "garden_id": {
+                                        "description": "Garden ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "amount": {
+                                        "description": "Amount to add (positive) or subtract (negative) from garden balance",
+                                        "type": "number",
+                                        "example": 100.5
+                                    },
+                                    "currency": {
+                                        "description": "Currency code",
+                                        "type": "string",
+                                        "example": "GEL",
+                                        "nullable": true
+                                    },
+                                    "comment": {
+                                        "description": "Payment comment",
+                                        "type": "string",
+                                        "example": "Payment for monthly subscription",
+                                        "nullable": true
+                                    },
+                                    "payment_gateway_id": {
+                                        "description": "Payment gateway ID",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Garden payment created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Garden payment created successfully"
+                                        },
+                                        "payment": {
+                                            "type": "object"
+                                        },
+                                        "garden": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "balance": {
+                                                    "type": "number",
+                                                    "example": 250.5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "404": {
+                        "description": "Garden not found"
                     }
                 },
                 "security": [

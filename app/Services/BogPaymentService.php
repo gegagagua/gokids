@@ -3,6 +3,12 @@
 namespace App\Services;
 
 use App\Models\BogPayment;
+use App\Models\Payment;
+use App\Models\PaymentGateway;
+use App\Models\Card;
+use App\Models\Dister;
+use App\Models\Garden;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
@@ -189,6 +195,12 @@ class BogPaymentService
 
             if ($status === 'completed') {
                 $payment->update(['paid_at' => now()]);
+                
+                // Create Payment record in payments table
+                $this->createPaymentRecord($payment);
+                
+                // Update dister balance
+                $this->updateDisterBalance($payment);
             }
 
             \Log::info('BOG payment callback handled successfully', [
@@ -256,5 +268,301 @@ class BogPaymentService
         ];
 
         return $statusMap[$bogStatus] ?? 'pending';
+    }
+
+    /**
+     * Create Payment record in payments table after successful BOG payment
+     */
+    protected function createPaymentRecord(BogPayment $bogPayment)
+    {
+        try {
+            // Check if Payment already exists for this BOG payment
+            $existingPayment = Payment::where('transaction_number', $bogPayment->order_id)->first();
+            if ($existingPayment) {
+                \Log::info('Payment already exists for BOG payment', [
+                    'bog_payment_id' => $bogPayment->id,
+                    'payment_id' => $existingPayment->id,
+                ]);
+                return $existingPayment;
+            }
+
+            // Get card number from callback data, payment_details, or generate placeholder
+            $cardNumber = null;
+            
+            // First try to get from callback_data (most recent)
+            if (isset($bogPayment->payment_details['callback_data']['card_number'])) {
+                $cardNumber = $bogPayment->payment_details['callback_data']['card_number'];
+            }
+            // Then try payment_details
+            elseif (isset($bogPayment->payment_details['card_number'])) {
+                $cardNumber = $bogPayment->payment_details['card_number'];
+            }
+            // If card_id exists, use phone as fallback
+            elseif ($bogPayment->card_id) {
+                $card = Card::find($bogPayment->card_id);
+                if ($card && $card->phone) {
+                    $cardNumber = '****' . substr($card->phone, -4);
+                }
+            }
+            
+            // Final fallback
+            if (!$cardNumber) {
+                $cardNumber = 'N/A';
+            }
+
+            // Find payment gateway by currency (required - should always find one with fallbacks)
+            $paymentGateway = $this->findPaymentGatewayByCurrency($bogPayment->currency ?? 'GEL');
+            
+            if (!$paymentGateway) {
+                \Log::error('Payment gateway not found even after all fallbacks', [
+                    'currency' => $bogPayment->currency,
+                    'bog_payment_id' => $bogPayment->id,
+                ]);
+                throw new \Exception('Payment gateway not found for currency: ' . ($bogPayment->currency ?? 'GEL'));
+            }
+
+            // Get comment from payment_details
+            $comment = $bogPayment->payment_details['description'] ?? 'BOG Payment';
+
+            // Ensure all required fields are set
+            $paymentData = [
+                'transaction_number' => $bogPayment->order_id,
+                'transaction_number_bank' => $bogPayment->bog_transaction_id ?? null,
+                'card_number' => $cardNumber ?? 'N/A',
+                'card_id' => $bogPayment->card_id,
+                'amount' => $bogPayment->amount,
+                'currency' => $bogPayment->currency ?? 'GEL',
+                'comment' => $comment,
+                'type' => 'bank', // Always 'bank' for BOG payments
+                'status' => 'completed',
+                'payment_gateway_id' => $paymentGateway->id, // Should always be set due to fallbacks
+            ];
+
+            // Create Payment record
+            $payment = Payment::create($paymentData);
+
+            \Log::info('Payment record created from BOG payment', [
+                'bog_payment_id' => $bogPayment->id,
+                'payment_id' => $payment->id,
+                'transaction_number' => $payment->transaction_number,
+            ]);
+
+            return $payment;
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to create Payment record from BOG payment: ' . $e->getMessage(), [
+                'bog_payment_id' => $bogPayment->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return null;
+        }
+    }
+
+    /**
+     * Find payment gateway by currency
+     * Always returns a PaymentGateway (never null) - uses fallbacks if needed
+     */
+    protected function findPaymentGatewayByCurrency(string $currency): ?PaymentGateway
+    {
+        try {
+            // Map currency to payment gateway name
+            $gatewayName = match($currency) {
+                'GEL' => 'BOG',
+                'USD' => 'BOG - USD',
+                'EUR' => 'BOG - EUR',
+                default => 'BOG',
+            };
+
+            // First try: exact match by name and currency
+            $paymentGateway = PaymentGateway::where('name', $gatewayName)
+                ->where('currency', $currency)
+                ->where('is_active', true)
+                ->first();
+
+            if (!$paymentGateway) {
+                // Fallback 1: try to find by currency only (any BOG gateway with this currency)
+                $paymentGateway = PaymentGateway::where('name', 'like', 'BOG%')
+                    ->where('currency', $currency)
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            if (!$paymentGateway) {
+                // Fallback 2: try to find any active BOG gateway
+                $paymentGateway = PaymentGateway::where('name', 'like', 'BOG%')
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            if (!$paymentGateway) {
+                // Fallback 3: try to find default BOG gateway (ID 1)
+                $paymentGateway = PaymentGateway::find(1);
+            }
+
+            if ($paymentGateway) {
+                \Log::info('Payment gateway found', [
+                    'gateway_id' => $paymentGateway->id,
+                    'gateway_name' => $paymentGateway->name,
+                    'currency' => $currency,
+                ]);
+            } else {
+                \Log::warning('No payment gateway found, even with fallbacks', [
+                    'currency' => $currency,
+                ]);
+            }
+
+            return $paymentGateway;
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to find payment gateway by currency: ' . $e->getMessage(), [
+                'currency' => $currency,
+            ]);
+            
+            // Last resort: try to get default BOG gateway
+            return PaymentGateway::find(1);
+        }
+    }
+
+    /**
+     * Update dister balance when payment is completed
+     * Finds dister by garden (if exists) or by country, then adds percentage of payment amount
+     */
+    protected function updateDisterBalance(BogPayment $bogPayment)
+    {
+        try {
+            // Get card to find garden
+            if (!$bogPayment->card_id) {
+                \Log::warning('BOG payment has no card_id, cannot update dister balance', [
+                    'bog_payment_id' => $bogPayment->id,
+                ]);
+                return false;
+            }
+
+            $card = Card::find($bogPayment->card_id);
+            if (!$card || !$card->group_id) {
+                \Log::warning('Card or group not found for BOG payment', [
+                    'bog_payment_id' => $bogPayment->id,
+                    'card_id' => $bogPayment->card_id,
+                ]);
+                return false;
+            }
+
+            // Get garden through group
+            $group = \App\Models\GardenGroup::find($card->group_id);
+            if (!$group || !$group->garden_id) {
+                \Log::warning('Group or garden not found for BOG payment', [
+                    'bog_payment_id' => $bogPayment->id,
+                    'group_id' => $card->group_id,
+                ]);
+                return false;
+            }
+
+            $garden = Garden::find($group->garden_id);
+            if (!$garden) {
+                \Log::warning('Garden not found for BOG payment', [
+                    'bog_payment_id' => $bogPayment->id,
+                    'garden_id' => $group->garden_id,
+                ]);
+                return false;
+            }
+
+            // Find dister: first try by garden, then by country
+            $dister = Dister::whereJsonContains('gardens', $garden->id)->first();
+            
+            if (!$dister && $garden->country_id) {
+                // If no dister found by garden, try to find by country
+                $dister = Dister::where('country_id', $garden->country_id)->first();
+            }
+
+            if (!$dister) {
+                \Log::warning('Dister not found for BOG payment', [
+                    'bog_payment_id' => $bogPayment->id,
+                    'garden_id' => $garden->id,
+                    'country_id' => $garden->country_id,
+                ]);
+                return false;
+            }
+
+            // Check if dister has percent field
+            if (!$dister->percent || $dister->percent <= 0) {
+                \Log::warning('Dister has no valid percent, skipping balance update', [
+                    'bog_payment_id' => $bogPayment->id,
+                    'dister_id' => $dister->id,
+                    'percent' => $dister->percent,
+                ]);
+                return false;
+            }
+
+            // Calculate percentage amount: payment_amount * (percent / 100)
+            $percentageAmount = $bogPayment->amount * ($dister->percent / 100);
+
+            // Calculate remaining amount (payment_amount - dister_percentage)
+            $remainingAmount = $bogPayment->amount - $percentageAmount;
+
+            // Update dister balance
+            $oldDisterBalance = $dister->balance ?? 0;
+            $newDisterBalance = $oldDisterBalance + $percentageAmount;
+            
+            $dister->update([
+                'balance' => $newDisterBalance,
+            ]);
+
+            // Find first admin user and update their balance
+            $adminUser = User::where('type', User::TYPE_ADMIN)->orderBy('id', 'asc')->first();
+            
+            if ($adminUser) {
+                $oldAdminBalance = $adminUser->balance ?? 0;
+                $newAdminBalance = $oldAdminBalance + $remainingAmount;
+                
+                $adminUser->update([
+                    'balance' => $newAdminBalance,
+                ]);
+
+                \Log::info('Dister and Admin balances updated from BOG payment', [
+                    'bog_payment_id' => $bogPayment->id,
+                    'dister_id' => $dister->id,
+                    'payment_amount' => $bogPayment->amount,
+                    'dister_percent' => $dister->percent,
+                    'dister_percentage_amount' => $percentageAmount,
+                    'dister_old_balance' => $oldDisterBalance,
+                    'dister_new_balance' => $newDisterBalance,
+                    'remaining_amount' => $remainingAmount,
+                    'admin_user_id' => $adminUser->id,
+                    'admin_old_balance' => $oldAdminBalance,
+                    'admin_new_balance' => $newAdminBalance,
+                    'garden_id' => $garden->id,
+                ]);
+            } else {
+                \Log::warning('Admin user not found, only dister balance updated', [
+                    'bog_payment_id' => $bogPayment->id,
+                    'dister_id' => $dister->id,
+                    'remaining_amount' => $remainingAmount,
+                ]);
+
+                \Log::info('Dister balance updated from BOG payment', [
+                    'bog_payment_id' => $bogPayment->id,
+                    'dister_id' => $dister->id,
+                    'payment_amount' => $bogPayment->amount,
+                    'dister_percent' => $dister->percent,
+                    'percentage_amount' => $percentageAmount,
+                    'old_balance' => $oldDisterBalance,
+                    'new_balance' => $newDisterBalance,
+                    'garden_id' => $garden->id,
+                ]);
+            }
+
+            return true;
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to update dister balance from BOG payment: ' . $e->getMessage(), [
+                'bog_payment_id' => $bogPayment->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return false;
+        }
     }
 }

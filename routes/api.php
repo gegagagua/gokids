@@ -53,10 +53,13 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     
     Route::apiResource('notifications', NotificationController::class);
     Route::post('/bog-payment', [BogPaymentController::class, 'createPayment']);
+    Route::post('/bog-payment/callback', [BogPaymentController::class, 'handleCallback']);
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/bog-payment/bulk', [BogPaymentController::class, 'createBulkPayment']);
         // Place specific routes before resource to avoid {garden} binding capturing 'export'
         Route::apiResource('disters', DisterController::class);
+        Route::post('/payments/create-garden-payment', [PaymentController::class, 'createGardenPayment']);
         Route::apiResource('payments', PaymentController::class);
         Route::get('/gardens/export', [GardenController::class, 'export']);
         Route::apiResource('gardens', GardenController::class)->except(['store']);
@@ -164,7 +167,10 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     
     // Garden OTP routes (no authentication required)
     Route::post('/gardens/send-otp', [GardenController::class, 'sendOtp']);
+    Route::post('/gardens/check-otp', [GardenController::class, 'checkOtp']);
     Route::post('/gardens/verify-otp', [GardenController::class, 'verifyOtp']);
+    Route::post('/gardens/request-password-reset', [GardenController::class, 'requestPasswordReset']);
+    Route::post('/gardens/reset-password', [GardenController::class, 'resetPassword']);
     
     // Called Cards routes (no authentication required)
     Route::post('/called-cards', [CalledCardController::class, 'store']);
