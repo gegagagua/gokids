@@ -1578,12 +1578,26 @@ class GardenController extends Controller
         $garden->password = Hash::make($newPassword);
         $garden->save();
 
+        // Also update User password if user exists with this email and type is 'garden'
+        $user = User::where('email', $email)->where('type', 'garden')->first();
+        if ($user) {
+            $user->password = Hash::make($newPassword);
+            $user->save();
+            
+            \Log::info('Garden User password also updated during password reset', [
+                'email' => $email,
+                'user_id' => $user->id,
+                'garden_id' => $garden->id,
+            ]);
+        }
+
         // Delete used OTP
         DB::table('password_resets')->where('email', $email)->delete();
 
         \Log::info('Garden password reset successfully', [
             'email' => $email,
             'garden_id' => $garden->id,
+            'user_updated' => $user ? true : false,
         ]);
 
         return response()->json([
