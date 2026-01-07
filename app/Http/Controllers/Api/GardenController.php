@@ -11,6 +11,7 @@ use App\Services\SmsService;
 use App\Services\GardenMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use App\Exports\GardensExport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -1104,6 +1105,15 @@ class GardenController extends Controller
 
         $email = $validated['email'];
 
+        // Check if garden exists with this email
+        $garden = Garden::where('email', $email)->first();
+        if (!$garden) {
+            return response()->json([
+                'message' => 'Garden not found with this email',
+                'email' => $email
+            ], 404);
+        }
+
         // Create OTP
         $otp = GardenOtp::createOtp($email);
 
@@ -1113,12 +1123,23 @@ class GardenController extends Controller
         
         if (!$mailResult['success']) {
             \Log::error('Failed to send garden OTP email: ' . $mailResult['message']);
+            // Delete OTP if email sending failed
+            $otp->delete();
+            return response()->json([
+                'message' => 'Failed to send OTP email. Please try again.',
+                'email' => $email
+            ], 500);
         }
+
+        \Log::info('Garden OTP sent successfully', [
+            'email' => $email,
+            'otp_id' => $otp->id,
+        ]);
 
         return response()->json([
             'message' => 'OTP sent to email',
             'email' => $email
-        ]);
+        ], 200);
     }
 
     /**
@@ -1179,6 +1200,18 @@ class GardenController extends Controller
         $email = $validated['email'];
         $otpCode = $validated['otp'];
 
+        // Check if garden exists with this email
+        $garden = Garden::where('email', $email)->first();
+        if (!$garden) {
+            \Log::warning('Garden OTP verification attempted for non-existent email', [
+                'email' => $email,
+            ]);
+            return response()->json([
+                'message' => 'Garden not found with this email',
+                'verified' => false
+            ], 404);
+        }
+
         // Find valid OTP
         $otp = GardenOtp::where('email', $email)
             ->where('otp', $otpCode)
@@ -1187,6 +1220,10 @@ class GardenController extends Controller
             ->first();
 
         if (!$otp) {
+            \Log::warning('Invalid or expired OTP verification attempt', [
+                'email' => $email,
+                'otp_provided' => $otpCode,
+            ]);
             return response()->json([
                 'message' => 'Invalid or expired OTP',
                 'verified' => false
@@ -1196,11 +1233,363 @@ class GardenController extends Controller
         // Mark OTP as used
         $otp->update(['used' => true]);
 
+        \Log::info('Garden OTP verified successfully', [
+            'email' => $email,
+            'garden_id' => $garden->id,
+            'otp_id' => $otp->id,
+        ]);
+
         return response()->json([
             'message' => 'Email verified successfully',
             'email' => $email,
-            'verified' => true
+            'verified' => true,
+            'garden_id' => $garden->id
+        ], 200);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/gardens/check-otp",
+     *     operationId="checkGardenOtp",
+     *     tags={"Gardens"},
+     *     summary="Check garden OTP (without marking as used)",
+     *     description="Check if the OTP code sent to garden email is valid without marking it as used. This allows checking the OTP multiple times before verification.",
+     *     security={},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email", "otp"},
+     *             @OA\Property(property="email", type="string", format="email", example="garden@example.com", description="Garden email address"),
+     *             @OA\Property(property="otp", type="string", example="123456", description="6-digit OTP code")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="OTP is valid",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="OTP is valid"),
+     *             @OA\Property(property="email", type="string", example="garden@example.com"),
+     *             @OA\Property(property="valid", type="boolean", example=true),
+     *             @OA\Property(property="expires_at", type="string", format="date-time", example="2025-12-18T03:00:00.000000Z", description="OTP expiration time")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid or expired OTP",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Invalid or expired OTP"),
+     *             @OA\Property(property="valid", type="boolean", example=false)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Garden not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Garden not found with this email"),
+     *             @OA\Property(property="valid", type="boolean", example=false)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(property="email", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="otp", type="array", @OA\Items(type="string"))
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function checkOtp(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|max:255',
+            'otp' => 'required|string|size:6',
         ]);
+
+        $email = $validated['email'];
+        $otpCode = $validated['otp'];
+
+        // Check if garden exists with this email
+        $garden = Garden::where('email', $email)->first();
+        if (!$garden) {
+            \Log::warning('Garden OTP check attempted for non-existent email', [
+                'email' => $email,
+            ]);
+            return response()->json([
+                'message' => 'Garden not found with this email',
+                'valid' => false
+            ], 404);
+        }
+
+        // Find valid OTP (without marking as used)
+        $otp = GardenOtp::where('email', $email)
+            ->where('otp', $otpCode)
+            ->where('used', false)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$otp) {
+            \Log::info('Invalid or expired OTP check attempt', [
+                'email' => $email,
+                'otp_provided' => $otpCode,
+            ]);
+            return response()->json([
+                'message' => 'Invalid or expired OTP',
+                'valid' => false
+            ], 400);
+        }
+
+        \Log::info('Garden OTP checked successfully (not marked as used)', [
+            'email' => $email,
+            'garden_id' => $garden->id,
+            'otp_id' => $otp->id,
+        ]);
+
+        return response()->json([
+            'message' => 'OTP is valid',
+            'email' => $email,
+            'valid' => true,
+            'expires_at' => $otp->expires_at->toIso8601String(),
+            'garden_id' => $garden->id
+        ], 200);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/gardens/request-password-reset",
+     *     operationId="requestGardenPasswordReset",
+     *     tags={"Gardens"},
+     *     summary="Request garden password reset (send OTP to phone)",
+     *     description="Send OTP code to garden's phone number for password reset. First checks if garden exists with the provided email.",
+     *     security={},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email"},
+     *             @OA\Property(property="email", type="string", format="email", example="garden@example.com", description="Garden email address")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="OTP sent to phone successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="OTP sent to phone."),
+     *             @OA\Property(property="email", type="string", example="garden@example.com"),
+     *             @OA\Property(property="phone", type="string", example="995555123456", description="Phone number where OTP was sent")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Garden not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Garden not found with this email.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error or missing phone number",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Garden does not have a phone number.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Failed to send SMS",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Failed to send OTP. Please try again.")
+     *         )
+     *     )
+     * )
+     */
+    public function requestPasswordReset(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|max:255',
+        ]);
+
+        $email = $validated['email'];
+
+        // Check if garden exists with this email
+        $garden = Garden::where('email', $email)->first();
+        if (!$garden) {
+            \Log::warning('Garden password reset requested for non-existent email', [
+                'email' => $email,
+            ]);
+            return response()->json([
+                'message' => 'Garden not found with this email.'
+            ], 404);
+        }
+
+        // Check if garden has a phone number
+        if (!$garden->phone) {
+            \Log::warning('Garden password reset requested but garden has no phone number', [
+                'email' => $email,
+                'garden_id' => $garden->id,
+            ]);
+            return response()->json([
+                'message' => 'Garden does not have a phone number.'
+            ], 422);
+        }
+
+        // Generate OTP
+        $otp = rand(100000, 999999);
+        $expiresAt = now()->addMinutes(10);
+
+        // Store OTP in password_resets table (using email as identifier)
+        DB::table('password_resets')->updateOrInsert(
+            ['email' => $email],
+            [
+                'otp' => $otp,
+                'expires_at' => $expiresAt,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]
+        );
+
+        // Send OTP via SMS to garden's phone
+        $smsService = new SmsService();
+        $smsResult = $smsService->sendOtp($garden->phone, $otp);
+
+        if (!$smsResult['success']) {
+            \Log::error('Failed to send garden password reset OTP SMS', [
+                'email' => $email,
+                'phone' => $garden->phone,
+                'error' => $smsResult['response'] ?? 'Unknown error',
+            ]);
+            // Delete OTP if SMS sending failed
+            DB::table('password_resets')->where('email', $email)->delete();
+            return response()->json([
+                'message' => 'Failed to send OTP. Please try again.'
+            ], 500);
+        }
+
+        \Log::info('Garden password reset OTP sent successfully', [
+            'email' => $email,
+            'garden_id' => $garden->id,
+            'phone' => $garden->phone,
+        ]);
+
+        return response()->json([
+            'message' => 'OTP sent to phone.',
+            'email' => $email,
+            'phone' => $garden->phone
+        ], 200);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/gardens/reset-password",
+     *     operationId="resetGardenPassword",
+     *     tags={"Gardens"},
+     *     summary="Reset garden password with OTP",
+     *     description="Reset garden password using email, OTP code sent to phone, new password and confirmation.",
+     *     security={},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email", "otp", "password", "password_confirmation"},
+     *             @OA\Property(property="email", type="string", format="email", example="garden@example.com", description="Garden email address"),
+     *             @OA\Property(property="otp", type="string", example="123456", description="6-digit OTP code sent to phone"),
+     *             @OA\Property(property="password", type="string", minLength=6, example="newpassword123", description="New password"),
+     *             @OA\Property(property="password_confirmation", type="string", minLength=6, example="newpassword123", description="Password confirmation")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Password reset successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Password reset successfully."),
+     *             @OA\Property(property="email", type="string", example="garden@example.com")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid OTP or expired",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Invalid or expired OTP.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Garden not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Garden not found with this email.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object"
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function resetPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'email' => 'required|email|max:255',
+            'otp' => 'required|string|size:6',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $email = $validated['email'];
+        $otpCode = $validated['otp'];
+        $newPassword = $validated['password'];
+
+        // Check if garden exists with this email
+        $garden = Garden::where('email', $email)->first();
+        if (!$garden) {
+            \Log::warning('Garden password reset attempted for non-existent email', [
+                'email' => $email,
+            ]);
+            return response()->json([
+                'message' => 'Garden not found with this email.'
+            ], 404);
+        }
+
+        // Verify OTP from password_resets table
+        $reset = DB::table('password_resets')
+            ->where('email', $email)
+            ->where('otp', $otpCode)
+            ->where('expires_at', '>', now())
+            ->first();
+
+        if (!$reset) {
+            \Log::warning('Invalid or expired OTP for garden password reset', [
+                'email' => $email,
+                'otp_provided' => $otpCode,
+            ]);
+            return response()->json([
+                'message' => 'Invalid or expired OTP.'
+            ], 400);
+        }
+
+        // Update garden password
+        $garden->password = Hash::make($newPassword);
+        $garden->save();
+
+        // Delete used OTP
+        DB::table('password_resets')->where('email', $email)->delete();
+
+        \Log::info('Garden password reset successfully', [
+            'email' => $email,
+            'garden_id' => $garden->id,
+        ]);
+
+        return response()->json([
+            'message' => 'Password reset successfully.',
+            'email' => $email
+        ], 200);
     }
 
     /**

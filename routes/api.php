@@ -167,7 +167,10 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     
     // Garden OTP routes (no authentication required)
     Route::post('/gardens/send-otp', [GardenController::class, 'sendOtp']);
+    Route::post('/gardens/check-otp', [GardenController::class, 'checkOtp']);
     Route::post('/gardens/verify-otp', [GardenController::class, 'verifyOtp']);
+    Route::post('/gardens/request-password-reset', [GardenController::class, 'requestPasswordReset']);
+    Route::post('/gardens/reset-password', [GardenController::class, 'resetPassword']);
     
     // Called Cards routes (no authentication required)
     Route::post('/called-cards', [CalledCardController::class, 'store']);
