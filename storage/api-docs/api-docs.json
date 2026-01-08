@@ -12031,7 +12031,7 @@
                     "Gardens"
                 ],
                 "summary": "Create a new garden",
-                "description": "Create a new garden with the provided information",
+                "description": "Create a new garden with the provided information. OTP verification is required - first call /api/gardens/send-registration-otp to receive OTP on email and phone, then provide the OTP in this request.",
                 "operationId": "createGarden",
                 "requestBody": {
                     "required": true,
@@ -12045,7 +12045,8 @@
                                     "city_id",
                                     "phone",
                                     "email",
-                                    "password"
+                                    "password",
+                                    "otp"
                                 ],
                                 "properties": {
                                     "name": {
@@ -12094,6 +12095,11 @@
                                         "type": "string",
                                         "minLength": 6,
                                         "example": "password123"
+                                    },
+                                    "otp": {
+                                        "description": "6-digit OTP code sent to email and phone (required for verification)",
+                                        "type": "string",
+                                        "example": "123456"
                                     },
                                     "referral": {
                                         "description": "Optional referral code",
@@ -13689,6 +13695,86 @@
                                                 }
                                             },
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/api/gardens/send-registration-otp": {
+            "post": {
+                "tags": [
+                    "Gardens"
+                ],
+                "summary": "Send OTP for garden registration (to email and phone)",
+                "description": "Send a 6-digit OTP code to both email and phone for garden registration verification. This OTP must be verified before creating the garden.",
+                "operationId": "sendGardenRegistrationOtp",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "phone"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "description": "Garden email address",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "newgarden@garden.ge"
+                                    },
+                                    "phone": {
+                                        "description": "Garden phone number",
+                                        "type": "string",
+                                        "example": "+995599654321"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OTP sent successfully to email and phone",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "OTP sent to email and phone"
+                                        },
+                                        "email": {
+                                            "type": "string",
+                                            "example": "newgarden@garden.ge"
+                                        },
+                                        "phone": {
+                                            "type": "string",
+                                            "example": "+995599654321"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error or email/phone already exists",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Email or phone already exists"
                                         }
                                     },
                                     "type": "object"

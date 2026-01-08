@@ -167,6 +167,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     
     // Garden OTP routes (no authentication required)
     Route::post('/gardens/send-otp', [GardenController::class, 'sendOtp']);
+    Route::post('/gardens/send-registration-otp', [GardenController::class, 'sendRegistrationOtp']);
     Route::post('/gardens/check-otp', [GardenController::class, 'checkOtp']);
     Route::post('/gardens/verify-otp', [GardenController::class, 'verifyOtp']);
     Route::post('/gardens/request-password-reset', [GardenController::class, 'requestPasswordReset']);
