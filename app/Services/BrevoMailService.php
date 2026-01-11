@@ -12,11 +12,10 @@ class BrevoMailService
     public function __construct()
     {
         // Get API key from environment variable (.env file)
-        // Set BREVO_API_KEY in .env file
         $this->apiKey = config('services.brevo.api_key');
         
         if (empty($this->apiKey)) {
-            Log::warning('Brevo API key is not configured. Please set BREVO_API_KEY in .env file.');
+            Log::error('Brevo API key is not configured. Please set BREVO_API_KEY in .env file.');
         }
     }
 
