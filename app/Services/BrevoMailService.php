@@ -11,13 +11,17 @@ class BrevoMailService
 
     public function __construct()
     {
-        // API key from environment variable
-        // If not set in .env, it will use the hardcoded value from config/services.php
+        // Get API key from environment variable (.env file)
+        // For production, set BREVO_API_KEY in .env file
+        // For local development without .env, the key is set in config/services.php as fallback
         $this->apiKey = config('services.brevo.api_key');
         
-        // Fallback: if not in config, use hardcoded value (for local development)
+        // Fallback for local development (only if .env is not configured)
+        // This allows the service to work without .env file in local development
         if (empty($this->apiKey)) {
-            $this->apiKey = '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';
+            // Hardcoded fallback - only used if BREVO_API_KEY is not in .env
+            // In production, always use .env file
+            $this->apiKey = env('BREVO_API_KEY', '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');
         }
     }
 
