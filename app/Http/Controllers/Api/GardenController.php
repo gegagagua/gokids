@@ -1492,11 +1492,10 @@ class GardenController extends Controller
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="OTP sent to phone successfully",
+     *         description="OTP sent to email successfully",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="OTP sent to phone."),
-     *             @OA\Property(property="email", type="string", example="garden@example.com"),
-     *             @OA\Property(property="phone", type="string", example="995555123456", description="Phone number where OTP was sent")
+     *             @OA\Property(property="message", type="string", example="OTP sent to email."),
+     *             @OA\Property(property="email", type="string", example="garden@example.com")
      *         )
      *     ),
      *     @OA\Response(
@@ -1507,15 +1506,8 @@ class GardenController extends Controller
      *         )
      *     ),
      *     @OA\Response(
-     *         response=422,
-     *         description="Validation error or missing phone number",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Garden does not have a phone number.")
-     *         )
-     *     ),
-     *     @OA\Response(
      *         response=500,
-     *         description="Failed to send SMS",
+     *         description="Failed to send email",
      *         @OA\JsonContent(
      *             @OA\Property(property="message", type="string", example="Failed to send OTP. Please try again.")
      *         )
@@ -1541,17 +1533,6 @@ class GardenController extends Controller
             ], 404);
         }
 
-        // Check if garden has a phone number
-        if (!$garden->phone) {
-            \Log::warning('Garden password reset requested but garden has no phone number', [
-                'email' => $email,
-                'garden_id' => $garden->id,
-            ]);
-            return response()->json([
-                'message' => 'Garden does not have a phone number.'
-            ], 422);
-        }
-
         // Generate OTP
         $otp = rand(100000, 999999);
         $expiresAt = now()->addMinutes(10);
@@ -1567,33 +1548,32 @@ class GardenController extends Controller
             ]
         );
 
-        // Send OTP via SMS to garden's phone
-        $smsService = new SmsService();
-        $smsResult = $smsService->sendOtp($garden->phone, $otp);
+        // Send OTP via Brevo email service
+        $brevoMailService = new BrevoMailService();
+        $mailResult = $brevoMailService->sendPasswordResetOtp($email, $otp);
 
-        if (!$smsResult['success']) {
-            \Log::error('Failed to send garden password reset OTP SMS', [
+        if (!$mailResult['success']) {
+            \Log::error('Failed to send garden password reset OTP email via Brevo', [
                 'email' => $email,
-                'phone' => $garden->phone,
-                'error' => $smsResult['response'] ?? 'Unknown error',
+                'garden_id' => $garden->id,
+                'error_message' => $mailResult['message'],
+                'status' => $mailResult['status'] ?? null,
             ]);
-            // Delete OTP if SMS sending failed
+            // Delete OTP if email sending failed
             DB::table('password_resets')->where('email', $email)->delete();
             return response()->json([
                 'message' => 'Failed to send OTP. Please try again.'
             ], 500);
         }
 
-        \Log::info('Garden password reset OTP sent successfully', [
+        \Log::info('Garden password reset OTP sent successfully via email', [
             'email' => $email,
             'garden_id' => $garden->id,
-            'phone' => $garden->phone,
         ]);
 
         return response()->json([
-            'message' => 'OTP sent to phone.',
-            'email' => $email,
-            'phone' => $garden->phone
+            'message' => 'OTP sent to email.',
+            'email' => $email
         ], 200);
     }
 

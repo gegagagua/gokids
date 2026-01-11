@@ -156,4 +156,18 @@ class BrevoMailService
 
         return $this->sendEmail($email, $subject, $htmlContent);
     }
+
+    /**
+     * Send password reset OTP code to email via Brevo using cURL
+     */
+    public function sendPasswordResetOtp($email, $otp)
+    {
+        $htmlContent = view('emails.password_reset_otp', [
+            'otp' => $otp,
+        ])->render();
+
+        $subject = 'Password Reset OTP Code';
+
+        return $this->sendEmail($email, $subject, $htmlContent);
+    }
 }
