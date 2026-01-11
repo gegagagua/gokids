@@ -5,6 +5,70 @@ The system is currently configured to use **log** mailer, which means emails are
 
 ## To Enable Real Email Sending
 
+### Option 0: Contabo Server (Sendmail) - RECOMMENDED
+For Contabo servers, the easiest way is to use sendmail which is usually pre-installed:
+
+```env
+MAIL_MAILER=sendmail
+MAIL_FROM_ADDRESS=noreply@yourdomain.com
+MAIL_FROM_NAME="MyKids Garden System"
+```
+
+**Installation and Configuration Steps:**
+
+1. **Check if sendmail is installed:**
+```bash
+which sendmail
+```
+
+2. **If not installed (Ubuntu/Debian):**
+```bash
+sudo apt-get update
+sudo apt-get install sendmail
+```
+
+3. **Configure sendmail (if needed):**
+```bash
+# Configure sendmail
+sudo sendmailconfig
+
+# Or manually edit /etc/mail/sendmail.mc if needed
+```
+
+4. **Test sendmail:**
+```bash
+echo "Test email body" | sendmail -v your-email@example.com
+```
+
+5. **Check mail queue:**
+```bash
+mailq
+```
+
+6. **View sendmail logs:**
+```bash
+tail -f /var/log/mail.log
+# or
+tail -f /var/log/mail.err
+```
+
+**Alternative: Contabo SMTP (if sendmail doesn't work)**
+
+If sendmail doesn't work, you can use Contabo's SMTP server:
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=mail.yourdomain.com
+MAIL_PORT=587
+MAIL_USERNAME=noreply@yourdomain.com
+MAIL_PASSWORD=your-email-password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=noreply@yourdomain.com
+MAIL_FROM_NAME="MyKids Garden System"
+```
+
+**Note:** Replace `yourdomain.com` with your actual domain name configured in Contabo.
+
 ### Option 1: Gmail SMTP
 Add these settings to your `.env` file:
 

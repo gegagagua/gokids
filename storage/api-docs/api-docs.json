@@ -13711,8 +13711,8 @@
                 "tags": [
                     "Gardens"
                 ],
-                "summary": "Send OTP for garden registration (to email and phone)",
-                "description": "Send a 6-digit OTP code to both email and phone for garden registration verification. This OTP must be verified before creating the garden.",
+                "summary": "Send OTP for garden registration (to email)",
+                "description": "Send a 6-digit OTP code to email for garden registration verification. This OTP must be verified before creating the garden.",
                 "operationId": "sendGardenRegistrationOtp",
                 "requestBody": {
                     "required": true,
@@ -13720,8 +13720,7 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "email",
-                                    "phone"
+                                    "email"
                                 ],
                                 "properties": {
                                     "email": {
@@ -13729,11 +13728,6 @@
                                         "type": "string",
                                         "format": "email",
                                         "example": "newgarden@garden.ge"
-                                    },
-                                    "phone": {
-                                        "description": "Garden phone number",
-                                        "type": "string",
-                                        "example": "+995599654321"
                                     }
                                 },
                                 "type": "object"
@@ -13743,22 +13737,18 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "OTP sent successfully to email and phone",
+                        "description": "OTP sent successfully to email",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "OTP sent to email and phone"
+                                            "example": "OTP sent to email"
                                         },
                                         "email": {
                                             "type": "string",
                                             "example": "newgarden@garden.ge"
-                                        },
-                                        "phone": {
-                                            "type": "string",
-                                            "example": "+995599654321"
                                         }
                                     },
                                     "type": "object"
@@ -13767,14 +13757,30 @@
                         }
                     },
                     "422": {
-                        "description": "Validation error or email/phone already exists",
+                        "description": "Validation error or email already exists",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Email or phone already exists"
+                                            "example": "Email already exists"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to send OTP email",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to send OTP email. Please try again."
                                         }
                                     },
                                     "type": "object"

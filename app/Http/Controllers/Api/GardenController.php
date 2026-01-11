@@ -1182,31 +1182,36 @@ class GardenController extends Controller
      *     path="/api/gardens/send-registration-otp",
      *     operationId="sendGardenRegistrationOtp",
      *     tags={"Gardens"},
-     *     summary="Send OTP for garden registration (to email and phone)",
-     *     description="Send a 6-digit OTP code to both email and phone for garden registration verification. This OTP must be verified before creating the garden.",
+     *     summary="Send OTP for garden registration (to email)",
+     *     description="Send a 6-digit OTP code to email for garden registration verification. This OTP must be verified before creating the garden.",
      *     security={},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"email", "phone"},
-     *             @OA\Property(property="email", type="string", format="email", example="newgarden@garden.ge", description="Garden email address"),
-     *             @OA\Property(property="phone", type="string", example="+995599654321", description="Garden phone number")
+     *             required={"email"},
+     *             @OA\Property(property="email", type="string", format="email", example="newgarden@garden.ge", description="Garden email address")
      *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="OTP sent successfully to email and phone",
+     *         description="OTP sent successfully to email",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="OTP sent to email and phone"),
-     *             @OA\Property(property="email", type="string", example="newgarden@garden.ge"),
-     *             @OA\Property(property="phone", type="string", example="+995599654321")
+     *             @OA\Property(property="message", type="string", example="OTP sent to email"),
+     *             @OA\Property(property="email", type="string", example="newgarden@garden.ge")
      *         )
      *     ),
      *     @OA\Response(
      *         response=422,
-     *         description="Validation error or email/phone already exists",
+     *         description="Validation error or email already exists",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Email or phone already exists")
+     *             @OA\Property(property="message", type="string", example="Email already exists")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Failed to send OTP email",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Failed to send OTP email. Please try again.")
      *         )
      *     )
      * )
@@ -1215,11 +1220,9 @@ class GardenController extends Controller
     {
         $validated = $request->validate([
             'email' => 'required|email|max:255|unique:gardens,email|unique:users,email',
-            'phone' => 'required|string|max:255',
         ]);
 
         $email = $validated['email'];
-        $phone = $validated['phone'];
 
         // Create OTP for registration
         $otp = GardenOtp::createOtp($email);
@@ -1228,59 +1231,24 @@ class GardenController extends Controller
         $mailService = new GardenMailService();
         $mailResult = $mailService->sendOtp($email, $otp->otp);
         
-        $emailSent = $mailResult['success'];
-        if (!$emailSent) {
+        if (!$mailResult['success']) {
             \Log::error('Failed to send garden registration OTP email: ' . $mailResult['message']);
-        }
-
-        // Send OTP via SMS service
-        $smsService = new SmsService();
-        $smsResult = $smsService->sendOtp($phone, $otp->otp);
-        
-        $smsSent = $smsResult['success'];
-        if (!$smsSent) {
-            \Log::error('Failed to send garden registration OTP SMS', [
-                'phone' => $phone,
-                'error' => $smsResult['response'] ?? 'Unknown error',
-            ]);
-        }
-
-        // If both failed, delete OTP and return error
-        if (!$emailSent && !$smsSent) {
+            // Delete OTP if email sending failed
             $otp->delete();
             return response()->json([
-                'message' => 'Failed to send OTP to both email and phone. Please try again.',
-                'email' => $email,
-                'phone' => $phone
+                'message' => 'Failed to send OTP email. Please try again.',
+                'email' => $email
             ], 500);
         }
 
-        // If at least one succeeded, return success (but log if one failed)
-        if (!$emailSent) {
-            \Log::warning('Garden registration OTP: Email failed but SMS succeeded', [
-                'email' => $email,
-                'phone' => $phone,
-            ]);
-        }
-        if (!$smsSent) {
-            \Log::warning('Garden registration OTP: SMS failed but email succeeded', [
-                'email' => $email,
-                'phone' => $phone,
-            ]);
-        }
-
-        \Log::info('Garden registration OTP sent', [
+        \Log::info('Garden registration OTP sent successfully', [
             'email' => $email,
-            'phone' => $phone,
             'otp_id' => $otp->id,
-            'email_sent' => $emailSent,
-            'sms_sent' => $smsSent,
         ]);
 
         return response()->json([
-            'message' => 'OTP sent to email and phone',
-            'email' => $email,
-            'phone' => $phone
+            'message' => 'OTP sent to email',
+            'email' => $email
         ], 200);
     }
 
