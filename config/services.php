@@ -44,4 +44,8 @@ return [
         'test_mode' => false,
     ],
 
+    'brevo' => [
+        'api_key' => env('BREVO_API_KEY'),
+    ],
+
 ];

@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\GardenOtp;
 use App\Services\SmsService;
 use App\Services\GardenMailService;
+use App\Services\BrevoMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -1227,17 +1228,22 @@ class GardenController extends Controller
         // Create OTP for registration
         $otp = GardenOtp::createOtp($email);
 
-        // Send OTP via Mail service
-        $mailService = new GardenMailService();
-        $mailResult = $mailService->sendOtp($email, $otp->otp);
+        // Send OTP via Brevo API using cURL
+        $brevoMailService = new BrevoMailService();
+        $mailResult = $brevoMailService->sendOtp($email, $otp->otp);
         
         if (!$mailResult['success']) {
-            \Log::error('Failed to send garden registration OTP email: ' . $mailResult['message']);
+            \Log::error('Failed to send garden registration OTP email via Brevo cURL', [
+                'email' => $email,
+                'error_message' => $mailResult['message'],
+                'status' => $mailResult['status'] ?? null,
+            ]);
             // Delete OTP if email sending failed
             $otp->delete();
             return response()->json([
                 'message' => 'Failed to send OTP email. Please try again.',
-                'email' => $email
+                'email' => $email,
+                'error' => config('app.debug') ? $mailResult['message'] : null,
             ], 500);
         }
 
