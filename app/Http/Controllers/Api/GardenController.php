@@ -1583,14 +1583,14 @@ class GardenController extends Controller
      *     operationId="resetGardenPassword",
      *     tags={"Gardens"},
      *     summary="Reset garden password with OTP",
-     *     description="Reset garden password using email, OTP code sent to phone, new password and confirmation.",
+     *     description="Reset garden password using email, OTP code sent to email, new password and confirmation.",
      *     security={},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             required={"email", "otp", "password", "password_confirmation"},
      *             @OA\Property(property="email", type="string", format="email", example="garden@example.com", description="Garden email address"),
-     *             @OA\Property(property="otp", type="string", example="123456", description="6-digit OTP code sent to phone"),
+     *             @OA\Property(property="otp", type="string", example="123456", description="6-digit OTP code sent to email"),
      *             @OA\Property(property="password", type="string", minLength=6, example="newpassword123", description="New password"),
      *             @OA\Property(property="password_confirmation", type="string", minLength=6, example="newpassword123", description="Password confirmation")
      *         )

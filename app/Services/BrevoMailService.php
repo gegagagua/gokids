@@ -162,7 +162,7 @@ class BrevoMailService
      */
     public function sendPasswordResetOtp($email, $otp)
     {
-        $htmlContent = view('emails.password_reset_otp', [
+        $htmlContent = view('emails.password-reset-otp-html', [
             'otp' => $otp,
         ])->render();
 
