@@ -22,6 +22,26 @@ class ExpoNotificationService
             // Check if device actually exists in database (to handle temporary card-as-device objects)
             $deviceId = $device->exists ? $device->id : null;
 
+            // CRITICAL DEBUG: Log before creating notification
+            \Log::info('ExpoNotificationService::sendToDevice: CREATING NOTIFICATION', [
+                'device_id' => $deviceId,
+                'device_name' => $device->name ?? null,
+                'expo_token' => substr($device->expo_token ?? '', 0, 20) . '...',
+                'card_id' => $card?->id,
+                'card_child_first_name' => $card?->child_first_name,
+                'card_child_last_name' => $card?->child_last_name,
+                'card_child_full_name' => $card ? ($card->child_first_name . ' ' . $card->child_last_name) : null,
+                'card_parent_name' => $card?->parent_name,
+                'title' => $title,
+                'body' => $body,
+                'body_length' => strlen($body),
+                'body_empty' => empty($body),
+                'data_type' => $data['type'] ?? null,
+                'data_child_name' => $data['child_name'] ?? null,
+                'data_parent_name' => $data['parent_name'] ?? null,
+                'data_sender_name' => $data['sender_name'] ?? null,
+            ]);
+
             $notification = Notification::create([
                 'title' => $title,
                 'body' => $body,
@@ -30,6 +50,16 @@ class ExpoNotificationService
                 'device_id' => $deviceId,
                 'card_id' => $card?->id,
                 'status' => 'pending',
+            ]);
+
+            // CRITICAL DEBUG: Log after creating notification
+            \Log::info('ExpoNotificationService::sendToDevice: NOTIFICATION CREATED', [
+                'notification_id' => $notification->id,
+                'notification_title' => $notification->title,
+                'notification_body' => $notification->body,
+                'notification_card_id' => $notification->card_id,
+                'notification_device_id' => $notification->device_id,
+                'notification_status' => $notification->status,
             ]);
 
             // Add notification ID to data
@@ -44,6 +74,17 @@ class ExpoNotificationService
 
             }
 
+            // CRITICAL DEBUG: Log before sending to Expo
+            \Log::info('ExpoNotificationService::sendToDevice: SENDING TO EXPO', [
+                'notification_id' => $notification->id,
+                'device_id' => $deviceId,
+                'expo_token' => substr($device->expo_token ?? '', 0, 20) . '...',
+                'encoded_title' => $encodedTitle,
+                'body' => $body,
+                'body_length' => strlen($body),
+                'data_type' => $data['type'] ?? null,
+            ]);
+
             // Send Expo notification with encoded title and clean body
             $response = $this->sendExpoNotification($device->expo_token, $encodedTitle, $body, $data);
 
@@ -56,7 +97,11 @@ class ExpoNotificationService
                 \Log::info('ExpoNotificationService::sendToDevice: SUCCESS', [
                     'notification_id' => $notification->id,
                     'device_id' => $deviceId,
-                    'expo_token' => substr($device->expo_token, 0, 20) . '...',
+                    'expo_token' => substr($device->expo_token ?? '', 0, 20) . '...',
+                    'title' => $title,
+                    'body' => $body,
+                    'card_id' => $card?->id,
+                    'card_child_name' => $card ? ($card->child_first_name . ' ' . $card->child_last_name) : null,
                 ]);
                 return true;
             } else {
@@ -175,12 +220,23 @@ class ExpoNotificationService
      */
     public function sendCardToAllDevices(Card $card, string $title, string $body, array $data = [])
     {
-        // LOG: Start of sendCardToAllDevices in ExpoNotificationService
+        // CRITICAL DEBUG: Log card data and notification parameters
         \Log::info('ExpoNotificationService::sendCardToAllDevices START', [
             'card_id' => $card->id,
             'card_group_id' => $card->group_id,
+            'card_child_first_name' => $card->child_first_name,
+            'card_child_last_name' => $card->child_last_name,
+            'card_child_full_name' => $card->child_first_name . ' ' . $card->child_last_name,
+            'card_parent_name' => $card->parent_name,
+            'card_phone' => $card->phone,
+            'card_status' => $card->status,
             'title' => $title,
             'body' => $body,
+            'body_length' => strlen($body),
+            'body_empty' => empty($body),
+            'data' => $data,
+            'data_type' => $data['type'] ?? null,
+            'data_sender_name' => $data['sender_name'] ?? null,
         ]);
 
         if (!$card->group_id) {
@@ -281,12 +337,24 @@ class ExpoNotificationService
                 ] : null,
             ]);
 
-            // LOG: Sending to device
+            // CRITICAL DEBUG: Log before sending to device
             \Log::info('ExpoNotificationService::sendCardToAllDevices: Sending to device', [
                 'device_id' => $device->id,
                 'device_name' => $device->name,
                 'expo_token' => substr($device->expo_token, 0, 20) . '...',
+                'card_id' => $card->id,
+                'card_child_first_name' => $card->child_first_name,
+                'card_child_last_name' => $card->child_last_name,
+                'card_child_full_name' => $card->child_first_name . ' ' . $card->child_last_name,
                 'card_parent_name' => $card->parent_name,
+                'title_to_send' => $card->parent_name,
+                'body_to_send' => $body,
+                'body_length' => strlen($body),
+                'device_data' => [
+                    'child_name' => $deviceData['child_name'] ?? null,
+                    'parent_name' => $deviceData['parent_name'] ?? null,
+                    'sender_name' => $deviceData['sender_name'] ?? null,
+                ],
             ]);
 
             $result = $this->sendToDevice($device, $card->parent_name, $body, $deviceData, $card);
@@ -529,11 +597,37 @@ class ExpoNotificationService
                 }
             }
 
+            // CRITICAL DEBUG: Log payload before sending to Expo
+            \Log::info('ExpoNotificationService::sendExpoNotification: SENDING TO EXPO API', [
+                'expo_api_url' => $this->expoApiUrl,
+                'expo_token' => substr($expoToken, 0, 20) . '...',
+                'payload' => $payload,
+                'payload_title' => $payload['title'] ?? null,
+                'payload_body' => $payload['body'] ?? null,
+                'payload_body_length' => isset($payload['body']) ? strlen($payload['body']) : 0,
+                'payload_data' => $payload['data'] ?? null,
+                'payload_data_type' => $payload['data']['type'] ?? null,
+                'payload_data_child_name' => $payload['data']['child_name'] ?? null,
+                'payload_data_parent_name' => $payload['data']['parent_name'] ?? null,
+                'payload_data_sender_name' => $payload['data']['sender_name'] ?? null,
+                'payload_data_card_id' => $payload['data']['card_id'] ?? null,
+            ]);
+
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Accept-encoding' => 'gzip, deflate',
                 'Content-Type' => 'application/json',
             ])->post($this->expoApiUrl, [$payload]);
+
+            // CRITICAL DEBUG: Log Expo API response
+            \Log::info('ExpoNotificationService::sendExpoNotification: EXPO API RESPONSE', [
+                'expo_token' => substr($expoToken, 0, 20) . '...',
+                'response_status' => $response->status(),
+                'response_successful' => $response->successful(),
+                'response_body' => $response->body(),
+                'response_json' => $response->json(),
+                'response_headers' => $response->headers(),
+            ]);
 
             if ($response->successful()) {
                 $responseData = $response->json();

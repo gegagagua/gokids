@@ -354,12 +354,36 @@ class NotificationController extends Controller
      */
     public function sendCardToAllDevices(Request $request)
     {
+        // CRITICAL DEBUG: Log incoming request
+        \Log::info('NotificationController::sendCardToAllDevices: INCOMING REQUEST', [
+            'request_method' => $request->method(),
+            'request_url' => $request->fullUrl(),
+            'request_ip' => $request->ip(),
+            'request_headers' => $request->headers->all(),
+            'request_all_data' => $request->all(),
+            'request_json' => $request->json()->all() ?? null,
+            'user_agent' => $request->userAgent(),
+            'timestamp' => now()->toIso8601String(),
+        ]);
+
         $validated = $request->validate([
             'card_id' => 'nullable|integer|exists:cards,id',
             'people_id' => 'nullable|integer|exists:people,id',
             'title' => 'required|string|max:255',
             'body' => 'nullable|string',
             'data' => 'nullable|array',
+        ]);
+
+        // CRITICAL DEBUG: Log validated data
+        \Log::info('NotificationController::sendCardToAllDevices: VALIDATED DATA', [
+            'validated' => $validated,
+            'card_id' => $validated['card_id'] ?? null,
+            'people_id' => $validated['people_id'] ?? null,
+            'title' => $validated['title'] ?? null,
+            'body' => $validated['body'] ?? null,
+            'body_length' => isset($validated['body']) ? strlen($validated['body']) : 0,
+            'body_empty' => empty($validated['body'] ?? ''),
+            'data' => $validated['data'] ?? null,
         ]);
 
         // Ensure either card_id or people_id is provided, but not both
@@ -383,11 +407,36 @@ class NotificationController extends Controller
         if ($hasCardId) {
             $sourceEntity = Card::with(['group.garden:id,name,country_id', 'group.garden.countryData', 'personType', 'group.garden.images'])->findOrFail($validated['card_id']);
             $group = $sourceEntity->group;
+            
+            // CRITICAL DEBUG: Log card data from database
+            \Log::info('NotificationController::sendCardToAllDevices: CARD FROM DATABASE', [
+                'card_id' => $sourceEntity->id,
+                'card_child_first_name' => $sourceEntity->child_first_name,
+                'card_child_last_name' => $sourceEntity->child_last_name,
+                'card_child_full_name' => $sourceEntity->child_first_name . ' ' . $sourceEntity->child_last_name,
+                'card_parent_name' => $sourceEntity->parent_name,
+                'card_phone' => $sourceEntity->phone,
+                'card_group_id' => $sourceEntity->group_id,
+                'card_status' => $sourceEntity->status,
+                'card_image_url' => $sourceEntity->image_url,
+            ]);
         } else {
             $people = \App\Models\People::with(['card.group.garden:id,name,country_id', 'card.group.garden.countryData', 'card.personType', 'card.group.garden.images'])->findOrFail($validated['people_id']);
             $sourceEntity = $people;
             $group = $people->card->group;
             $isFromPeople = true;
+            
+            // CRITICAL DEBUG: Log people and card data from database
+            \Log::info('NotificationController::sendCardToAllDevices: PEOPLE FROM DATABASE', [
+                'people_id' => $people->id,
+                'people_name' => $people->name,
+                'people_phone' => $people->phone,
+                'card_id' => $people->card->id ?? null,
+                'card_child_first_name' => $people->card->child_first_name ?? null,
+                'card_child_last_name' => $people->card->child_last_name ?? null,
+                'card_child_full_name' => ($people->card->child_first_name ?? '') . ' ' . ($people->card->child_last_name ?? ''),
+                'card_parent_name' => $people->card->parent_name ?? null,
+            ]);
         }
 
         if (!$group) {
@@ -459,6 +508,19 @@ class NotificationController extends Controller
         $cardToNotify->refresh();
         $cardToNotify->load(['group.garden.countryData']);
 
+        // CRITICAL DEBUG: Log card to notify data from database
+        \Log::info('NotificationController::sendCardToAllDevices: CARD TO NOTIFY FROM DATABASE', [
+            'card_id' => $cardToNotify->id,
+            'card_child_first_name' => $cardToNotify->child_first_name,
+            'card_child_last_name' => $cardToNotify->child_last_name,
+            'card_child_full_name' => $cardToNotify->child_first_name . ' ' . $cardToNotify->child_last_name,
+            'card_parent_name' => $cardToNotify->parent_name,
+            'card_phone' => $cardToNotify->phone,
+            'card_group_id' => $cardToNotify->group_id,
+            'card_status' => $cardToNotify->status,
+            'free_calls_remaining' => $cardToNotify->free_calls_remaining,
+        ]);
+
         // - Paid countries with valid license: Always allowed, no decrement
         // - Paid countries without license: Decrement and check limit
         if (!$cardToNotify->decrementFreeCalls()) {
@@ -503,6 +565,23 @@ class NotificationController extends Controller
             $notificationData['sender_name'] = $cardToNotify->parent_name;
         }
 
+        // CRITICAL DEBUG: Log before sending notification
+        \Log::info('NotificationController::sendCardToAllDevices: PREPARING TO SEND', [
+            'card_id' => $cardToNotify->id,
+            'card_child_first_name_db' => $cardToNotify->child_first_name,
+            'card_child_last_name_db' => $cardToNotify->child_last_name,
+            'card_child_full_name_db' => $cardToNotify->child_first_name . ' ' . $cardToNotify->child_last_name,
+            'card_parent_name_db' => $cardToNotify->parent_name,
+            'title_from_request' => $validated['title'] ?? null,
+            'body_from_request' => $validated['body'] ?? null,
+            'body_provided' => isset($validated['body']),
+            'body_empty' => empty($validated['body'] ?? ''),
+            'body_length' => isset($validated['body']) ? strlen($validated['body']) : 0,
+            'is_from_people' => $isFromPeople,
+            'notification_data' => $notificationData,
+            'sender_expo_token' => $senderExpoToken,
+        ]);
+
         $results = $expoService->sendCardToAllDevices(
             $cardToNotify,
             $validated['title'],
@@ -517,6 +596,15 @@ class NotificationController extends Controller
             'success_count' => $successCount,
             'results' => $results
         ];
+
+        // CRITICAL DEBUG: Log results from ExpoNotificationService
+        \Log::info('NotificationController::sendCardToAllDevices: RESULTS FROM EXPO SERVICE', [
+            'card_id' => $cardToNotify->id,
+            'results' => $results,
+            'success_count' => $successCount,
+            'total_success_count' => $totalSuccessCount,
+            'all_results' => $allResults,
+        ]);
 
         // Record the notification call if it was successful
         if ($totalSuccessCount > 0) {
@@ -534,7 +622,7 @@ class NotificationController extends Controller
             $remainingCalls = $cardToNotify->free_calls_remaining;
         }
 
-        return response()->json([
+        $responseData = [
             'message' => ($isFromPeople ? 'People' : 'Card') . ' to all devices notification sent',
             'success' => $totalSuccessCount > 0,
             'devices_count' => $totalSuccessCount,
@@ -557,7 +645,20 @@ class NotificationController extends Controller
                 ];
             }),
             'notification_results' => $allResults
+        ];
+
+        // CRITICAL DEBUG: Log response before sending to mobile app
+        \Log::info('NotificationController::sendCardToAllDevices: RESPONSE TO MOBILE APP', [
+            'card_id' => $cardToNotify->id,
+            'response_data' => $responseData,
+            'response_success' => $responseData['success'],
+            'response_devices_count' => $responseData['devices_count'],
+            'response_remaining_calls' => $responseData['remaining_calls'],
+            'response_free_calls_remaining' => $responseData['free_calls_remaining'],
+            'response_notification_results' => $responseData['notification_results'],
         ]);
+
+        return response()->json($responseData);
     }
 
     /**
