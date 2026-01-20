@@ -552,6 +552,12 @@ class NotificationController extends Controller
         // Otherwise fallback to card's expo_token
         $senderExpoToken = $notificationData['sender_expo_token'] ?? $cardToNotify->expo_token;
 
+        // CRITICAL DEBUG: Get sender device information
+        $senderDevice = null;
+        if ($senderExpoToken) {
+            $senderDevice = \App\Models\Device::where('expo_token', $senderExpoToken)->first();
+        }
+
         if ($isFromPeople) {
             // Notification sent by shared parent (People)
             $notificationData['sender_expo_token'] = $senderExpoToken;
@@ -565,8 +571,26 @@ class NotificationController extends Controller
             $notificationData['sender_name'] = $cardToNotify->parent_name;
         }
 
+        // CRITICAL DEBUG: Log sender device information
+        \Log::info('NotificationController::sendCardToAllDevices: SENDER DEVICE INFO', [
+            'sender_expo_token' => $senderExpoToken ? substr($senderExpoToken, 0, 20) . '...' : null,
+            'sender_device_id' => $senderDevice?->id,
+            'sender_device_name' => $senderDevice?->name,
+            'sender_device_status' => $senderDevice?->status,
+            'sender_device_garden_id' => $senderDevice?->garden_id,
+            'sender_device_is_logged_in' => $senderDevice?->is_logged_in,
+            'sender_device_created_at' => $senderDevice?->created_at?->toIso8601String(),
+            'sender_device_updated_at' => $senderDevice?->updated_at?->toIso8601String(),
+            'sender_type' => $isFromPeople ? 'people' : 'card',
+            'sender_name' => $isFromPeople ? $sourceEntity->name : $cardToNotify->parent_name,
+            'sender_card_id' => $cardToNotify->id,
+            'sender_card_phone' => $cardToNotify->phone,
+        ]);
+
         // CRITICAL DEBUG: Log before sending notification
+        $requestReceivedAt = now();
         \Log::info('NotificationController::sendCardToAllDevices: PREPARING TO SEND', [
+            'timestamp' => $requestReceivedAt->toIso8601String(),
             'card_id' => $cardToNotify->id,
             'card_child_first_name_db' => $cardToNotify->child_first_name,
             'card_child_last_name_db' => $cardToNotify->child_last_name,
@@ -579,7 +603,9 @@ class NotificationController extends Controller
             'body_length' => isset($validated['body']) ? strlen($validated['body']) : 0,
             'is_from_people' => $isFromPeople,
             'notification_data' => $notificationData,
-            'sender_expo_token' => $senderExpoToken,
+            'sender_expo_token' => $senderExpoToken ? substr($senderExpoToken, 0, 20) . '...' : null,
+            'sender_device_id' => $senderDevice?->id,
+            'sender_device_name' => $senderDevice?->name,
         ]);
 
         $results = $expoService->sendCardToAllDevices(

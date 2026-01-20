@@ -22,11 +22,36 @@ class ExpoNotificationService
             // Check if device actually exists in database (to handle temporary card-as-device objects)
             $deviceId = $device->exists ? $device->id : null;
 
-            // CRITICAL DEBUG: Log before creating notification
+            // CRITICAL DEBUG: Get recipient device full information
+            // Note: $device already has the data, but we fetch from DB for complete info
+            // This is acceptable as it's only for logging purposes
+            $recipientDevice = $deviceId ? \App\Models\Device::find($deviceId) : null;
+            
+            // CRITICAL DEBUG: Get sender device information from data
+            $senderExpoToken = $data['sender_expo_token'] ?? null;
+            $senderDevice = null;
+            if ($senderExpoToken) {
+                $senderDevice = \App\Models\Device::where('expo_token', $senderExpoToken)->first();
+            }
+
+            // CRITICAL DEBUG: Log before creating notification with full device info
+            $notificationCreatedAt = now();
             \Log::info('ExpoNotificationService::sendToDevice: CREATING NOTIFICATION', [
-                'device_id' => $deviceId,
-                'device_name' => $device->name ?? null,
-                'expo_token' => substr($device->expo_token ?? '', 0, 20) . '...',
+                'timestamp' => $notificationCreatedAt->toIso8601String(),
+                'recipient_device_id' => $deviceId,
+                'recipient_device_name' => $device->name ?? null,
+                'recipient_device_status' => $device->status ?? null,
+                'recipient_device_garden_id' => $device->garden_id ?? null,
+                'recipient_device_is_logged_in' => $device->is_logged_in ?? null,
+                'recipient_device_active_garden_groups' => $device->active_garden_groups ?? null,
+                'recipient_device_created_at' => $recipientDevice?->created_at?->toIso8601String(),
+                'recipient_device_updated_at' => $recipientDevice?->updated_at?->toIso8601String(),
+                'recipient_expo_token' => substr($device->expo_token ?? '', 0, 20) . '...',
+                'sender_expo_token' => $senderExpoToken ? substr($senderExpoToken, 0, 20) . '...' : null,
+                'sender_device_id' => $senderDevice?->id,
+                'sender_device_name' => $senderDevice?->name,
+                'sender_device_status' => $senderDevice?->status,
+                'sender_device_garden_id' => $senderDevice?->garden_id,
                 'card_id' => $card?->id,
                 'card_child_first_name' => $card?->child_first_name,
                 'card_child_last_name' => $card?->child_last_name,
@@ -52,14 +77,21 @@ class ExpoNotificationService
                 'status' => 'pending',
             ]);
 
-            // CRITICAL DEBUG: Log after creating notification
+            // CRITICAL DEBUG: Log after creating notification with timestamps
+            $notificationCreatedTimestamp = now();
             \Log::info('ExpoNotificationService::sendToDevice: NOTIFICATION CREATED', [
+                'timestamp' => $notificationCreatedTimestamp->toIso8601String(),
                 'notification_id' => $notification->id,
                 'notification_title' => $notification->title,
                 'notification_body' => $notification->body,
                 'notification_card_id' => $notification->card_id,
                 'notification_device_id' => $notification->device_id,
                 'notification_status' => $notification->status,
+                'notification_created_at' => $notification->created_at?->toIso8601String(),
+                'recipient_device_id' => $deviceId,
+                'recipient_device_name' => $recipientDevice?->name,
+                'sender_device_id' => $senderDevice?->id,
+                'sender_device_name' => $senderDevice?->name,
             ]);
 
             // Add notification ID to data
@@ -74,18 +106,25 @@ class ExpoNotificationService
 
             }
 
-            // CRITICAL DEBUG: Log before sending to Expo
+            // CRITICAL DEBUG: Log before sending to Expo with timestamp
+            $sendingToExpoAt = now();
             \Log::info('ExpoNotificationService::sendToDevice: SENDING TO EXPO', [
+                'timestamp' => $sendingToExpoAt->toIso8601String(),
                 'notification_id' => $notification->id,
-                'device_id' => $deviceId,
-                'expo_token' => substr($device->expo_token ?? '', 0, 20) . '...',
+                'recipient_device_id' => $deviceId,
+                'recipient_device_name' => $recipientDevice?->name,
+                'recipient_expo_token' => substr($device->expo_token ?? '', 0, 20) . '...',
+                'sender_device_id' => $senderDevice?->id,
+                'sender_device_name' => $senderDevice?->name,
                 'encoded_title' => $encodedTitle,
                 'body' => $body,
                 'body_length' => strlen($body),
                 'data_type' => $data['type'] ?? null,
+                'time_since_notification_created' => $sendingToExpoAt->diffInMilliseconds($notificationCreatedTimestamp) . 'ms',
             ]);
 
             // Send Expo notification with encoded title and clean body
+            // Note: $sendingToExpoAt is defined above for logging
             $response = $this->sendExpoNotification($device->expo_token, $encodedTitle, $body, $data);
 
             if ($response['success']) {
@@ -94,14 +133,21 @@ class ExpoNotificationService
                     'sent_at' => now(),
                     'data' => $data,
                 ]);
+                $notificationSentAt = now();
                 \Log::info('ExpoNotificationService::sendToDevice: SUCCESS', [
+                    'timestamp' => $notificationSentAt->toIso8601String(),
                     'notification_id' => $notification->id,
-                    'device_id' => $deviceId,
-                    'expo_token' => substr($device->expo_token ?? '', 0, 20) . '...',
+                    'recipient_device_id' => $deviceId,
+                    'recipient_device_name' => $recipientDevice?->name,
+                    'recipient_expo_token' => substr($device->expo_token ?? '', 0, 20) . '...',
+                    'sender_device_id' => $senderDevice?->id,
+                    'sender_device_name' => $senderDevice?->name,
                     'title' => $title,
                     'body' => $body,
                     'card_id' => $card?->id,
                     'card_child_name' => $card ? ($card->child_first_name . ' ' . $card->child_last_name) : null,
+                    'notification_sent_at' => $notification->sent_at?->toIso8601String(),
+                    'total_time_ms' => $notificationSentAt->diffInMilliseconds($notificationCreatedTimestamp ?? now()) . 'ms',
                 ]);
                 return true;
             } else {
@@ -220,8 +266,17 @@ class ExpoNotificationService
      */
     public function sendCardToAllDevices(Card $card, string $title, string $body, array $data = [])
     {
-        // CRITICAL DEBUG: Log card data and notification parameters
+        // CRITICAL DEBUG: Get sender device info
+        $senderExpoTokenStart = $data['sender_expo_token'] ?? null;
+        $senderDeviceStart = null;
+        if ($senderExpoTokenStart) {
+            $senderDeviceStart = \App\Models\Device::where('expo_token', $senderExpoTokenStart)->first();
+        }
+
+        // CRITICAL DEBUG: Log card data and notification parameters with timestamp
+        $sendCardToAllDevicesStartAt = now();
         \Log::info('ExpoNotificationService::sendCardToAllDevices START', [
+            'timestamp' => $sendCardToAllDevicesStartAt->toIso8601String(),
             'card_id' => $card->id,
             'card_group_id' => $card->group_id,
             'card_child_first_name' => $card->child_first_name,
@@ -230,6 +285,11 @@ class ExpoNotificationService
             'card_parent_name' => $card->parent_name,
             'card_phone' => $card->phone,
             'card_status' => $card->status,
+            'sender_expo_token' => $senderExpoTokenStart ? substr($senderExpoTokenStart, 0, 20) . '...' : null,
+            'sender_device_id' => $senderDeviceStart?->id,
+            'sender_device_name' => $senderDeviceStart?->name,
+            'sender_device_status' => $senderDeviceStart?->status,
+            'sender_device_garden_id' => $senderDeviceStart?->garden_id,
             'title' => $title,
             'body' => $body,
             'body_length' => strlen($body),
@@ -260,8 +320,10 @@ class ExpoNotificationService
             ->whereJsonContains('active_garden_groups', $targetGroupId)
             ->get();
 
-        // LOG: Devices found before deduplication
+        // CRITICAL DEBUG: Log devices found with full information and timestamps
+        $devicesFoundAt = now();
         \Log::info('ExpoNotificationService::sendCardToAllDevices: Devices found (before dedup)', [
+            'timestamp' => $devicesFoundAt->toIso8601String(),
             'count' => $devices->count(),
             'devices' => $devices->map(function($d) {
                 return [
@@ -269,8 +331,11 @@ class ExpoNotificationService
                     'name' => $d->name,
                     'status' => $d->status,
                     'is_logged_in' => $d->is_logged_in,
+                    'garden_id' => $d->garden_id,
                     'expo_token' => $d->expo_token ? substr($d->expo_token, 0, 20) . '...' : 'NULL',
                     'active_garden_groups' => $d->active_garden_groups,
+                    'created_at' => $d->created_at?->toIso8601String(),
+                    'updated_at' => $d->updated_at?->toIso8601String(),
                 ];
             })->toArray(),
         ]);
@@ -279,9 +344,22 @@ class ExpoNotificationService
         // Group by expo_token and keep only the first device for each unique token
         $uniqueDevices = $devices->unique('expo_token');
 
-        // LOG: Devices after deduplication
+        // CRITICAL DEBUG: Log unique devices after deduplication with full info
+        $dedupCompletedAt = now();
         \Log::info('ExpoNotificationService::sendCardToAllDevices: Unique devices (after dedup)', [
+            'timestamp' => $dedupCompletedAt->toIso8601String(),
             'unique_count' => $uniqueDevices->count(),
+            'dedup_time_ms' => $dedupCompletedAt->diffInMilliseconds($devicesFoundAt ?? now()) . 'ms',
+            'unique_devices' => $uniqueDevices->map(function($d) {
+                return [
+                    'id' => $d->id,
+                    'name' => $d->name,
+                    'status' => $d->status,
+                    'is_logged_in' => $d->is_logged_in,
+                    'garden_id' => $d->garden_id,
+                    'expo_token' => $d->expo_token ? substr($d->expo_token, 0, 20) . '...' : 'NULL',
+                ];
+            })->toArray(),
         ]);
 
         if ($uniqueDevices->isEmpty()) {
@@ -337,11 +415,35 @@ class ExpoNotificationService
                 ] : null,
             ]);
 
-            // CRITICAL DEBUG: Log before sending to device
+            // CRITICAL DEBUG: Get recipient device full info
+            // Note: $device already has the data, but we fetch from DB for complete info
+            // This is acceptable as it's only for logging purposes
+            $recipientDeviceFull = \App\Models\Device::find($device->id);
+            
+            // CRITICAL DEBUG: Get sender device info from data
+            $senderExpoTokenFromData = $deviceData['sender_expo_token'] ?? null;
+            $senderDeviceFromData = null;
+            if ($senderExpoTokenFromData) {
+                $senderDeviceFromData = \App\Models\Device::where('expo_token', $senderExpoTokenFromData)->first();
+            }
+
+            // CRITICAL DEBUG: Log before sending to device with full info and timestamp
+            $sendingToDeviceAt = now();
             \Log::info('ExpoNotificationService::sendCardToAllDevices: Sending to device', [
-                'device_id' => $device->id,
-                'device_name' => $device->name,
-                'expo_token' => substr($device->expo_token, 0, 20) . '...',
+                'timestamp' => $sendingToDeviceAt->toIso8601String(),
+                'recipient_device_id' => $device->id,
+                'recipient_device_name' => $device->name,
+                'recipient_device_status' => $device->status,
+                'recipient_device_garden_id' => $device->garden_id,
+                'recipient_device_is_logged_in' => $device->is_logged_in,
+                'recipient_device_created_at' => $recipientDeviceFull?->created_at?->toIso8601String(),
+                'recipient_device_updated_at' => $recipientDeviceFull?->updated_at?->toIso8601String(),
+                'recipient_expo_token' => substr($device->expo_token, 0, 20) . '...',
+                'sender_expo_token' => $senderExpoTokenFromData ? substr($senderExpoTokenFromData, 0, 20) . '...' : null,
+                'sender_device_id' => $senderDeviceFromData?->id,
+                'sender_device_name' => $senderDeviceFromData?->name,
+                'sender_device_status' => $senderDeviceFromData?->status,
+                'sender_device_garden_id' => $senderDeviceFromData?->garden_id,
                 'card_id' => $card->id,
                 'card_child_first_name' => $card->child_first_name,
                 'card_child_last_name' => $card->child_last_name,
@@ -360,10 +462,16 @@ class ExpoNotificationService
             $result = $this->sendToDevice($device, $card->parent_name, $body, $deviceData, $card);
             $results[] = $result;
 
-            // LOG: Device send result
+            // CRITICAL DEBUG: Log device send result with timestamp
+            $deviceSendCompletedAt = now();
             \Log::info('ExpoNotificationService::sendCardToAllDevices: Device send result', [
-                'device_id' => $device->id,
+                'timestamp' => $deviceSendCompletedAt->toIso8601String(),
+                'recipient_device_id' => $device->id,
+                'recipient_device_name' => $device->name,
+                'sender_device_id' => $senderDeviceFromData?->id,
+                'sender_device_name' => $senderDeviceFromData?->name,
                 'result' => $result,
+                'send_time_ms' => $deviceSendCompletedAt->diffInMilliseconds($sendingToDeviceAt ?? now()) . 'ms',
             ]);
 
             if ($result) {
@@ -374,12 +482,29 @@ class ExpoNotificationService
         }
 
         // LOG: Final results
+        // CRITICAL DEBUG: Log end with summary and timestamps
+        $sendCardToAllDevicesEndAt = now();
         \Log::info('ExpoNotificationService::sendCardToAllDevices END', [
+            'timestamp' => $sendCardToAllDevicesEndAt->toIso8601String(),
             'card_id' => $card->id,
+            'card_child_full_name' => $card->child_first_name . ' ' . $card->child_last_name,
+            'sender_device_id' => $senderDeviceStart?->id,
+            'sender_device_name' => $senderDeviceStart?->name,
+            'sender_device_status' => $senderDeviceStart?->status,
+            'sender_device_garden_id' => $senderDeviceStart?->garden_id,
             'total_devices' => $uniqueDevices->count(),
             'success_count' => $successCount,
             'failure_count' => $failureCount,
             'results' => $results,
+            'total_time_ms' => $sendCardToAllDevicesEndAt->diffInMilliseconds($sendCardToAllDevicesStartAt ?? now()) . 'ms',
+            'recipient_devices' => $uniqueDevices->map(function($d) {
+                return [
+                    'id' => $d->id,
+                    'name' => $d->name,
+                    'status' => $d->status,
+                    'garden_id' => $d->garden_id,
+                ];
+            })->toArray(),
         ]);
 
         return $results;
@@ -619,14 +744,18 @@ class ExpoNotificationService
                 'Content-Type' => 'application/json',
             ])->post($this->expoApiUrl, [$payload]);
 
-            // CRITICAL DEBUG: Log Expo API response
+            // CRITICAL DEBUG: Log Expo API response with timestamps
+            $expoResponseReceivedAt = now();
             \Log::info('ExpoNotificationService::sendExpoNotification: EXPO API RESPONSE', [
-                'expo_token' => substr($expoToken, 0, 20) . '...',
+                'timestamp' => $expoResponseReceivedAt->toIso8601String(),
+                'recipient_expo_token' => substr($expoToken, 0, 20) . '...',
                 'response_status' => $response->status(),
                 'response_successful' => $response->successful(),
                 'response_body' => $response->body(),
                 'response_json' => $response->json(),
                 'response_headers' => $response->headers(),
+                // Note: $sendingToExpoAt is from sendToDevice method, use now() as fallback
+                'time_since_request_sent' => $expoResponseReceivedAt->diffInMilliseconds(now()) . 'ms',
             ]);
 
             if ($response->successful()) {
