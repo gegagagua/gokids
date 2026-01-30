@@ -41,9 +41,9 @@ return [
     'procredit' => [
         'merchant_id' => '', // Optional. Bank will provide (Terminal identifier). Cert CN must match this; leave empty until then.
         'order_endpoint' => 'https://api.bank.com/order', // TODO: set real endpoint from bank after test env is ready
-        'cert_path' => storage_path('app/cert.pem'),
-        'key_path' => storage_path('app/key.pem'),
-        'ca_path' => storage_path('app/ca.pem'),
+        'cert_path' => storage_path('app/cert/cert.pem'),
+        'key_path' => storage_path('app/cert/key.pem'),
+        'ca_path' => storage_path('app/cert/ca.pem'),
     ],
 
     'brevo' => [
