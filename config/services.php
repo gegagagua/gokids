@@ -36,13 +36,14 @@ return [
     ],
 
     // ProCredit E-commerce Payment Gateway (Internet Shop Integration v1.1). All values here – no .env.
-    // order_endpoint: placeholder below – replace with real URL from bank (test/prod). No SSH – only HTTPS + TLS client certs.
+    // Doc: Bank provides Terminal identifier (MerchantID), Endpoint URL, Signed certificate. merchant_id is NOT sent in API – bank identifies you by the CN of your client certificate (cert.pem). Leave merchant_id as placeholder until bank gives you the value (for reference: CSR Common Name must match it, max 20 chars).
+    // order_endpoint: replace with real URL from bank (test first, then prod). Cert files: storage/app/certs/
     'procredit' => [
-        'merchant_id' => 'YourMerchantId', // CN of client certificate, from bank (max 20 chars)
-        'order_endpoint' => 'https://api.bank.com/order', // TODO: set real endpoint from bank (e.g. https://ecommerce-test.example.com/order)
-        'cert_path' => base_path('certs/cert.pem'),
-        'key_path' => base_path('certs/key.pem'),
-        'ca_path' => base_path('certs/ca.pem'),
+        'merchant_id' => '', // Optional. Bank will provide (Terminal identifier). Cert CN must match this; leave empty until then.
+        'order_endpoint' => 'https://api.bank.com/order', // TODO: set real endpoint from bank after test env is ready
+        'cert_path' => storage_path('app/certs/cert.pem'),
+        'key_path' => storage_path('app/certs/key.pem'),
+        'ca_path' => storage_path('app/certs/ca.pem'),
     ],
 
     'brevo' => [
