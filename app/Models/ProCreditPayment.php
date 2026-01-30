@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class BogPayment extends Model
+class ProCreditPayment extends Model
 {
+    protected $table = 'bog_payments';
+
     protected $fillable = [
         'order_id',
+        'bank_order_id',
+        'bank_order_password',
         'bog_transaction_id',
         'amount',
         'currency',
@@ -27,49 +31,31 @@ class BogPayment extends Model
         'paid_at' => 'datetime',
     ];
 
-    /**
-     * Get the user that owns the payment.
-     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Get the card associated with the payment.
-     */
     public function card()
     {
         return $this->belongsTo(Card::class);
     }
 
-    /**
-     * Get the garden associated with the payment.
-     */
     public function garden()
     {
         return $this->belongsTo(Garden::class);
     }
 
-    /**
-     * Scope for pending payments
-     */
     public function scopePending($query)
     {
         return $query->where('status', 'pending');
     }
 
-    /**
-     * Scope for completed payments
-     */
     public function scopeCompleted($query)
     {
         return $query->where('status', 'completed');
     }
 
-    /**
-     * Scope for failed payments
-     */
     public function scopeFailed($query)
     {
         return $query->where('status', 'failed');

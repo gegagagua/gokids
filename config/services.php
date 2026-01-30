@@ -35,13 +35,14 @@ return [
         ],
     ],
 
-    'bog' => [
-        'client_id' => env('BOG_CLIENT_ID', '10002133'),
-        'secret' => env('BOG_SECRET', 'Xf9Q3KjhbEgG'),
-        'public_key' => env('BOG_PUBLIC_KEY', '10002133'),
-        'base_url' => env('BOG_BASE_URL', 'https://api.bog.ge'),
-        'payment_url' => env('BOG_PAYMENT_URL', 'https://payment.bog.ge/payment'),
-        'test_mode' => false,
+    // ProCredit E-commerce Payment Gateway (Internet Shop Integration v1.1). All values here – no .env.
+    // order_endpoint: placeholder below – replace with real URL from bank (test/prod). No SSH – only HTTPS + TLS client certs.
+    'procredit' => [
+        'merchant_id' => 'YourMerchantId', // CN of client certificate, from bank (max 20 chars)
+        'order_endpoint' => 'https://api.bank.com/order', // TODO: set real endpoint from bank (e.g. https://ecommerce-test.example.com/order)
+        'cert_path' => base_path('certs/cert.pem'),
+        'key_path' => base_path('certs/key.pem'),
+        'ca_path' => base_path('certs/ca.pem'),
     ],
 
     'brevo' => [

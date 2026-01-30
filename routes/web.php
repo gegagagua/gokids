@@ -10,11 +10,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/bog-payment/success', function () {
-    return view('bog-payment-success');
+Route::get('/procredit-payment/success', function () {
+    return view('procredit-payment-success');
 });
-Route::get('/bog-payment/cancel', function () {
-    return view('bog-payment-cancel');
+Route::get('/procredit-payment/cancel', function () {
+    return view('procredit-payment-cancel');
 });
 
 // API Documentation JSON endpoint for Swagger UI

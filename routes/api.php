@@ -19,7 +19,7 @@ use App\Http\Controllers\Api\SmsGatewayController;
 use App\Http\Controllers\Api\PaymentGatewayController;
 use App\Http\Controllers\Api\PaymentController;
 use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\BogPaymentController;
+use App\Http\Controllers\Api\ProCreditPaymentController;
 use App\Http\Controllers\Api\CalledCardController;
 use App\Http\Controllers\Api\CurrencyController;
 
@@ -52,11 +52,12 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/disters/{id}/transfer-gardens', [DisterController::class, 'transferGardens']);
     
     Route::apiResource('notifications', NotificationController::class);
-    Route::post('/bog-payment', [BogPaymentController::class, 'createPayment']);
-    Route::post('/bog-payment/callback', [BogPaymentController::class, 'handleCallback']);
+    Route::post('/procredit-payment', [ProCreditPaymentController::class, 'createPayment']);
+    Route::post('/procredit-payment/callback', [ProCreditPaymentController::class, 'handleCallback']);
+    Route::get('/procredit-payment/status/{orderId}', [ProCreditPaymentController::class, 'getPaymentStatus']);
 
     Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/bog-payment/bulk', [BogPaymentController::class, 'createBulkPayment']);
+        Route::post('/procredit-payment/bulk', [ProCreditPaymentController::class, 'createBulkPayment']);
         // Place specific routes before resource to avoid {garden} binding capturing 'export'
         Route::apiResource('disters', DisterController::class);
         Route::post('/payments/create-garden-payment', [PaymentController::class, 'createGardenPayment']);
@@ -160,10 +161,8 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/notifications/{notificationId}/accept', [NotificationController::class, 'acceptNotification']);
     
     // BOG Payment additional routes
-    Route::post('/bog-payments/saved-card', [BogPaymentController::class, 'payWithSavedCard']);
-    Route::post('/bog-payments/subscription', [BogPaymentController::class, 'createSubscription']);
-    Route::get('/bog-payments/status/{orderId}', [BogPaymentController::class, 'getPaymentStatus']);
-    Route::post('/bog-payments/callback', [BogPaymentController::class, 'handleCallback']);
+    Route::get('/procredit-payments/status/{orderId}', [ProCreditPaymentController::class, 'getPaymentStatus']);
+    Route::post('/procredit-payments/callback', [ProCreditPaymentController::class, 'handleCallback']);
     
     // Garden OTP routes (no authentication required)
     Route::post('/gardens/send-otp', [GardenController::class, 'sendOtp']);

@@ -1627,270 +1627,6 @@
                 ]
             }
         },
-        "/api/bog-payment": {
-            "post": {
-                "tags": [
-                    "BOG Payments"
-                ],
-                "summary": "Create BOG payment",
-                "description": "Create a payment through Bank of Georgia payment gateway",
-                "operationId": "createBogPayment",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "amount"
-                                ],
-                                "properties": {
-                                    "amount": {
-                                        "description": "Payment amount",
-                                        "type": "number",
-                                        "example": 100
-                                    },
-                                    "currency": {
-                                        "description": "Payment currency",
-                                        "type": "string",
-                                        "example": "GEL"
-                                    },
-                                    "card_id": {
-                                        "description": "Card ID",
-                                        "type": "integer",
-                                        "example": 1,
-                                        "nullable": true
-                                    },
-                                    "garden_id": {
-                                        "description": "Garden ID",
-                                        "type": "integer",
-                                        "example": 1,
-                                        "nullable": true
-                                    },
-                                    "description": {
-                                        "description": "Payment description",
-                                        "type": "string",
-                                        "example": "Payment for services"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Payment created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "payment": {
-                                            "type": "object"
-                                        },
-                                        "redirect_url": {
-                                            "type": "string",
-                                            "example": "https://payment.bog.ge/payment/..."
-                                        },
-                                        "bog_transaction_id": {
-                                            "type": "string",
-                                            "example": "bog_123456"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error"
-                    },
-                    "500": {
-                        "description": "Payment creation failed"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
-        "/api/bog-payment/callback": {
-            "post": {
-                "tags": [
-                    "BOG Payments"
-                ],
-                "summary": "Handle BOG callback",
-                "description": "Handle payment callback from BOG payment gateway. When payment status is 'success', automatically creates a Payment record in the payments table with all required fields (transaction_number, card_number, amount, status, payment_gateway_id, etc.)",
-                "operationId": "handleBogCallback",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "order_id": {
-                                        "description": "BOG order ID",
-                                        "type": "string",
-                                        "example": "BOG_ABC123_1234567890"
-                                    },
-                                    "status": {
-                                        "description": "Payment status (success, failed, cancelled)",
-                                        "type": "string",
-                                        "example": "success"
-                                    },
-                                    "transaction_id": {
-                                        "description": "BOG transaction ID",
-                                        "type": "string",
-                                        "example": "bog_123456"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Callback handled successfully. If status is 'success', a Payment record is automatically created in the payments table.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Callback handled successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to handle callback",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Failed to handle callback"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/api/bog-payment/bulk": {
-            "post": {
-                "tags": [
-                    "BOG Payments"
-                ],
-                "summary": "Create bulk BOG payments for cards",
-                "description": "Create payments for multiple cards. Garden can pay for their cards. Calculates total amount, creates BOG payments for each card, and automatically processes callbacks with 'completed' status.",
-                "operationId": "createBulkBogPayment",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "card_ids",
-                                    "garden_id"
-                                ],
-                                "properties": {
-                                    "garden_id": {
-                                        "description": "Garden ID",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "card_ids": {
-                                        "description": "Array of card IDs to pay for",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 1
-                                        }
-                                    },
-                                    "description": {
-                                        "description": "Payment description",
-                                        "type": "string",
-                                        "example": "Bulk payment for cards"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Payments created and processed successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "total_amount": {
-                                            "description": "Total amount for all cards",
-                                            "type": "number",
-                                            "example": 300
-                                        },
-                                        "payments_count": {
-                                            "description": "Number of payments created",
-                                            "type": "integer",
-                                            "example": 3
-                                        },
-                                        "payments": {
-                                            "description": "Array of created payments",
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Access denied. Only garden users can use this endpoint."
-                    },
-                    "422": {
-                        "description": "Validation error"
-                    },
-                    "500": {
-                        "description": "Payment creation failed"
-                    }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
-            }
-        },
         "/api/called-cards": {
             "post": {
                 "tags": [
@@ -14083,23 +13819,18 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "OTP sent to phone successfully",
+                        "description": "OTP sent to email successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "OTP sent to phone."
+                                            "example": "OTP sent to email."
                                         },
                                         "email": {
                                             "type": "string",
                                             "example": "garden@example.com"
-                                        },
-                                        "phone": {
-                                            "description": "Phone number where OTP was sent",
-                                            "type": "string",
-                                            "example": "995555123456"
                                         }
                                     },
                                     "type": "object"
@@ -14123,24 +13854,8 @@
                             }
                         }
                     },
-                    "422": {
-                        "description": "Validation error or missing phone number",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Garden does not have a phone number."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
                     "500": {
-                        "description": "Failed to send SMS",
+                        "description": "Failed to send email",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -14165,7 +13880,7 @@
                     "Gardens"
                 ],
                 "summary": "Reset garden password with OTP",
-                "description": "Reset garden password using email, OTP code sent to phone, new password and confirmation.",
+                "description": "Reset garden password using email, OTP code sent to email, new password and confirmation.",
                 "operationId": "resetGardenPassword",
                 "requestBody": {
                     "required": true,
@@ -14186,7 +13901,7 @@
                                         "example": "garden@example.com"
                                     },
                                     "otp": {
-                                        "description": "6-digit OTP code sent to phone",
+                                        "description": "6-digit OTP code sent to email",
                                         "type": "string",
                                         "example": "123456"
                                     },
@@ -19229,6 +18944,217 @@
                 }
             }
         },
+        "/api/procredit-payment": {
+            "post": {
+                "tags": [
+                    "ProCredit Payments"
+                ],
+                "summary": "Create ProCredit payment",
+                "description": "Create order via ProCredit E-commerce PG (Internet Shop Integration v1.1). Returns redirect_url to Hosted Payment Page (HPP); user completes payment there, then is redirected to success page.",
+                "operationId": "createProCreditPayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "card_id"
+                                ],
+                                "properties": {
+                                    "card_id": {
+                                        "description": "Card ID (amount and currency from card's country tariff; default 10 GEL if not found)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "description": {
+                                        "description": "Payment description (optional)",
+                                        "type": "string",
+                                        "example": "Payment for services"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "payment": {
+                                            "type": "object"
+                                        },
+                                        "redirect_url": {
+                                            "type": "string",
+                                            "example": "https://hpp.bank.com/flex?id=1234&password=..."
+                                        },
+                                        "bog_transaction_id": {
+                                            "type": "string",
+                                            "example": "1027"
+                                        },
+                                        "order_id": {
+                                            "description": "Internal order_id for status/redirect",
+                                            "type": "string",
+                                            "example": "PC_ABC12_1234567890"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "503": {
+                        "description": "ProCredit gateway not configured (edit config/services.php)"
+                    },
+                    "500": {
+                        "description": "Payment creation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/procredit-payment/callback": {
+            "post": {
+                "tags": [
+                    "ProCredit Payments"
+                ],
+                "summary": "Handle ProCredit callback",
+                "description": "Handle callback: pass order_id (our internal) to sync via Get Order Details, or bank_order_id + status from PG. On completed status, creates Payment record and updates dister balance.",
+                "operationId": "handleProCreditCallback",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "order_id": {
+                                        "type": "string",
+                                        "example": "PC_ABC123_1234567890"
+                                    },
+                                    "bank_order_id": {
+                                        "type": "string"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "success"
+                                    },
+                                    "transaction_id": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Callback handled successfully"
+                    },
+                    "500": {
+                        "description": "Failed to handle callback"
+                    }
+                }
+            }
+        },
+        "/api/procredit-payment/status/{orderId}": {
+            "get": {
+                "tags": [
+                    "ProCredit Payments"
+                ],
+                "summary": "Get ProCredit payment status",
+                "description": "Get payment status by order_id. If order is still pending, syncs with E-commerce PG via Get Order Details.",
+                "operationId": "getProCreditPaymentStatus",
+                "parameters": [
+                    {
+                        "name": "orderId",
+                        "in": "path",
+                        "description": "Our internal order_id (e.g. PC_XXX_timestamp)",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment status"
+                    },
+                    "404": {
+                        "description": "Order not found"
+                    }
+                }
+            }
+        },
+        "/api/procredit-payment/bulk": {
+            "post": {
+                "tags": [
+                    "ProCredit Payments"
+                ],
+                "summary": "Create bulk ProCredit payments for cards",
+                "description": "Create one ProCredit E-commerce order per card (Create Order). Returns redirect_url for each; user completes each payment on HPP. Use GET /api/procredit-payment/status/{orderId} or callback to confirm.",
+                "operationId": "createBulkProCreditPayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "card_ids",
+                                    "garden_id"
+                                ],
+                                "properties": {
+                                    "garden_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "card_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payments created"
+                    },
+                    "403": {
+                        "description": "Access denied. Only garden users."
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Payment creation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/sms-gateways": {
             "get": {
                 "tags": [
@@ -19343,10 +19269,6 @@
             "description": "Authentication"
         },
         {
-            "name": "BOG Payments",
-            "description": "BOG Payments"
-        },
-        {
             "name": "Called Cards",
             "description": "Called Cards"
         },
@@ -19361,6 +19283,10 @@
         {
             "name": "Payments",
             "description": "Payments"
+        },
+        {
+            "name": "ProCredit Payments",
+            "description": "ProCredit Payments"
         }
     ],
     "components": {
