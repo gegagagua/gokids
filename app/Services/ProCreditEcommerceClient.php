@@ -19,12 +19,15 @@ class ProCreditEcommerceClient
 
     protected ?string $caPath;
 
+    protected bool $verifyPeer;
+
     public function __construct()
     {
         $this->orderEndpoint = rtrim((string) config('services.procredit.order_endpoint', ''), '/');
         $this->certPath = config('services.procredit.cert_path');
         $this->keyPath = config('services.procredit.key_path');
         $this->caPath = config('services.procredit.ca_path');
+        $this->verifyPeer = (bool) config('services.procredit.verify_peer', true);
     }
 
     /**
@@ -39,6 +42,14 @@ class ProCreditEcommerceClient
             return ['success' => false, 'error' => 'ProCredit order endpoint not configured'];
         }
 
+        // api.bank.com is a placeholder from the PDF – not a real host. Bank must provide the real URL.
+        if (str_contains(parse_url($url, PHP_URL_HOST) ?? '', 'api.bank.com')) {
+            return [
+                'success' => false,
+                'error' => 'ProCredit order endpoint is still the placeholder (api.bank.com). Set the real URL from the bank in config/services.php → procredit.order_endpoint.',
+            ];
+        }
+
         $certCheck = $this->validateCertPaths();
         if ($certCheck !== null) {
             Log::warning('ProCredit E-commerce: certificate check failed', ['error' => $certCheck]);
@@ -47,7 +58,7 @@ class ProCreditEcommerceClient
 
         $body = [
             'order' => [
-                'typeRid' => $params['typeRid'] ?? 'ORD1',
+                'typeRid' => $params['typeRid'] ?? config('services.procredit.type_rid', 'ORD1'),
                 'amount' => $params['amount'],
                 'currency' => $params['currency'] ?? 'GEL',
                 'description' => $params['description'] ?? 'Order',
@@ -169,11 +180,12 @@ class ProCreditEcommerceClient
         if ($this->keyPath && is_file($this->keyPath)) {
             $opts[CURLOPT_SSLKEY] = $this->keyPath;
         }
-        if ($this->caPath && is_file($this->caPath)) {
+        if ($this->verifyPeer && $this->caPath && is_file($this->caPath)) {
             $opts[CURLOPT_CAINFO] = $this->caPath;
             $opts[CURLOPT_SSL_VERIFYPEER] = true;
         } else {
             $opts[CURLOPT_SSL_VERIFYPEER] = false;
+            $opts[CURLOPT_SSL_VERIFYHOST] = 0;
         }
 
         if ($method === 'POST' && $body !== null) {

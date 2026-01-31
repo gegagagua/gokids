@@ -95,7 +95,7 @@ class ProCreditPaymentController extends Controller
         }
 
         $error = $result['error'] ?? 'Payment creation failed';
-        $isConfigError = str_contains($error, 'not configured') || str_contains($error, 'not set');
+        $isConfigError = str_contains($error, 'not configured') || str_contains($error, 'not set') || str_contains($error, 'placeholder');
         return response()->json([
             'success' => false,
             'error' => $error,
