@@ -56,6 +56,8 @@ class ProCreditEcommerceClient
             return ['success' => false, 'error' => $certCheck];
         }
 
+        Log::info('ProCredit E-commerce Create Order request', ['params' => $params]);
+
         $body = [
             'order' => [
                 'typeRid' => $params['typeRid'] ?? config('services.procredit.type_rid', 'ORD1'),
