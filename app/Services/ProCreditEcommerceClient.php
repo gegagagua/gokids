@@ -61,8 +61,8 @@ class ProCreditEcommerceClient
         $body = [
             'order' => [
                 'typeRid' => $params['typeRid'] ?? config('services.procredit.type_rid', 'ORD1'),
-                'amount' => 100,
-                'currency' => 'GEL',
+                'amount' => 1,
+                'currency' => $params['currency'] ?? 'GEL',
                 'description' => $params['description'] ?? 'Order',
                 'language' => $params['language'] ?? 'en',
                 'hppRedirectUrl' => $params['hppRedirectUrl'],
