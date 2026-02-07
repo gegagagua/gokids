@@ -155,8 +155,9 @@ class ProCreditPaymentController extends Controller
      */
     public function getPaymentStatus(Request $request, string $orderId)
     {
+        $hppStatus = $request->query('hpp_status'); // STATUS from HPP redirect URL
         $proCreditService = new ProCreditPaymentService();
-        $status = $proCreditService->getPaymentStatus($orderId);
+        $status = $proCreditService->getPaymentStatus($orderId, $hppStatus);
         if ($status === null) {
             return response()->json(['success' => false, 'message' => 'Order not found'], 404);
         }

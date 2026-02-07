@@ -14,6 +14,7 @@
         .description { color: #6b7280; margin-bottom: 30px; }
         .btn { display: inline-block; padding: 12px 24px; background-color: #1e40af; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; }
         .btn:hover { background-color: #1d4ed8; }
+        .attempt-info { color: #9ca3af; font-size: 12px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -23,6 +24,7 @@
             <div class="logo">ProCredit E-commerce</div>
             <div id="status-message" class="success-message">Checking payment status…</div>
             <div id="status-description" class="description"></div>
+            <div id="attempt-info" class="attempt-info"></div>
         </div>
         <a href="/" class="btn" id="home-btn" style="display:none;">Return to Home</a>
     </div>
@@ -30,10 +32,18 @@
         (function() {
             var params = new URLSearchParams(window.location.search);
             var orderId = params.get('order_id');
+            var hppStatus = params.get('STATUS');  // Bank sends STATUS=FullyPaid in redirect URL
+            var hppId = params.get('ID');           // Bank sends ID (bank order id) in redirect URL
             var statusEl = document.getElementById('status-message');
             var descEl = document.getElementById('status-description');
             var iconEl = document.getElementById('status-icon');
             var homeBtn = document.getElementById('home-btn');
+            var attemptEl = document.getElementById('attempt-info');
+
+            var MAX_ATTEMPTS = 10;
+            var INTERVAL_MS = 3000; // 3 seconds between checks
+            var attempt = 0;
+
             if (!orderId) {
                 statusEl.textContent = 'Order not found';
                 statusEl.style.color = '#6b7280';
@@ -41,41 +51,65 @@
                 homeBtn.style.display = 'inline-block';
                 return;
             }
-            fetch('/api/procredit-payment/status/' + encodeURIComponent(orderId), { headers: { 'Accept': 'application/json' } })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    homeBtn.style.display = 'inline-block';
-                    if (data.success && data.status) {
-                        if (data.status === 'completed') {
-                            iconEl.textContent = '✅';
-                            statusEl.textContent = 'Payment Successful!';
-                            statusEl.style.color = '#10b981';
-                            descEl.textContent = 'Your payment has been processed successfully.';
-                        } else if (data.status === 'failed' || data.status === 'cancelled') {
-                            iconEl.textContent = '❌';
-                            statusEl.textContent = data.status === 'cancelled' ? 'Payment cancelled' : 'Payment failed';
-                            statusEl.style.color = '#ef4444';
-                            descEl.textContent = 'The payment was not completed.';
+
+            function showFinal(icon, message, color, description) {
+                iconEl.textContent = icon;
+                statusEl.textContent = message;
+                statusEl.style.color = color;
+                descEl.textContent = description;
+                homeBtn.style.display = 'inline-block';
+                attemptEl.textContent = '';
+            }
+
+            // Build status URL with hpp_status query param so backend can use it as fallback
+            function buildStatusUrl() {
+                var url = '/api/procredit-payment/status/' + encodeURIComponent(orderId);
+                if (hppStatus) {
+                    url += '?hpp_status=' + encodeURIComponent(hppStatus);
+                }
+                return url;
+            }
+
+            function checkStatus() {
+                attempt++;
+                attemptEl.textContent = 'Checking… (' + attempt + '/' + MAX_ATTEMPTS + ')';
+
+                fetch(buildStatusUrl(), { headers: { 'Accept': 'application/json' } })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.success && data.status) {
+                            if (data.status === 'completed') {
+                                showFinal('✅', 'Payment Successful!', '#10b981', 'Your payment has been processed successfully.');
+                                return;
+                            }
+                            if (data.status === 'failed' || data.status === 'cancelled') {
+                                showFinal('❌', data.status === 'cancelled' ? 'Payment cancelled' : 'Payment failed', '#ef4444', 'The payment was not completed.');
+                                return;
+                            }
+                            // Still pending
+                            if (attempt < MAX_ATTEMPTS) {
+                                setTimeout(checkStatus, INTERVAL_MS);
+                            } else {
+                                showFinal('⏳', 'Payment pending', '#6b7280', 'Your payment is still being processed. The license will activate automatically once completed. You can close this page.');
+                            }
                         } else {
-                            iconEl.textContent = '⏳';
-                            statusEl.textContent = 'Payment pending';
-                            statusEl.style.color = '#6b7280';
-                            descEl.textContent = 'Your payment is still being processed. You can close this page and check back later.';
+                            if (attempt < MAX_ATTEMPTS) {
+                                setTimeout(checkStatus, INTERVAL_MS);
+                            } else {
+                                showFinal('❓', 'Unable to verify', '#6b7280', data.message || 'Could not load payment status.');
+                            }
                         }
-                    } else {
-                        iconEl.textContent = '❓';
-                        statusEl.textContent = 'Unable to verify';
-                        statusEl.style.color = '#6b7280';
-                        descEl.textContent = data.message || 'Could not load payment status.';
-                    }
-                })
-                .catch(function() {
-                    iconEl.textContent = '⚠️';
-                    statusEl.textContent = 'Error';
-                    statusEl.style.color = '#ef4444';
-                    descEl.textContent = 'Could not load payment status. You may check your order later.';
-                    homeBtn.style.display = 'inline-block';
-                });
+                    })
+                    .catch(function() {
+                        if (attempt < MAX_ATTEMPTS) {
+                            setTimeout(checkStatus, INTERVAL_MS);
+                        } else {
+                            showFinal('⚠️', 'Error', '#ef4444', 'Could not load payment status. You may check your order later.');
+                        }
+                    });
+            }
+
+            checkStatus();
         })();
     </script>
 </body>

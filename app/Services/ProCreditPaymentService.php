@@ -9,6 +9,7 @@ use App\Models\Card;
 use App\Models\Dister;
 use App\Models\Garden;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -161,6 +162,7 @@ class ProCreditPaymentService
                     $payment->update(['paid_at' => now()]);
                     $this->createPaymentRecord($payment);
                     $this->updateDisterBalance($payment);
+                    $this->activateCardLicense($payment);
                 }
             }
 
@@ -182,26 +184,58 @@ class ProCreditPaymentService
 
     /**
      * Get payment status; if pending and we have bank order, sync via Get Order Details.
+     * $hppStatus: optional STATUS from HPP redirect URL (e.g. "FullyPaid").
      */
-    public function getPaymentStatus(string $orderId): ?array
+    public function getPaymentStatus(string $orderId, ?string $hppStatus = null): ?array
     {
         $payment = ProCreditPayment::where('order_id', $orderId)->first();
         if (!$payment) {
             return null;
         }
 
-        if ($payment->status === 'pending' && $payment->bank_order_id && $payment->bank_order_password) {
-            $details = $this->client->getOrderDetails($payment->bank_order_id, $payment->bank_order_password);
-            if ($details['success'] && isset($details['order']['status'])) {
-                $status = $this->mapPgStatus($details['order']['status']);
-                $payment->update(['status' => $status]);
-                if ($status === 'completed') {
+        if ($payment->status === 'pending') {
+            $resolvedStatus = null;
+
+            // 1) Try Get Order Details from bank API
+            if ($payment->bank_order_id && $payment->bank_order_password) {
+                $details = $this->client->getOrderDetails($payment->bank_order_id, $payment->bank_order_password);
+                Log::info('ProCredit getPaymentStatus: bank API response', [
+                    'order_id' => $orderId,
+                    'bank_order_id' => $payment->bank_order_id,
+                    'api_success' => $details['success'],
+                    'api_order_status' => $details['order']['status'] ?? null,
+                    'api_order' => $details['order'] ?? null,
+                ]);
+                if ($details['success'] && isset($details['order']['status'])) {
+                    $resolvedStatus = $this->mapPgStatus($details['order']['status']);
+                }
+            }
+
+            // 2) If bank API didn't resolve, use HPP redirect STATUS as fallback
+            if (($resolvedStatus === null || $resolvedStatus === 'pending') && $hppStatus) {
+                $hppMapped = $this->mapPgStatus($hppStatus);
+                Log::info('ProCredit getPaymentStatus: using HPP redirect STATUS', [
+                    'order_id' => $orderId,
+                    'hpp_status_raw' => $hppStatus,
+                    'hpp_status_mapped' => $hppMapped,
+                ]);
+                if ($hppMapped !== 'pending') {
+                    $resolvedStatus = $hppMapped;
+                }
+            }
+
+            if ($resolvedStatus && $resolvedStatus !== 'pending') {
+                $payment->update(['status' => $resolvedStatus]);
+                if ($resolvedStatus === 'completed') {
                     $payment->update(['paid_at' => now()]);
                     $this->createPaymentRecord($payment);
                     $this->updateDisterBalance($payment);
+                    $this->activateCardLicense($payment);
                 }
             }
         }
+
+        $card = $payment->card_id ? Card::find($payment->card_id) : null;
 
         return [
             'order_id' => $payment->order_id,
@@ -210,6 +244,8 @@ class ProCreditPaymentService
             'currency' => $payment->currency,
             'paid_at' => $payment->paid_at?->toIso8601String(),
             'bog_transaction_id' => $payment->bog_transaction_id,
+            'card_id' => $payment->card_id,
+            'card_license' => $card ? $card->license : null,
         ];
     }
 
@@ -230,6 +266,9 @@ class ProCreditPaymentService
             'pending' => 'pending',
             'approved' => 'completed',
             'completed' => 'completed',
+            'fullypaid' => 'completed',
+            'fully_paid' => 'completed',
+            'paid' => 'completed',
             'success' => 'completed',
             'failed' => 'failed',
             'declined' => 'failed',
@@ -359,6 +398,54 @@ class ProCreditPaymentService
         } catch (\Throwable $e) {
             Log::error('ProCredit updateDisterBalance exception: ' . $e->getMessage(), [
                 'procredit_payment_id' => $proCreditPayment->id,
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Activate card license after successful payment.
+     * Sets license to date type with expiry = 1 year from now.
+     */
+    protected function activateCardLicense(ProCreditPayment $proCreditPayment)
+    {
+        try {
+            if (!$proCreditPayment->card_id) {
+                Log::warning('ProCredit activateCardLicense: no card_id', [
+                    'procredit_payment_id' => $proCreditPayment->id,
+                ]);
+                return false;
+            }
+
+            $card = Card::find($proCreditPayment->card_id);
+            if (!$card) {
+                Log::warning('ProCredit activateCardLicense: card not found', [
+                    'card_id' => $proCreditPayment->card_id,
+                ]);
+                return false;
+            }
+
+            $oldLicense = $card->license;
+            $expiryDate = Carbon::now()->addYear()->toDateString(); // 1 year from now
+
+            $card->setLicenseDate($expiryDate);
+            $card->save();
+
+            Log::info('ProCredit: card license activated after payment', [
+                'procredit_payment_id' => $proCreditPayment->id,
+                'card_id' => $card->id,
+                'old_license' => $oldLicense,
+                'new_license' => $card->license,
+                'expiry_date' => $expiryDate,
+                'amount' => $proCreditPayment->amount,
+                'currency' => $proCreditPayment->currency,
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('ProCredit activateCardLicense exception: ' . $e->getMessage(), [
+                'procredit_payment_id' => $proCreditPayment->id,
+                'card_id' => $proCreditPayment->card_id,
             ]);
             return false;
         }
