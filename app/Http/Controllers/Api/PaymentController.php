@@ -538,11 +538,12 @@ class PaymentController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             required={"garden_id", "amount"},
-             *             @OA\Property(property="garden_id", type="integer", example=1, description="Garden ID"),
-             *             @OA\Property(property="amount", type="number", example=100.5, description="Amount to add (positive) or subtract (negative) from garden balance"),
-             *             @OA\Property(property="currency", type="string", example="GEL", description="Currency code", nullable=true),
-             *             @OA\Property(property="comment", type="string", example="Payment for monthly subscription", description="Payment comment", nullable=true),
-             *             @OA\Property(property="payment_gateway_id", type="integer", example=1, description="Payment gateway ID", nullable=true)
+     *             @OA\Property(property="garden_id", type="integer", example=1, description="Garden ID"),
+     *             @OA\Property(property="amount", type="number", example=100.5, description="Amount (always positive)"),
+     *             @OA\Property(property="operation", type="string", enum={"add", "subtract"}, example="add", description="Operation: add (increase balance, default) or subtract (decrease balance)"),
+     *             @OA\Property(property="currency", type="string", example="GEL", description="Currency code", nullable=true),
+     *             @OA\Property(property="comment", type="string", example="Payment for monthly subscription", description="Payment comment", nullable=true),
+     *             @OA\Property(property="payment_gateway_id", type="integer", example=1, description="Payment gateway ID", nullable=true)
      *         )
      *     ),
      *     @OA\Response(
@@ -573,7 +574,8 @@ class PaymentController extends Controller
     {
         $validated = $request->validate([
             'garden_id' => 'required|integer|exists:gardens,id',
-            'amount' => 'required|numeric|max:9999999.99|min:-9999999.99',
+            'amount' => 'required|numeric|min:0.01|max:9999999.99',
+            'operation' => 'nullable|string|in:add,subtract',
             'currency' => 'nullable|string|max:10',
             'comment' => 'nullable|string|max:1000',
             'status' => 'nullable|string|max:255',
@@ -589,6 +591,13 @@ class PaymentController extends Controller
             ], 404);
         }
 
+        // Apply operation: "add" (default) or "subtract" (makes amount negative)
+        $operation = $validated['operation'] ?? 'add';
+        $amount = (float) $validated['amount'];
+        if ($operation === 'subtract') {
+            $amount = -$amount;
+        }
+
         // Generate unique transaction_number (must be unique)
         $transactionNumber = '0_' . $validated['garden_id'] . '_' . time() . '_' . uniqid();
 
@@ -599,9 +608,9 @@ class PaymentController extends Controller
             'card_number' => '0',
             'card_id' => null,
             'garden_id' => $validated['garden_id'],
-            'amount' => $validated['amount'],
+            'amount' => $amount,
             'currency' => $validated['currency'] ?? 'GEL',
-            'comment' => $validated['comment'] ?? 'Garden balance update',
+            'comment' => $validated['comment'] ?? ('Garden balance ' . $operation),
             'type' => 'garden_balance',
             'status' => $validated['status'] ?? 'completed',
             'payment_gateway_id' => $validated['payment_gateway_id'] ?? null,
@@ -612,8 +621,8 @@ class PaymentController extends Controller
         // Update garden balance only if status is completed
         if ($payment->status === 'completed') {
             $oldBalance = $garden->balance ?? 0;
-            $newBalance = $oldBalance + $payment->amount; // amount can be negative
-            
+            $newBalance = $oldBalance + $payment->amount; // amount is negative for subtract
+
             $garden->update([
                 'balance' => max(0, $newBalance), // Ensure balance doesn't go below 0
             ]);
@@ -621,6 +630,7 @@ class PaymentController extends Controller
             Log::info('Garden balance updated from Payment', [
                 'payment_id' => $payment->id,
                 'garden_id' => $garden->id,
+                'operation' => $operation,
                 'amount' => $payment->amount,
                 'old_balance' => $oldBalance,
                 'new_balance' => $garden->balance,
@@ -633,6 +643,7 @@ class PaymentController extends Controller
             'success' => true,
             'message' => 'Garden payment created successfully',
             'payment' => $payment,
+            'operation' => $operation,
             'garden' => [
                 'id' => $garden->id,
                 'balance' => $garden->balance,

@@ -160,10 +160,7 @@ class ProCreditPaymentService
 
                 if ($status === 'completed') {
                     $payment->update(['paid_at' => now()]);
-                    $this->createPaymentRecord($payment);
-                    // $this->updateGardenBalance($payment);
-                    $this->updateDisterBalance($payment);
-                    $this->activateCardLicense($payment);
+                    $this->onPaymentCompleted($payment);
                 }
             }
 
@@ -229,17 +226,15 @@ class ProCreditPaymentService
                 $payment->update(['status' => $resolvedStatus]);
                 if ($resolvedStatus === 'completed') {
                     $payment->update(['paid_at' => now()]);
-                    $this->createPaymentRecord($payment);
-                    // $this->updateGardenBalance($payment);
-                    $this->updateDisterBalance($payment);
-                    $this->activateCardLicense($payment);
+                    $this->onPaymentCompleted($payment);
                 }
             }
         }
 
-        $card = $payment->card_id ? Card::find($payment->card_id) : null;
+        $details = $payment->payment_details ?? [];
+        $isBulk = !empty($details['bulk_payment']) && !empty($details['bulk_card_ids']);
 
-        return [
+        $result = [
             'order_id' => $payment->order_id,
             'status' => $payment->status,
             'amount' => $payment->amount,
@@ -247,8 +242,19 @@ class ProCreditPaymentService
             'paid_at' => $payment->paid_at?->toIso8601String(),
             'bog_transaction_id' => $payment->bog_transaction_id,
             'card_id' => $payment->card_id,
-            'card_license' => $card ? $card->license : null,
+            'bulk_payment' => $isBulk,
         ];
+
+        if ($isBulk) {
+            $result['bulk_card_ids'] = $details['bulk_card_ids'];
+            $result['cards_count'] = count($details['bulk_card_ids']);
+            $result['tariff_per_card'] = $details['tariff_per_card'] ?? null;
+        } else {
+            $card = $payment->card_id ? Card::find($payment->card_id) : null;
+            $result['card_license'] = $card ? $card->license : null;
+        }
+
+        return $result;
     }
 
     protected function generateOrderId(): string
@@ -258,6 +264,44 @@ class ProCreditPaymentService
         } while (ProCreditPayment::where('order_id', $orderId)->exists());
 
         return $orderId;
+    }
+
+    /**
+     * Central handler for completed payments — works for both single and bulk.
+     */
+    protected function onPaymentCompleted(ProCreditPayment $payment)
+    {
+        $details = $payment->payment_details ?? [];
+        $isBulk = !empty($details['bulk_payment']) && !empty($details['bulk_card_ids']);
+
+        if ($isBulk) {
+            $bulkCardIds = $details['bulk_card_ids'];
+            $tariffPerCard = $details['tariff_per_card'] ?? 0;
+
+            Log::info('ProCredit: bulk payment completed — processing cards', [
+                'procredit_payment_id' => $payment->id,
+                'order_id' => $payment->order_id,
+                'total_amount' => $payment->amount,
+                'cards_count' => count($bulkCardIds),
+                'tariff_per_card' => $tariffPerCard,
+            ]);
+
+            // Create individual payment records + activate license for each card
+            foreach ($bulkCardIds as $cardId) {
+                $this->createPaymentRecordForCard($payment, $cardId, $tariffPerCard);
+                $this->activateCardLicenseById($cardId, $payment);
+            }
+
+            // Balances: update once for the total amount
+            $this->updateGardenBalance($payment);
+            $this->updateDisterBalance($payment);
+        } else {
+            // Single payment — existing logic
+            $this->createPaymentRecord($payment);
+            $this->updateGardenBalance($payment);
+            $this->updateDisterBalance($payment);
+            $this->activateCardLicense($payment);
+        }
     }
 
     protected function mapPgStatus(string $pgStatus): string
@@ -324,6 +368,98 @@ class ProCreditPaymentService
                 'procredit_payment_id' => $proCreditPayment->id,
             ]);
             return null;
+        }
+    }
+
+    /**
+     * Create individual payment record for a specific card (used in bulk).
+     */
+    protected function createPaymentRecordForCard(ProCreditPayment $proCreditPayment, int $cardId, float $amount)
+    {
+        try {
+            $txn = $proCreditPayment->order_id . '_card_' . $cardId;
+
+            if (Payment::where('transaction_number', $txn)->exists()) {
+                return Payment::where('transaction_number', $txn)->first();
+            }
+
+            $card = Card::find($cardId);
+            $cardNumber = 'N/A';
+            if ($card && $card->phone) {
+                $cardNumber = '****' . substr($card->phone, -4);
+            }
+
+            $paymentGateway = $this->findPaymentGatewayByCurrency($proCreditPayment->currency ?? 'GEL');
+            if (!$paymentGateway) {
+                throw new \Exception('Payment gateway not found for currency: ' . ($proCreditPayment->currency ?? 'GEL'));
+            }
+
+            $comment = ($proCreditPayment->payment_details['description'] ?? 'Bulk Payment') . ' - Card ID: ' . $cardId;
+
+            $record = Payment::create([
+                'transaction_number' => $txn,
+                'transaction_number_bank' => $proCreditPayment->bog_transaction_id,
+                'card_number' => $cardNumber,
+                'card_id' => $cardId,
+                'garden_id' => $proCreditPayment->garden_id,
+                'amount' => $amount > 0 ? $amount : $proCreditPayment->amount,
+                'currency' => $proCreditPayment->currency ?? 'GEL',
+                'comment' => $comment,
+                'type' => 'bank',
+                'status' => 'completed',
+                'payment_gateway_id' => $paymentGateway->id,
+            ]);
+
+            Log::info('ProCredit: bulk payment record created for card', [
+                'procredit_payment_id' => $proCreditPayment->id,
+                'payment_record_id' => $record->id,
+                'card_id' => $cardId,
+                'amount' => $record->amount,
+            ]);
+
+            return $record;
+        } catch (\Throwable $e) {
+            Log::error('ProCredit createPaymentRecordForCard exception: ' . $e->getMessage(), [
+                'procredit_payment_id' => $proCreditPayment->id,
+                'card_id' => $cardId,
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Activate a specific card's license by card ID (used in bulk).
+     */
+    protected function activateCardLicenseById(int $cardId, ProCreditPayment $proCreditPayment)
+    {
+        try {
+            $card = Card::find($cardId);
+            if (!$card) {
+                Log::warning('ProCredit activateCardLicenseById: card not found', ['card_id' => $cardId]);
+                return false;
+            }
+
+            $oldLicense = $card->license;
+            $expiryDate = Carbon::now()->addYear()->toDateString();
+
+            $card->setLicenseDate($expiryDate);
+            $card->save();
+
+            Log::info('ProCredit: bulk — card license activated', [
+                'procredit_payment_id' => $proCreditPayment->id,
+                'card_id' => $card->id,
+                'old_license' => $oldLicense,
+                'new_license' => $card->license,
+                'expiry_date' => $expiryDate,
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('ProCredit activateCardLicenseById exception: ' . $e->getMessage(), [
+                'card_id' => $cardId,
+                'procredit_payment_id' => $proCreditPayment->id,
+            ]);
+            return false;
         }
     }
 
@@ -419,33 +555,29 @@ class ProCreditPaymentService
     protected function updateDisterBalance(ProCreditPayment $proCreditPayment)
     {
         try {
-            if (!$proCreditPayment->card_id) {
-                Log::info('ProCredit updateDisterBalance: skipped — no card_id', [
-                    'procredit_payment_id' => $proCreditPayment->id,
-                ]);
-                return false;
+            $garden = null;
+
+            // 1) Try garden_id directly (works for both single and bulk)
+            if ($proCreditPayment->garden_id) {
+                $garden = Garden::find($proCreditPayment->garden_id);
             }
-            $card = Card::find($proCreditPayment->card_id);
-            if (!$card || !$card->group_id) {
-                Log::info('ProCredit updateDisterBalance: skipped — card or group not found', [
-                    'procredit_payment_id' => $proCreditPayment->id,
-                    'card_id' => $proCreditPayment->card_id,
-                ]);
-                return false;
+
+            // 2) Fallback: find garden via card → group → garden
+            if (!$garden && $proCreditPayment->card_id) {
+                $card = Card::find($proCreditPayment->card_id);
+                if ($card && $card->group_id) {
+                    $group = \App\Models\GardenGroup::find($card->group_id);
+                    if ($group && $group->garden_id) {
+                        $garden = Garden::find($group->garden_id);
+                    }
+                }
             }
-            $group = \App\Models\GardenGroup::find($card->group_id);
-            if (!$group || !$group->garden_id) {
-                Log::info('ProCredit updateDisterBalance: skipped — garden group not found', [
-                    'procredit_payment_id' => $proCreditPayment->id,
-                    'group_id' => $card->group_id,
-                ]);
-                return false;
-            }
-            $garden = Garden::find($group->garden_id);
+
             if (!$garden) {
                 Log::info('ProCredit updateDisterBalance: skipped — garden not found', [
                     'procredit_payment_id' => $proCreditPayment->id,
-                    'garden_id' => $group->garden_id,
+                    'garden_id' => $proCreditPayment->garden_id,
+                    'card_id' => $proCreditPayment->card_id,
                 ]);
                 return false;
             }

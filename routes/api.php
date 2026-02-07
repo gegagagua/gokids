@@ -55,9 +55,9 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/procredit-payment', [ProCreditPaymentController::class, 'createPayment']);
     Route::post('/procredit-payment/callback', [ProCreditPaymentController::class, 'handleCallback']);
     Route::get('/procredit-payment/status/{orderId}', [ProCreditPaymentController::class, 'getPaymentStatus']);
+    Route::post('/procredit-payment/bulk', [ProCreditPaymentController::class, 'createBulkPayment']);
 
     Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/procredit-payment/bulk', [ProCreditPaymentController::class, 'createBulkPayment']);
         // Place specific routes before resource to avoid {garden} binding capturing 'export'
         Route::apiResource('disters', DisterController::class);
         Route::post('/payments/create-garden-payment', [PaymentController::class, 'createGardenPayment']);

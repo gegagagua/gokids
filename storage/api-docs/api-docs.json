@@ -18016,7 +18016,8 @@
                             "schema": {
                                 "required": [
                                     "garden_id",
-                                    "amount"
+                                    "amount",
+                                    "operation"
                                 ],
                                 "properties": {
                                     "garden_id": {
@@ -18025,9 +18026,18 @@
                                         "example": 1
                                     },
                                     "amount": {
-                                        "description": "Amount to add (positive) or subtract (negative) from garden balance",
+                                        "description": "Amount (always positive)",
                                         "type": "number",
                                         "example": 100.5
+                                    },
+                                    "operation": {
+                                        "description": "Operation: add (increase balance) or subtract (decrease balance)",
+                                        "type": "string",
+                                        "enum": [
+                                            "add",
+                                            "subtract"
+                                        ],
+                                        "example": "add"
                                     },
                                     "currency": {
                                         "description": "Currency code",
@@ -19102,8 +19112,8 @@
                 "tags": [
                     "ProCredit Payments"
                 ],
-                "summary": "Create bulk ProCredit payments for cards",
-                "description": "Create one ProCredit E-commerce order per card (Create Order). Returns redirect_url for each; user completes each payment on HPP. Use GET /api/procredit-payment/status/{orderId} or callback to confirm.",
+                "summary": "Create bulk ProCredit payment for multiple cards",
+                "description": "Creates ONE ProCredit order for the total amount (tariff × number of cards). User pays once on HPP. On completion, each card gets its license activated, payment records created, and balances updated.",
                 "operationId": "createBulkProCreditPayment",
                 "requestBody": {
                     "required": true,
@@ -19135,8 +19145,8 @@
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "Payments created"
+                    "201": {
+                        "description": "Bulk payment created — single redirect_url for total amount"
                     },
                     "403": {
                         "description": "Access denied. Only garden users."
@@ -19144,15 +19154,13 @@
                     "422": {
                         "description": "Validation error"
                     },
+                    "503": {
+                        "description": "ProCredit gateway not configured"
+                    },
                     "500": {
                         "description": "Payment creation failed"
                     }
-                },
-                "security": [
-                    {
-                        "sanctum": []
-                    }
-                ]
+                }
             }
         },
         "/api/sms-gateways": {

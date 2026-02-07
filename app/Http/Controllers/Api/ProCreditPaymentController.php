@@ -166,9 +166,8 @@ class ProCreditPaymentController extends Controller
      *     path="/api/procredit-payment/bulk",
      *     operationId="createBulkProCreditPayment",
      *     tags={"ProCredit Payments"},
-     *     summary="Create bulk ProCredit payments for cards",
-     *     description="Create one ProCredit E-commerce order per card (Create Order). Returns redirect_url for each; user completes each payment on HPP. Use GET /api/procredit-payment/status/{orderId} or callback to confirm.",
-     *     security={{"sanctum":{}}},
+     *     summary="Create bulk ProCredit payment for multiple cards",
+     *     description="Creates ONE ProCredit order for the total amount (tariff × number of cards). User pays once on HPP. On completion, each card gets its license activated, payment records created, and balances updated.",
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -178,22 +177,15 @@ class ProCreditPaymentController extends Controller
      *             @OA\Property(property="description", type="string")
      *         )
      *     ),
-     *     @OA\Response(response=200, description="Payments created"),
+     *     @OA\Response(response=201, description="Bulk payment created — single redirect_url for total amount"),
      *     @OA\Response(response=403, description="Access denied. Only garden users."),
      *     @OA\Response(response=422, description="Validation error"),
+     *     @OA\Response(response=503, description="ProCredit gateway not configured"),
      *     @OA\Response(response=500, description="Payment creation failed")
      * )
      */
     public function createBulkPayment(Request $request)
     {
-        $user = $request->user();
-        if (!$user || $user->type !== 'garden') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Access denied. Only garden users can use this endpoint.'
-            ], 403);
-        }
-
         $validated = $request->validate([
             'garden_id' => 'required|integer|exists:gardens,id',
             'card_ids' => 'required|array|min:1',
@@ -204,9 +196,6 @@ class ProCreditPaymentController extends Controller
         $garden = Garden::with('countryData')->find($validated['garden_id']);
         if (!$garden) {
             return response()->json(['success' => false, 'message' => 'Garden not found.'], 404);
-        }
-        if ($garden->email !== $user->email) {
-            return response()->json(['success' => false, 'message' => 'Access denied. This garden does not belong to you.'], 403);
         }
         if (!$garden->countryData) {
             return response()->json(['success' => false, 'message' => 'Garden country not found.'], 422);
@@ -226,22 +215,11 @@ class ProCreditPaymentController extends Controller
             $currency = $paymentGateway->currency;
         }
 
-        Log::info('ProCredit bulk: country & payment gateway info', [
-            'garden_id' => $garden->id,
-            'country_id' => $country->id,
-            'country_tariff' => $tariff,
-            'payment_gateway' => $paymentGateway ? [
-                'id' => $paymentGateway->id,
-                'name' => $paymentGateway->name,
-                'currency' => $paymentGateway->currency,
-            ] : null,
-            'resolved_currency' => $currency,
-        ]);
-
         $cardIds = $validated['card_ids'];
-        $description = $validated['description'] ?? 'Bulk payment for cards';
+        $description = $validated['description'] ?? 'Bulk payment for ' . count($cardIds) . ' cards';
         $cards = Card::with(['group.garden'])->whereIn('id', $cardIds)->get();
 
+        // Validate all cards belong to this garden
         $invalidCards = [];
         foreach ($cards as $card) {
             if (!$card->group || !$card->group->garden || $card->group->garden->id !== $garden->id) {
@@ -256,59 +234,57 @@ class ProCreditPaymentController extends Controller
             ], 422);
         }
 
+        $totalAmount = round($tariff * count($cards), 2);
+
+        Log::info('ProCredit bulk: creating single order for multiple cards', [
+            'garden_id' => $garden->id,
+            'card_ids' => $cardIds,
+            'cards_count' => count($cards),
+            'tariff_per_card' => $tariff,
+            'total_amount' => $totalAmount,
+            'currency' => $currency,
+        ]);
+
+        // Create ONE payment for the total amount, store card_ids in payment_details
         $proCreditService = new ProCreditPaymentService();
-        $payments = [];
-        $totalAmount = $tariff * count($cards);
-        $successCount = 0;
-        $failedCount = 0;
+        $paymentData = [
+            'amount' => $totalAmount,
+            'currency' => $currency,
+            'card_id' => null, // bulk — no single card
+            'garden_id' => $garden->id,
+            'user_id' => auth()->id(),
+            'payment_details' => [
+                'description' => $description,
+                'bulk_payment' => true,
+                'bulk_card_ids' => $cardIds,
+                'tariff_per_card' => $tariff,
+                'cards_count' => count($cards),
+                'country_id' => $country->id,
+            ],
+        ];
 
-        foreach ($cards as $card) {
-            try {
-                $amount = $tariff;
-                $paymentData = [
-                    'amount' => $amount,
-                    'currency' => $currency,
-                    'card_id' => $card->id,
-                    'garden_id' => $garden->id,
-                    'user_id' => $user->id,
-                    'payment_details' => [
-                        'description' => $description . ' - Card ID: ' . $card->id,
-                        'bulk_payment' => true,
-                        'country_tariff' => $tariff,
-                        'country_id' => $country->id,
-                    ],
-                ];
+        $result = $proCreditService->createPayment($paymentData);
 
-                $result = $proCreditService->createPayment($paymentData);
-
-                if ($result['success']) {
-                    $successCount++;
-                    $payments[] = [
-                        'card_id' => $card->id,
-                        'payment_id' => $result['payment']->id,
-                        'order_id' => $result['order_id'] ?? $result['payment']->order_id,
-                        'redirect_url' => $result['redirect_url'],
-                        'amount' => $amount,
-                        'currency' => $currency,
-                        'status' => 'pending',
-                    ];
-                } else {
-                    $failedCount++;
-                    Log::error('ProCredit bulk: create order failed for card', ['card_id' => $card->id, 'error' => $result['error'] ?? 'Unknown']);
-                }
-            } catch (\Exception $e) {
-                $failedCount++;
-                Log::error('ProCredit bulk exception', ['card_id' => $card->id, 'error' => $e->getMessage()]);
-            }
+        if ($result['success']) {
+            return response()->json([
+                'success' => true,
+                'payment' => $result['payment'],
+                'redirect_url' => $result['redirect_url'],
+                'order_id' => $result['order_id'] ?? $result['payment']->order_id,
+                'total_amount' => $totalAmount,
+                'currency' => $currency,
+                'cards_count' => count($cards),
+                'card_ids' => $cardIds,
+                'tariff_per_card' => $tariff,
+            ], 201);
         }
 
+        $error = $result['error'] ?? 'Payment creation failed';
+        $isConfigError = str_contains($error, 'not configured') || str_contains($error, 'not set') || str_contains($error, 'placeholder');
         return response()->json([
-            'success' => true,
-            'total_amount' => round($totalAmount, 2),
-            'payments_count' => count($payments),
-            'success_count' => $successCount,
-            'failed_count' => $failedCount,
-            'payments' => $payments,
-        ], 200);
+            'success' => false,
+            'error' => $error,
+            'hint' => $isConfigError ? 'Edit config/services.php → procredit. See PROCREDIT_ECOMMERCE_SETUP.md.' : null,
+        ], $isConfigError ? 503 : 500);
     }
 }
