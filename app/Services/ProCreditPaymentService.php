@@ -454,14 +454,34 @@ class ProCreditPaymentService
             if (!$dister && $garden->country_id) {
                 $dister = Dister::where('country_id', $garden->country_id)->first();
             }
+
+            $adminUser = User::where('type', User::TYPE_ADMIN)->orderBy('id', 'asc')->first();
+
             if (!$dister || !$dister->percent || $dister->percent <= 0) {
-                Log::info('ProCredit updateDisterBalance: skipped — no dister or percent is 0', [
+                // No dister — 100% goes to admin
+                Log::info('ProCredit updateDisterBalance: no dister — 100% to admin', [
                     'procredit_payment_id' => $proCreditPayment->id,
                     'garden_id' => $garden->id,
                     'dister_found' => $dister ? true : false,
                     'dister_percent' => $dister->percent ?? null,
                 ]);
-                return false;
+
+                if ($adminUser) {
+                    $oldAdminBalance = $adminUser->balance ?? 0;
+                    $adminUser->update([
+                        'balance' => $oldAdminBalance + (float) $proCreditPayment->amount,
+                    ]);
+
+                    Log::info('ProCredit: admin balance updated (100%, no dister)', [
+                        'procredit_payment_id' => $proCreditPayment->id,
+                        'admin_user_id' => $adminUser->id,
+                        'admin_amount' => (float) $proCreditPayment->amount,
+                        'old_admin_balance' => $oldAdminBalance,
+                        'new_admin_balance' => $adminUser->balance,
+                    ]);
+                }
+
+                return true;
             }
 
             $percentageAmount = (float) $proCreditPayment->amount * ($dister->percent / 100);
@@ -482,7 +502,6 @@ class ProCreditPaymentService
                 'new_dister_balance' => $dister->balance,
             ]);
 
-            $adminUser = User::where('type', User::TYPE_ADMIN)->orderBy('id', 'asc')->first();
             if ($adminUser) {
                 $oldAdminBalance = $adminUser->balance ?? 0;
                 $adminUser->update([
