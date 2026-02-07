@@ -63,15 +63,17 @@ class ProCreditPaymentController extends Controller
         $country = $garden->countryData;
         $amount = 10.0;
         $currency = 'GEL';
-        if ($country) {
-            $tariff = $country->tariff ?? 0;
-            if ($tariff > 0) {
-                $amount = (float) $tariff;
-            }
-            if (!empty($country->currency)) {
-                $currency = $country->currency;
-            }
-        }
+        
+        Log::info('Country', ['country' => $country]);
+        // if ($country) {
+        //     $tariff = $country->tariff ?? 0;
+        //     if ($tariff > 0) {
+        //         $amount = (float) $tariff;
+        //     }
+        //     if (!empty($country->currency)) {
+        //         $currency = $country->currency;
+        //     }
+        // }
 
         $validated['user_id'] = auth()->id();
         $validated['amount'] = $amount;
