@@ -26,7 +26,7 @@
             <div id="status-description" class="description"></div>
             <div id="attempt-info" class="attempt-info"></div>
         </div>
-        <a href="/" class="btn" id="home-btn" style="display:none;">Return to Home</a>
+        <a href="https://my.gokids.kids/admin/cards" class="btn" id="home-btn" style="display:none;">Return to Home</a>
     </div>
     <script>
         (function() {

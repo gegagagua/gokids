@@ -2288,6 +2288,27 @@ class CardController extends Controller
                 ->where('spam', '!=', 1)
                 ->get();
 
+            // Check and expire licenses that have passed their date
+            foreach ($cards as $card) {
+                if (
+                    is_array($card->license)
+                    && ($card->license['type'] ?? null) === 'date'
+                    && !empty($card->license['value'])
+                ) {
+                    try {
+                        $expiryDate = \Carbon\Carbon::parse($card->license['value']);
+                        if ($expiryDate->isPast()) {
+                            $card->setLicenseBoolean(false);
+                            $card->save();
+                        }
+                    } catch (\Throwable $e) {
+                        // Invalid date format — deactivate
+                        $card->setLicenseBoolean(false);
+                        $card->save();
+                    }
+                }
+            }
+
             // If no cards found, try to find in People table
             if ($cards->isEmpty()) {
                 $people = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
@@ -2306,6 +2327,25 @@ class CardController extends Controller
                     ]);
                 }
                 
+                // Check and expire licenses on people's cards
+                foreach ($people as $person) {
+                    if ($person->card && is_array($person->card->license)
+                        && ($person->card->license['type'] ?? null) === 'date'
+                        && !empty($person->card->license['value'])
+                    ) {
+                        try {
+                            $expiryDate = \Carbon\Carbon::parse($person->card->license['value']);
+                            if ($expiryDate->isPast()) {
+                                $person->card->setLicenseBoolean(false);
+                                $person->card->save();
+                            }
+                        } catch (\Throwable $e) {
+                            $person->card->setLicenseBoolean(false);
+                            $person->card->save();
+                        }
+                    }
+                }
+
                 // Transform people to include full card data in same format as Cards
                 $transformedPeople = $people->map(function ($person) {
                     // If person has a card, return in Card format (same as normal cards)
@@ -2363,6 +2403,25 @@ class CardController extends Controller
             $people = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
                 ->where('phone', $user->phone)
                 ->get();
+
+            // Check and expire licenses on people's cards
+            foreach ($people as $person) {
+                if ($person->card && is_array($person->card->license)
+                    && ($person->card->license['type'] ?? null) === 'date'
+                    && !empty($person->card->license['value'])
+                ) {
+                    try {
+                        $expiryDate = \Carbon\Carbon::parse($person->card->license['value']);
+                        if ($expiryDate->isPast()) {
+                            $person->card->setLicenseBoolean(false);
+                            $person->card->save();
+                        }
+                    } catch (\Throwable $e) {
+                        $person->card->setLicenseBoolean(false);
+                        $person->card->save();
+                    }
+                }
+            }
 
             // Transform cards to include garden images and garden info (same as verifyOtp)
             $transformedCards = $cards->map(function ($card) {
