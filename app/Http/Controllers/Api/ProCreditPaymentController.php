@@ -64,16 +64,32 @@ class ProCreditPaymentController extends Controller
         $amount = 10.0;
         $currency = 'GEL';
         
-        Log::info('Country', ['country' => $country]);
-        // if ($country) {
-        //     $tariff = $country->tariff ?? 0;
-        //     if ($tariff > 0) {
-        //         $amount = (float) $tariff;
-        //     }
-        //     if (!empty($country->currency)) {
-        //         $currency = $country->currency;
-        //     }
-        // }
+        if ($country) {
+            $tariff = $country->tariff ?? 0;
+            if ($tariff > 0) {
+                $amount = (float) $tariff;
+            }
+            // if (!empty($country->currency)) {
+            //     $currency = $country->currency;
+            // }
+
+            $paymentGateway = $country->paymentGateway;
+            Log::info('ProCredit createPayment: country & payment gateway info', [
+                'country_id' => $country->id,
+                'country_name' => $country->name,
+                'tariff' => $country->tariff,
+                'currency' => $country->currency,
+                'payment_gateway_id' => $country->payment_gateway_id,
+                'payment_gateway' => $paymentGateway ? [
+                    'id' => $paymentGateway->id,
+                    'name' => $paymentGateway->name ?? null,
+                    'currency' => $paymentGateway->currency ?? null,
+                    'is_active' => $paymentGateway->is_active ?? null,
+                ] : null,
+                'resolved_amount' => $amount,
+                'resolved_currency' => $currency,
+            ]);
+        }
 
         $validated['user_id'] = auth()->id();
         $validated['amount'] = $amount;
