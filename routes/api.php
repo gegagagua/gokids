@@ -61,6 +61,7 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         // Place specific routes before resource to avoid {garden} binding capturing 'export'
         Route::apiResource('disters', DisterController::class);
         Route::post('/payments/create-garden-payment', [PaymentController::class, 'createGardenPayment']);
+        Route::post('/payments/pay-for-cards', [PaymentController::class, 'payForCards']);
         Route::apiResource('payments', PaymentController::class);
         Route::get('/gardens/export', [GardenController::class, 'export']);
         Route::apiResource('gardens', GardenController::class)->except(['store']);

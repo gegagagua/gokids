@@ -532,15 +532,14 @@ class PaymentController extends Controller
      *     operationId="createGardenPayment",
      *     tags={"Payments"},
      *     summary="Create garden balance payment",
-     *     description="Create a payment record to update garden balance. Amount can be positive (add to balance) or negative (subtract from balance).",
+     *     description="Create a payment record to update garden balance. Positive amount (e.g. 50) adds to balance, negative amount (e.g. -100) subtracts from balance.",
      *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             required={"garden_id", "amount"},
      *             @OA\Property(property="garden_id", type="integer", example=1, description="Garden ID"),
-     *             @OA\Property(property="amount", type="number", example=100.5, description="Amount (always positive)"),
-     *             @OA\Property(property="operation", type="string", enum={"add", "subtract"}, example="add", description="Operation: add (increase balance, default) or subtract (decrease balance)"),
+     *             @OA\Property(property="amount", type="number", example=50, description="Positive to add, negative to subtract (e.g. 50 adds, -100 subtracts)"),
      *             @OA\Property(property="currency", type="string", example="GEL", description="Currency code", nullable=true),
      *             @OA\Property(property="comment", type="string", example="Payment for monthly subscription", description="Payment comment", nullable=true),
      *             @OA\Property(property="payment_gateway_id", type="integer", example=1, description="Payment gateway ID", nullable=true)
@@ -574,8 +573,7 @@ class PaymentController extends Controller
     {
         $validated = $request->validate([
             'garden_id' => 'required|integer|exists:gardens,id',
-            'amount' => 'required|numeric|min:0.01|max:9999999.99',
-            'operation' => 'nullable|string|in:add,subtract',
+            'amount' => 'required|numeric|max:9999999.99|min:-9999999.99',
             'currency' => 'nullable|string|max:10',
             'comment' => 'nullable|string|max:1000',
             'status' => 'nullable|string|max:255',
@@ -591,12 +589,8 @@ class PaymentController extends Controller
             ], 404);
         }
 
-        // Apply operation: "add" (default) or "subtract" (makes amount negative)
-        $operation = $validated['operation'] ?? 'add';
+        // Amount sign determines operation: positive = add, negative = subtract
         $amount = (float) $validated['amount'];
-        if ($operation === 'subtract') {
-            $amount = -$amount;
-        }
 
         // Generate unique transaction_number (must be unique)
         $transactionNumber = '0_' . $validated['garden_id'] . '_' . time() . '_' . uniqid();
@@ -610,7 +604,7 @@ class PaymentController extends Controller
             'garden_id' => $validated['garden_id'],
             'amount' => $amount,
             'currency' => $validated['currency'] ?? 'GEL',
-            'comment' => $validated['comment'] ?? ('Garden balance ' . $operation),
+            'comment' => $validated['comment'] ?? ('Garden balance ' . ($amount >= 0 ? 'add' : 'subtract')),
             'type' => 'garden_balance',
             'status' => $validated['status'] ?? 'completed',
             'payment_gateway_id' => $validated['payment_gateway_id'] ?? null,
@@ -630,7 +624,7 @@ class PaymentController extends Controller
             Log::info('Garden balance updated from Payment', [
                 'payment_id' => $payment->id,
                 'garden_id' => $garden->id,
-                'operation' => $operation,
+                'operation' => $amount >= 0 ? 'add' : 'subtract',
                 'amount' => $payment->amount,
                 'old_balance' => $oldBalance,
                 'new_balance' => $garden->balance,
@@ -643,11 +637,181 @@ class PaymentController extends Controller
             'success' => true,
             'message' => 'Garden payment created successfully',
             'payment' => $payment,
-            'operation' => $operation,
+            'operation' => $amount >= 0 ? 'add' : 'subtract',
             'garden' => [
                 'id' => $garden->id,
                 'balance' => $garden->balance,
             ],
         ], 201);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/payments/pay-for-cards",
+     *     operationId="payForCards",
+     *     tags={"Payments"},
+     *     summary="Pay for cards from garden balance",
+     *     description="Garden pays for cards using its balance. Deducts tariff × number of cards from garden balance and activates 1-year license for each card.",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"garden_id", "card_ids"},
+     *             @OA\Property(property="garden_id", type="integer", example=1, description="Garden ID"),
+     *             @OA\Property(property="card_ids", type="array", @OA\Items(type="integer"), description="Array of card IDs to pay for"),
+     *             @OA\Property(property="comment", type="string", example="Monthly subscription", description="Payment comment", nullable=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cards paid successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string"),
+     *             @OA\Property(property="total_amount", type="number", example=200),
+     *             @OA\Property(property="tariff_per_card", type="number", example=100),
+     *             @OA\Property(property="cards_count", type="integer", example=2),
+     *             @OA\Property(property="garden", type="object",
+     *                 @OA\Property(property="id", type="integer"),
+     *                 @OA\Property(property="old_balance", type="number"),
+     *                 @OA\Property(property="new_balance", type="number")
+     *             ),
+     *             @OA\Property(property="activated_cards", type="array", @OA\Items(type="object"))
+     *         )
+     *     ),
+     *     @OA\Response(response=422, description="Validation error or insufficient balance"),
+     *     @OA\Response(response=404, description="Garden not found")
+     * )
+     */
+    public function payForCards(Request $request)
+    {
+        $validated = $request->validate([
+            'garden_id' => 'required|integer|exists:gardens,id',
+            'card_ids' => 'required|array|min:1',
+            'card_ids.*' => 'required|integer|exists:cards,id',
+            'comment' => 'nullable|string|max:1000',
+        ]);
+
+        $garden = Garden::with('countryData')->find($validated['garden_id']);
+        if (!$garden) {
+            return response()->json(['success' => false, 'message' => 'Garden not found.'], 404);
+        }
+
+        // Get tariff from country
+        $country = $garden->countryData;
+        if (!$country || !$country->tariff || $country->tariff <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Country tariff not configured or is zero.',
+            ], 422);
+        }
+
+        $tariff = (float) $country->tariff;
+        $currency = 'GEL';
+
+        // Use payment gateway currency if available
+        $paymentGateway = $country->paymentGateway;
+        if ($paymentGateway && !empty($paymentGateway->currency)) {
+            $currency = $paymentGateway->currency;
+        }
+
+        // Validate cards belong to this garden
+        $cards = \App\Models\Card::with(['group.garden'])->whereIn('id', $validated['card_ids'])->get();
+        $invalidCards = [];
+        foreach ($cards as $card) {
+            if (!$card->group || !$card->group->garden || $card->group->garden->id !== $garden->id) {
+                $invalidCards[] = $card->id;
+            }
+        }
+        if (!empty($invalidCards)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Some cards do not belong to this garden.',
+                'invalid_card_ids' => $invalidCards,
+            ], 422);
+        }
+
+        $totalAmount = round($tariff * count($cards), 2);
+        $gardenBalance = (float) ($garden->balance ?? 0);
+
+        // Check sufficient balance
+        if ($gardenBalance < $totalAmount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Insufficient garden balance.',
+                'garden_balance' => $gardenBalance,
+                'required_amount' => $totalAmount,
+                'shortage' => round($totalAmount - $gardenBalance, 2),
+            ], 422);
+        }
+
+        $oldBalance = $gardenBalance;
+        $comment = $validated['comment'] ?? ('Pay for ' . count($cards) . ' cards from garden balance');
+        $activatedCards = [];
+
+        // Process each card: create payment record + activate license
+        foreach ($cards as $card) {
+            $txn = '0_' . $garden->id . '_card_' . $card->id . '_' . time() . '_' . uniqid();
+
+            $pgId = $paymentGateway ? $paymentGateway->id : null;
+
+            Payment::create([
+                'transaction_number' => $txn,
+                'transaction_number_bank' => '0',
+                'card_number' => $card->phone ? ('****' . substr($card->phone, -4)) : 'N/A',
+                'card_id' => $card->id,
+                'garden_id' => $garden->id,
+                'amount' => -$tariff, // negative — deducted from garden balance
+                'currency' => $currency,
+                'comment' => $comment . ' - Card ID: ' . $card->id,
+                'type' => 'garden_balance',
+                'status' => 'completed',
+                'payment_gateway_id' => $pgId,
+            ]);
+
+            // Activate card license (1 year)
+            $oldLicense = $card->license;
+            $expiryDate = \Carbon\Carbon::now()->addYear()->toDateString();
+            $card->setLicenseDate($expiryDate);
+            $card->save();
+
+            $activatedCards[] = [
+                'card_id' => $card->id,
+                'amount' => $tariff,
+                'old_license' => $oldLicense,
+                'new_license' => $card->license,
+                'expiry_date' => $expiryDate,
+            ];
+        }
+
+        // Deduct total from garden balance
+        $garden->update([
+            'balance' => max(0, $oldBalance - $totalAmount),
+        ]);
+
+        Log::info('Garden payForCards: balance deducted and cards activated', [
+            'garden_id' => $garden->id,
+            'cards_count' => count($cards),
+            'tariff_per_card' => $tariff,
+            'total_amount' => $totalAmount,
+            'old_balance' => $oldBalance,
+            'new_balance' => $garden->balance,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => count($cards) . ' card(s) paid and activated successfully.',
+            'total_amount' => $totalAmount,
+            'tariff_per_card' => $tariff,
+            'currency' => $currency,
+            'cards_count' => count($cards),
+            'garden' => [
+                'id' => $garden->id,
+                'old_balance' => $oldBalance,
+                'new_balance' => $garden->balance,
+            ],
+            'activated_cards' => $activatedCards,
+        ]);
     }
 }

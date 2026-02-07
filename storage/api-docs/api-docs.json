@@ -18007,7 +18007,7 @@
                     "Payments"
                 ],
                 "summary": "Create garden balance payment",
-                "description": "Create a payment record to update garden balance. Amount can be positive (add to balance) or negative (subtract from balance).",
+                "description": "Create a payment record to update garden balance. Positive amount (e.g. 50) adds to balance, negative amount (e.g. -100) subtracts from balance.",
                 "operationId": "createGardenPayment",
                 "requestBody": {
                     "required": true,
@@ -18016,8 +18016,7 @@
                             "schema": {
                                 "required": [
                                     "garden_id",
-                                    "amount",
-                                    "operation"
+                                    "amount"
                                 ],
                                 "properties": {
                                     "garden_id": {
@@ -18026,18 +18025,9 @@
                                         "example": 1
                                     },
                                     "amount": {
-                                        "description": "Amount (always positive)",
+                                        "description": "Positive to add, negative to subtract (e.g. 50 adds, -100 subtracts)",
                                         "type": "number",
-                                        "example": 100.5
-                                    },
-                                    "operation": {
-                                        "description": "Operation: add (increase balance) or subtract (decrease balance)",
-                                        "type": "string",
-                                        "enum": [
-                                            "add",
-                                            "subtract"
-                                        ],
-                                        "example": "add"
+                                        "example": 50
                                     },
                                     "currency": {
                                         "description": "Currency code",
@@ -18102,6 +18092,114 @@
                     },
                     "422": {
                         "description": "Validation error"
+                    },
+                    "404": {
+                        "description": "Garden not found"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/payments/pay-for-cards": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Pay for cards from garden balance",
+                "description": "Garden pays for cards using its balance. Deducts tariff × number of cards from garden balance and activates 1-year license for each card.",
+                "operationId": "payForCards",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "garden_id",
+                                    "card_ids"
+                                ],
+                                "properties": {
+                                    "garden_id": {
+                                        "description": "Garden ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "card_ids": {
+                                        "description": "Array of card IDs to pay for",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "comment": {
+                                        "description": "Payment comment",
+                                        "type": "string",
+                                        "example": "Monthly subscription",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cards paid successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "total_amount": {
+                                            "type": "number",
+                                            "example": 200
+                                        },
+                                        "tariff_per_card": {
+                                            "type": "number",
+                                            "example": 100
+                                        },
+                                        "cards_count": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "garden": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "old_balance": {
+                                                    "type": "number"
+                                                },
+                                                "new_balance": {
+                                                    "type": "number"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "activated_cards": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error or insufficient balance"
                     },
                     "404": {
                         "description": "Garden not found"
