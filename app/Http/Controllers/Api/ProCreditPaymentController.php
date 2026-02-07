@@ -74,21 +74,9 @@ class ProCreditPaymentController extends Controller
             // }
 
             $paymentGateway = $country->paymentGateway;
-            Log::info('ProCredit createPayment: country & payment gateway info', [
-                'country_id' => $country->id,
-                'country_name' => $country->name,
-                'tariff' => $country->tariff,
-                'currency' => $country->currency,
-                'payment_gateway_id' => $country->payment_gateway_id,
-                'payment_gateway' => $paymentGateway ? [
-                    'id' => $paymentGateway->id,
-                    'name' => $paymentGateway->name ?? null,
-                    'currency' => $paymentGateway->currency ?? null,
-                    'is_active' => $paymentGateway->is_active ?? null,
-                ] : null,
-                'resolved_amount' => $amount,
-                'resolved_currency' => $currency,
-            ]);
+            if ($paymentGateway && !empty($paymentGateway->currency)) {
+                $currency = $paymentGateway->currency;
+            }
         }
 
         $validated['user_id'] = auth()->id();
