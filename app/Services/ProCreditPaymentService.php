@@ -161,6 +161,7 @@ class ProCreditPaymentService
                 if ($status === 'completed') {
                     $payment->update(['paid_at' => now()]);
                     $this->createPaymentRecord($payment);
+                    // $this->updateGardenBalance($payment);
                     $this->updateDisterBalance($payment);
                     $this->activateCardLicense($payment);
                 }
@@ -229,6 +230,7 @@ class ProCreditPaymentService
                 if ($resolvedStatus === 'completed') {
                     $payment->update(['paid_at' => now()]);
                     $this->createPaymentRecord($payment);
+                    // $this->updateGardenBalance($payment);
                     $this->updateDisterBalance($payment);
                     $this->activateCardLicense($payment);
                 }
@@ -353,22 +355,98 @@ class ProCreditPaymentService
         return PaymentGateway::find(1);
     }
 
+    /**
+     * Update garden balance after successful payment.
+     * Adds the payment amount to the garden's balance (same logic as create-garden-payment).
+     */
+    protected function updateGardenBalance(ProCreditPayment $proCreditPayment)
+    {
+        try {
+            $garden = null;
+
+            // Try to find garden from payment's garden_id
+            if ($proCreditPayment->garden_id) {
+                $garden = Garden::find($proCreditPayment->garden_id);
+            }
+
+            // Fallback: find garden via card → group → garden
+            if (!$garden && $proCreditPayment->card_id) {
+                $card = Card::find($proCreditPayment->card_id);
+                if ($card && $card->group_id) {
+                    $group = \App\Models\GardenGroup::find($card->group_id);
+                    if ($group && $group->garden_id) {
+                        $garden = Garden::find($group->garden_id);
+                    }
+                }
+            }
+
+            if (!$garden) {
+                Log::warning('ProCredit updateGardenBalance: garden not found', [
+                    'procredit_payment_id' => $proCreditPayment->id,
+                    'garden_id' => $proCreditPayment->garden_id,
+                    'card_id' => $proCreditPayment->card_id,
+                ]);
+                return false;
+            }
+
+            $oldBalance = $garden->balance ?? 0;
+            $newBalance = $oldBalance + (float) $proCreditPayment->amount;
+
+            $garden->update([
+                'balance' => max(0, $newBalance),
+            ]);
+
+            Log::info('ProCredit: garden balance updated after payment', [
+                'procredit_payment_id' => $proCreditPayment->id,
+                'garden_id' => $garden->id,
+                'garden_name' => $garden->name,
+                'amount' => $proCreditPayment->amount,
+                'currency' => $proCreditPayment->currency,
+                'old_balance' => $oldBalance,
+                'new_balance' => $garden->balance,
+            ]);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::error('ProCredit updateGardenBalance exception: ' . $e->getMessage(), [
+                'procredit_payment_id' => $proCreditPayment->id,
+                'garden_id' => $proCreditPayment->garden_id,
+            ]);
+            return false;
+        }
+    }
+
     protected function updateDisterBalance(ProCreditPayment $proCreditPayment)
     {
         try {
             if (!$proCreditPayment->card_id) {
+                Log::info('ProCredit updateDisterBalance: skipped — no card_id', [
+                    'procredit_payment_id' => $proCreditPayment->id,
+                ]);
                 return false;
             }
             $card = Card::find($proCreditPayment->card_id);
             if (!$card || !$card->group_id) {
+                Log::info('ProCredit updateDisterBalance: skipped — card or group not found', [
+                    'procredit_payment_id' => $proCreditPayment->id,
+                    'card_id' => $proCreditPayment->card_id,
+                ]);
                 return false;
             }
             $group = \App\Models\GardenGroup::find($card->group_id);
             if (!$group || !$group->garden_id) {
+                Log::info('ProCredit updateDisterBalance: skipped — garden group not found', [
+                    'procredit_payment_id' => $proCreditPayment->id,
+                    'group_id' => $card->group_id,
+                ]);
                 return false;
             }
             $garden = Garden::find($group->garden_id);
             if (!$garden) {
+                Log::info('ProCredit updateDisterBalance: skipped — garden not found', [
+                    'procredit_payment_id' => $proCreditPayment->id,
+                    'garden_id' => $group->garden_id,
+                ]);
                 return false;
             }
 
@@ -377,20 +455,46 @@ class ProCreditPaymentService
                 $dister = Dister::where('country_id', $garden->country_id)->first();
             }
             if (!$dister || !$dister->percent || $dister->percent <= 0) {
+                Log::info('ProCredit updateDisterBalance: skipped — no dister or percent is 0', [
+                    'procredit_payment_id' => $proCreditPayment->id,
+                    'garden_id' => $garden->id,
+                    'dister_found' => $dister ? true : false,
+                    'dister_percent' => $dister->percent ?? null,
+                ]);
                 return false;
             }
 
-            $percentageAmount = $proCreditPayment->amount * ($dister->percent / 100);
-            $remainingAmount = $proCreditPayment->amount - $percentageAmount;
+            $percentageAmount = (float) $proCreditPayment->amount * ($dister->percent / 100);
+            $remainingAmount = (float) $proCreditPayment->amount - $percentageAmount;
 
+            $oldDisterBalance = $dister->balance ?? 0;
             $dister->update([
-                'balance' => ($dister->balance ?? 0) + $percentageAmount,
+                'balance' => $oldDisterBalance + $percentageAmount,
+            ]);
+
+            Log::info('ProCredit: dister balance updated after payment', [
+                'procredit_payment_id' => $proCreditPayment->id,
+                'dister_id' => $dister->id,
+                'dister_percent' => $dister->percent,
+                'payment_amount' => $proCreditPayment->amount,
+                'dister_amount' => round($percentageAmount, 2),
+                'old_dister_balance' => $oldDisterBalance,
+                'new_dister_balance' => $dister->balance,
             ]);
 
             $adminUser = User::where('type', User::TYPE_ADMIN)->orderBy('id', 'asc')->first();
             if ($adminUser) {
+                $oldAdminBalance = $adminUser->balance ?? 0;
                 $adminUser->update([
-                    'balance' => ($adminUser->balance ?? 0) + $remainingAmount,
+                    'balance' => $oldAdminBalance + $remainingAmount,
+                ]);
+
+                Log::info('ProCredit: admin balance updated after payment', [
+                    'procredit_payment_id' => $proCreditPayment->id,
+                    'admin_user_id' => $adminUser->id,
+                    'admin_amount' => round($remainingAmount, 2),
+                    'old_admin_balance' => $oldAdminBalance,
+                    'new_admin_balance' => $adminUser->balance,
                 ]);
             }
 

@@ -69,9 +69,6 @@ class ProCreditPaymentController extends Controller
             if ($tariff > 0) {
                 $amount = (float) $tariff;
             }
-            // if (!empty($country->currency)) {
-            //     $currency = $country->currency;
-            // }
 
             $paymentGateway = $country->paymentGateway;
             if ($paymentGateway && !empty($paymentGateway->currency)) {
@@ -217,10 +214,29 @@ class ProCreditPaymentController extends Controller
 
         $country = $garden->countryData;
         $tariff = $country->tariff ?? 0;
-        $currency = $country->currency ?? 'GEL';
+        $currency = 'GEL';
+
         if ($tariff <= 0) {
             return response()->json(['success' => false, 'message' => 'Country tariff is zero or invalid.'], 422);
         }
+
+        // Use payment gateway currency if available (same as single payment)
+        $paymentGateway = $country->paymentGateway;
+        if ($paymentGateway && !empty($paymentGateway->currency)) {
+            $currency = $paymentGateway->currency;
+        }
+
+        Log::info('ProCredit bulk: country & payment gateway info', [
+            'garden_id' => $garden->id,
+            'country_id' => $country->id,
+            'country_tariff' => $tariff,
+            'payment_gateway' => $paymentGateway ? [
+                'id' => $paymentGateway->id,
+                'name' => $paymentGateway->name,
+                'currency' => $paymentGateway->currency,
+            ] : null,
+            'resolved_currency' => $currency,
+        ]);
 
         $cardIds = $validated['card_ids'];
         $description = $validated['description'] ?? 'Bulk payment for cards';
