@@ -17107,13 +17107,12 @@
                     "Payments"
                 ],
                 "summary": "Get all payments",
-                "description": "Retrieve a paginated list of all payments. Supports filtering by payment type.",
+                "description": "Retrieve a paginated list of payments with filters: date range, country, city, dister, garden, payment gateway, type, status, and search by card phone.",
                 "operationId": "getPayments",
                 "parameters": [
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -17123,7 +17122,6 @@
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "Number of items per page",
                         "required": false,
                         "schema": {
                             "type": "integer",
@@ -17142,8 +17140,94 @@
                                 "garden_balance",
                                 "agent_balance",
                                 "garden_card_change"
-                            ],
-                            "example": "bank"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "completed"
+                        }
+                    },
+                    {
+                        "name": "date_from",
+                        "in": "query",
+                        "description": "Filter from date (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-01-01"
+                        }
+                    },
+                    {
+                        "name": "date_to",
+                        "in": "query",
+                        "description": "Filter to date (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-12-31"
+                        }
+                    },
+                    {
+                        "name": "country_id",
+                        "in": "query",
+                        "description": "Filter by card's country",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "city_id",
+                        "in": "query",
+                        "description": "Filter by card's city",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "dister_id",
+                        "in": "query",
+                        "description": "Filter by dister (cards in dister's gardens)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "garden_id",
+                        "in": "query",
+                        "description": "Filter by garden",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "payment_gateway_id",
+                        "in": "query",
+                        "description": "Filter by payment gateway",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by card phone number",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "995555"
                         }
                     }
                 ],
@@ -17163,141 +17247,54 @@
                                             "items": {
                                                 "properties": {
                                                     "id": {
-                                                        "type": "integer",
-                                                        "example": 1
+                                                        "type": "integer"
                                                     },
                                                     "transaction_number": {
-                                                        "type": "string",
-                                                        "example": "TXN123456789"
-                                                    },
-                                                    "transaction_number_bank": {
-                                                        "type": "string",
-                                                        "example": "BANK123456",
-                                                        "nullable": true
-                                                    },
-                                                    "card_number": {
-                                                        "type": "string",
-                                                        "example": "1234567890123456"
+                                                        "type": "string"
                                                     },
                                                     "card_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "garden_id": {
                                                         "type": "integer",
-                                                        "example": 1
-                                                    },
-                                                    "currency": {
-                                                        "description": "Payment currency",
-                                                        "type": "string",
-                                                        "example": "GEL"
-                                                    },
-                                                    "comment": {
-                                                        "description": "Payment comment",
-                                                        "type": "string",
-                                                        "example": "Payment for monthly subscription",
-                                                        "nullable": true
-                                                    },
-                                                    "type": {
-                                                        "description": "Payment type",
-                                                        "type": "string",
-                                                        "example": "bank",
                                                         "nullable": true
                                                     },
                                                     "amount": {
-                                                        "description": "Payment amount",
-                                                        "type": "number",
-                                                        "example": 100.5,
-                                                        "nullable": true
+                                                        "type": "number"
+                                                    },
+                                                    "currency": {
+                                                        "type": "string"
+                                                    },
+                                                    "type": {
+                                                        "type": "string"
                                                     },
                                                     "status": {
-                                                        "description": "Payment status",
-                                                        "type": "string",
-                                                        "example": "pending",
-                                                        "nullable": true
-                                                    },
-                                                    "payment_gateway_id": {
-                                                        "description": "Payment gateway ID",
-                                                        "type": "integer",
-                                                        "example": 1,
-                                                        "nullable": true
+                                                        "type": "string"
                                                     },
                                                     "card": {
-                                                        "description": "Card information",
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "integer",
-                                                                "example": 1
-                                                            },
-                                                            "phone": {
-                                                                "type": "string",
-                                                                "example": "+995555123456"
-                                                            },
-                                                            "status": {
-                                                                "type": "string",
-                                                                "example": "active"
-                                                            },
-                                                            "child_first_name": {
-                                                                "type": "string",
-                                                                "example": "John"
-                                                            },
-                                                            "child_last_name": {
-                                                                "type": "string",
-                                                                "example": "Doe"
-                                                            },
-                                                            "parent_name": {
-                                                                "type": "string",
-                                                                "example": "Jane Doe"
-                                                            },
-                                                            "parent_code": {
-                                                                "type": "string",
-                                                                "example": "ABC123"
-                                                            }
-                                                        },
-                                                        "type": "object"
-                                                    },
-                                                    "payment_gateway": {
-                                                        "description": "Payment gateway information",
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "integer",
-                                                                "example": 1
-                                                            },
-                                                            "name": {
-                                                                "type": "string",
-                                                                "example": "Bank of Georgia"
-                                                            },
-                                                            "currency": {
-                                                                "type": "string",
-                                                                "example": "GEL"
-                                                            },
-                                                            "is_active": {
-                                                                "type": "boolean",
-                                                                "example": true
-                                                            }
-                                                        },
                                                         "type": "object",
                                                         "nullable": true
                                                     },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
+                                                    "payment_gateway": {
+                                                        "type": "object",
+                                                        "nullable": true
                                                     },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
+                                                    "garden": {
+                                                        "type": "object",
+                                                        "nullable": true
                                                     }
                                                 },
                                                 "type": "object"
                                             }
                                         },
                                         "last_page": {
-                                            "type": "integer",
-                                            "example": 5
+                                            "type": "integer"
                                         },
                                         "per_page": {
-                                            "type": "integer",
-                                            "example": 15
+                                            "type": "integer"
                                         },
                                         "total": {
-                                            "type": "integer",
-                                            "example": 50
+                                            "type": "integer"
                                         }
                                     },
                                     "type": "object"
@@ -18218,7 +18215,7 @@
                     "Payment Gateways"
                 ],
                 "summary": "Get available payment gateways",
-                "description": "Retrieve a list of all available payment gateways",
+                "description": "Retrieve a list of all available payment gateways from database",
                 "operationId": "getPaymentGateways",
                 "responses": {
                     "200": {

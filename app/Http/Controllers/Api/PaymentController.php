@@ -18,29 +18,20 @@ class PaymentController extends Controller
      *     operationId="getPayments",
      *     tags={"Payments"},
      *     summary="Get all payments",
-     *     description="Retrieve a paginated list of all payments. Supports filtering by payment type.",
+     *     description="Retrieve a paginated list of payments with filters: date range, country, city, dister, garden, payment gateway, type, status, and search by card phone.",
      *     security={{"sanctum":{}}},
-     *     @OA\Parameter(
-     *         name="page",
-     *         in="query",
-     *         description="Page number",
-     *         required=false,
-     *         @OA\Schema(type="integer", default=1)
-     *     ),
-     *     @OA\Parameter(
-     *         name="per_page",
-     *         in="query",
-     *         description="Number of items per page",
-     *         required=false,
-     *         @OA\Schema(type="integer", default=15)
-     *     ),
-     *     @OA\Parameter(
-     *         name="type",
-     *         in="query",
-     *         description="Filter by payment type",
-     *         required=false,
-     *         @OA\Schema(type="string", enum={"bank","garden_balance","agent_balance","garden_card_change"}, example="bank")
-     *     ),
+     *     @OA\Parameter(name="page", in="query", required=false, @OA\Schema(type="integer", default=1)),
+     *     @OA\Parameter(name="per_page", in="query", required=false, @OA\Schema(type="integer", default=15)),
+     *     @OA\Parameter(name="type", in="query", description="Filter by payment type", required=false, @OA\Schema(type="string", enum={"bank","garden_balance","agent_balance","garden_card_change"})),
+     *     @OA\Parameter(name="status", in="query", description="Filter by status", required=false, @OA\Schema(type="string", example="completed")),
+     *     @OA\Parameter(name="date_from", in="query", description="Filter from date (YYYY-MM-DD)", required=false, @OA\Schema(type="string", format="date", example="2026-01-01")),
+     *     @OA\Parameter(name="date_to", in="query", description="Filter to date (YYYY-MM-DD)", required=false, @OA\Schema(type="string", format="date", example="2026-12-31")),
+     *     @OA\Parameter(name="country_id", in="query", description="Filter by card's country", required=false, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="city_id", in="query", description="Filter by card's city", required=false, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="dister_id", in="query", description="Filter by dister (cards in dister's gardens)", required=false, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="garden_id", in="query", description="Filter by garden", required=false, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="payment_gateway_id", in="query", description="Filter by payment gateway", required=false, @OA\Schema(type="integer")),
+     *     @OA\Parameter(name="search", in="query", description="Search by card phone number", required=false, @OA\Schema(type="string", example="995555")),
      *     @OA\Response(
      *         response=200,
      *         description="Successful operation",
@@ -48,41 +39,23 @@ class PaymentController extends Controller
      *             type="object",
      *             @OA\Property(property="current_page", type="integer", example=1),
      *             @OA\Property(property="data", type="array",
-     *                 @OA\Items(
-     *                     type="object",
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="transaction_number", type="string", example="TXN123456789"),
-     *                     @OA\Property(property="transaction_number_bank", type="string", nullable=true, example="BANK123456"),
-     *                     @OA\Property(property="card_number", type="string", example="1234567890123456"),
-     *                     @OA\Property(property="card_id", type="integer", example=1),
-     *                     @OA\Property(property="currency", type="string", example="GEL", description="Payment currency"),
-     *                     @OA\Property(property="comment", type="string", example="Payment for monthly subscription", nullable=true, description="Payment comment"),
-     *                     @OA\Property(property="type", type="string", example="bank", nullable=true, description="Payment type"),
-     *                     @OA\Property(property="amount", type="number", example=100.50, nullable=true, description="Payment amount"),
-     *                     @OA\Property(property="status", type="string", example="pending", nullable=true, description="Payment status"),
-     *                     @OA\Property(property="payment_gateway_id", type="integer", example=1, nullable=true, description="Payment gateway ID"),
-     *                     @OA\Property(property="card", type="object", description="Card information",
-     *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="phone", type="string", example="+995555123456"),
-     *                         @OA\Property(property="status", type="string", example="active"),
-     *                         @OA\Property(property="child_first_name", type="string", example="John"),
-     *                         @OA\Property(property="child_last_name", type="string", example="Doe"),
-     *                         @OA\Property(property="parent_name", type="string", example="Jane Doe"),
-     *                         @OA\Property(property="parent_code", type="string", example="ABC123")
-     *                     ),
-     *                     @OA\Property(property="payment_gateway", type="object", nullable=true, description="Payment gateway information",
-     *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="name", type="string", example="Bank of Georgia"),
-     *                         @OA\Property(property="currency", type="string", example="GEL"),
-     *                         @OA\Property(property="is_active", type="boolean", example=true)
-     *                     ),
-     *                     @OA\Property(property="created_at", type="string", format="date-time"),
-     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 @OA\Items(type="object",
+     *                     @OA\Property(property="id", type="integer"),
+     *                     @OA\Property(property="transaction_number", type="string"),
+     *                     @OA\Property(property="card_id", type="integer"),
+     *                     @OA\Property(property="garden_id", type="integer", nullable=true),
+     *                     @OA\Property(property="amount", type="number"),
+     *                     @OA\Property(property="currency", type="string"),
+     *                     @OA\Property(property="type", type="string"),
+     *                     @OA\Property(property="status", type="string"),
+     *                     @OA\Property(property="card", type="object", nullable=true),
+     *                     @OA\Property(property="payment_gateway", type="object", nullable=true),
+     *                     @OA\Property(property="garden", type="object", nullable=true)
      *                 )
      *             ),
-     *             @OA\Property(property="last_page", type="integer", example=5),
-     *             @OA\Property(property="per_page", type="integer", example=15),
-     *             @OA\Property(property="total", type="integer", example=50)
+     *             @OA\Property(property="last_page", type="integer"),
+     *             @OA\Property(property="per_page", type="integer"),
+     *             @OA\Property(property="total", type="integer")
      *         )
      *     )
      * )
@@ -90,18 +63,91 @@ class PaymentController extends Controller
     public function index(Request $request)
     {
         $query = Payment::with([
-            'card:id,phone,status,child_first_name,child_last_name,parent_name,parent_code',
-            'paymentGateway:id,name,currency,is_active'
+            'card:id,phone,status,child_first_name,child_last_name,parent_name,parent_code,group_id',
+            'card.group:id,garden_id',
+            'card.group.garden:id,name,country_id,city_id',
+            'paymentGateway:id,name,currency,is_active',
+            'garden:id,name,balance',
         ]);
-        
-        // Filter by type if provided
+
+        // Filter by type
         if ($request->filled('type')) {
             $query->where('type', $request->query('type'));
         }
-        
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->query('status'));
+        }
+
+        // Filter by payment gateway
+        if ($request->filled('payment_gateway_id')) {
+            $query->where('payment_gateway_id', $request->query('payment_gateway_id'));
+        }
+
+        // Filter by date range (created_at)
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->query('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->query('date_to'));
+        }
+
+        // Filter by garden (direct garden_id on payment OR card's garden)
+        if ($request->filled('garden_id')) {
+            $gardenId = $request->query('garden_id');
+            $query->where(function ($q) use ($gardenId) {
+                $q->where('garden_id', $gardenId)
+                  ->orWhereHas('card.group.garden', function ($gq) use ($gardenId) {
+                      $gq->where('id', $gardenId);
+                  });
+            });
+        }
+
+        // Filter by country (card → group → garden → country_id)
+        if ($request->filled('country_id')) {
+            $countryId = $request->query('country_id');
+            $query->whereHas('card.group.garden', function ($q) use ($countryId) {
+                $q->where('country_id', $countryId);
+            });
+        }
+
+        // Filter by city (card → group → garden → city_id)
+        if ($request->filled('city_id')) {
+            $cityId = $request->query('city_id');
+            $query->whereHas('card.group.garden', function ($q) use ($cityId) {
+                $q->where('city_id', $cityId);
+            });
+        }
+
+        // Filter by dister (dister has gardens JSON array containing garden IDs)
+        if ($request->filled('dister_id')) {
+            $dister = \App\Models\Dister::find($request->query('dister_id'));
+            if ($dister && is_array($dister->gardens) && count($dister->gardens) > 0) {
+                $disterGardenIds = $dister->gardens;
+                $query->where(function ($q) use ($disterGardenIds) {
+                    $q->whereIn('garden_id', $disterGardenIds)
+                      ->orWhereHas('card.group', function ($gq) use ($disterGardenIds) {
+                          $gq->whereIn('garden_id', $disterGardenIds);
+                      });
+                });
+            } else {
+                // Dister not found or has no gardens — return empty
+                $query->whereRaw('1 = 0');
+            }
+        }
+
+        // Search by card phone
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->whereHas('card', function ($q) use ($search) {
+                $q->where('phone', 'like', '%' . $search . '%');
+            });
+        }
+
         $perPage = $request->query('per_page', 15);
         $page = $request->query('page', 1);
-        
+
         return $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
     }
 
