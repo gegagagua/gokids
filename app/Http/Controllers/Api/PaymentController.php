@@ -811,7 +811,7 @@ class PaymentController extends Controller
                 'amount' => -$tariff, // negative — deducted from garden balance
                 'currency' => $currency,
                 'comment' => $comment . ' - Card ID: ' . $card->id,
-                'type' => 'garden_balance',
+                'type' => 'garden_card_change',
                 'status' => 'completed',
                 'payment_gateway_id' => $pgId,
             ]);
