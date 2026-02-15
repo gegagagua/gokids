@@ -259,7 +259,9 @@ class PaymentController extends Controller
 
             // Percentages (must always sum to 100%)
             $disterPercent = $dister ? (float) ($dister->percent ?? 0) : 0;
-            $secondDisterPercent = $dister ? (float) ($dister->second_percent ?? 0) : 0;
+            // second_percent only applies if the dister actually has a main_dister (parent)
+            $hasMainDister = $dister && !empty($dister->main_dister);
+            $secondDisterPercent = $hasMainDister ? (float) ($dister->second_percent ?? 0) : 0;
             $adminPercent = round(100 - $disterPercent - $secondDisterPercent, 2);
             if ($adminPercent < 0) $adminPercent = 0;
 
