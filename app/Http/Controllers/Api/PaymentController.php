@@ -67,8 +67,72 @@ class PaymentController extends Controller
             'card.group:id,garden_id',
             'card.group.garden:id,name,country_id,city_id',
             'paymentGateway:id,name,currency,is_active',
-            'garden:id,name,balance',
+            'garden:id,name,balance,country_id',
         ]);
+
+        // ── Role-based access filtering ──
+        $user = $request->user();
+        $disterRecord = null;
+
+        // Resolve Dister record (user can be Dister model directly or User with type=dister)
+        if ($user instanceof \App\Models\Dister) {
+            $disterRecord = $user;
+        } elseif ($user instanceof \App\Models\User && $user->type === 'dister') {
+            $disterRecord = \App\Models\Dister::where('email', $user->email)->first();
+        }
+
+        if ($disterRecord) {
+            $allowedGardenIds = is_array($disterRecord->gardens) ? $disterRecord->gardens : [];
+            $isChildDister = !empty($disterRecord->main_dister);
+
+            if ($isChildDister) {
+                // Child (second-level) dister — sees only their own gardens' payments
+                if (!empty($allowedGardenIds)) {
+                    $query->where(function ($q) use ($allowedGardenIds) {
+                        $q->whereIn('garden_id', $allowedGardenIds)
+                          ->orWhereHas('card.group', function ($gq) use ($allowedGardenIds) {
+                              $gq->whereIn('garden_id', $allowedGardenIds);
+                          });
+                    });
+                } else {
+                    $query->whereRaw('1 = 0'); // no gardens assigned — empty result
+                }
+            } else {
+                // Parent (first-level) dister — sees their gardens + all gardens in their country
+                $countryId = $disterRecord->country_id;
+                $countryGardenIds = [];
+                if ($countryId) {
+                    $countryGardenIds = \App\Models\Garden::where('country_id', $countryId)
+                        ->pluck('id')->toArray();
+                }
+                $mergedGardenIds = array_values(array_unique(array_merge($allowedGardenIds, $countryGardenIds)));
+
+                if (!empty($mergedGardenIds)) {
+                    $query->where(function ($q) use ($mergedGardenIds) {
+                        $q->whereIn('garden_id', $mergedGardenIds)
+                          ->orWhereHas('card.group', function ($gq) use ($mergedGardenIds) {
+                              $gq->whereIn('garden_id', $mergedGardenIds);
+                          });
+                    });
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+        } elseif ($user instanceof \App\Models\User && $user->type === 'garden') {
+            // Garden user — sees only their garden's payments
+            $garden = \App\Models\Garden::where('email', $user->email)->first();
+            if ($garden) {
+                $query->where(function ($q) use ($garden) {
+                    $q->where('garden_id', $garden->id)
+                      ->orWhereHas('card.group', function ($gq) use ($garden) {
+                          $gq->where('garden_id', $garden->id);
+                      });
+                });
+            } else {
+                $query->whereRaw('1 = 0');
+            }
+        }
+        // Admin, accountant, technical — no filter, sees all payments
 
         // Filter by type
         if ($request->filled('type')) {
@@ -148,7 +212,99 @@ class PaymentController extends Controller
         $perPage = $request->query('per_page', 15);
         $page = $request->query('page', 1);
 
-        return $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
+        $paginated = $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
+
+        // ── Add distribution (percentages & amounts) to each payment ──
+        // Collect all garden IDs from payments to batch-load related data
+        $gardenIds = collect();
+        foreach ($paginated->items() as $payment) {
+            if ($payment->garden_id) {
+                $gardenIds->push($payment->garden_id);
+            }
+            if ($payment->card && $payment->card->group && $payment->card->group->garden) {
+                $gardenIds->push($payment->card->group->garden->id);
+            }
+        }
+        $gardenIds = $gardenIds->unique()->values()->all();
+
+        // Load countries for those gardens
+        $gardens = \App\Models\Garden::whereIn('id', $gardenIds)->get()->keyBy('id');
+        $countryIds = $gardens->pluck('country_id')->unique()->filter()->values()->all();
+        $countries = \App\Models\Country::whereIn('id', $countryIds)->get()->keyBy('id');
+
+        // Load disters that own those gardens
+        $disters = \App\Models\Dister::all();
+        $gardenDisterMap = [];
+        foreach ($disters as $dister) {
+            if (is_array($dister->gardens)) {
+                foreach ($dister->gardens as $gId) {
+                    $gardenDisterMap[$gId] = $dister;
+                }
+            }
+        }
+
+        // Attach distribution to each payment
+        $paginated->getCollection()->transform(function ($payment) use ($gardens, $countries, $gardenDisterMap) {
+            $amount = abs((float) $payment->amount);
+
+            // Resolve garden
+            $gardenId = $payment->garden_id;
+            if (!$gardenId && $payment->card && $payment->card->group && $payment->card->group->garden) {
+                $gardenId = $payment->card->group->garden->id;
+            }
+
+            $garden = $gardenId ? ($gardens[$gardenId] ?? null) : null;
+            $country = ($garden && $garden->country_id) ? ($countries[$garden->country_id] ?? null) : null;
+            $dister = $gardenId ? ($gardenDisterMap[$gardenId] ?? null) : null;
+
+            // Percentages (must always sum to 100%)
+            $disterPercent = $dister ? (float) ($dister->percent ?? 0) : 0;
+            $secondDisterPercent = $dister ? (float) ($dister->second_percent ?? 0) : 0;
+            $adminPercent = round(100 - $disterPercent - $secondDisterPercent, 2);
+            if ($adminPercent < 0) $adminPercent = 0;
+
+            // Amounts
+            $disterAmount = round($amount * $disterPercent / 100, 2);
+            $secondDisterAmount = round($amount * $secondDisterPercent / 100, 2);
+            $adminAmount = round($amount - $disterAmount - $secondDisterAmount, 2);
+            if ($adminAmount < 0) $adminAmount = 0;
+
+            $distribution = [
+                'admin' => [
+                    'percent' => $adminPercent,
+                    'amount' => $adminAmount,
+                ],
+                'dister' => [
+                    'name' => $dister ? ($dister->first_name . ' ' . $dister->last_name) : null,
+                    'percent' => $disterPercent,
+                    'amount' => $disterAmount,
+                ],
+            ];
+
+            // Only include second_dister if it has a percent > 0 AND name is resolvable
+            if ($secondDisterPercent > 0) {
+                $secondDisterName = null;
+                if ($dister && is_array($dister->main_dister)) {
+                    $mainDisterId = $dister->main_dister['id'] ?? null;
+                    if ($mainDisterId) {
+                        $mainDister = \App\Models\Dister::find($mainDisterId);
+                        $secondDisterName = $mainDister ? ($mainDister->first_name . ' ' . $mainDister->last_name) : null;
+                    }
+                }
+                if ($secondDisterName !== null) {
+                    $distribution['second_dister'] = [
+                        'name' => $secondDisterName,
+                        'percent' => $secondDisterPercent,
+                        'amount' => $secondDisterAmount,
+                    ];
+                }
+            }
+
+            $payment->distribution = $distribution;
+            return $payment;
+        });
+
+        return $paginated;
     }
 
     // type: bank, garden_balance, agent_balance, garden_card_change

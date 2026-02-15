@@ -30,6 +30,23 @@ class Payment extends Model
     ];
 
     /**
+     * Distribution data (set dynamically by controller).
+     */
+    public $distribution = null;
+
+    /**
+     * Append distribution to JSON when set.
+     */
+    public function toArray()
+    {
+        $array = parent::toArray();
+        if ($this->distribution !== null) {
+            $array['distribution'] = $this->distribution;
+        }
+        return $array;
+    }
+
+    /**
      * Get the card that owns the payment.
      */
     public function card()
