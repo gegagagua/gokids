@@ -58,10 +58,11 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
     Route::post('/procredit-payment/bulk', [ProCreditPaymentController::class, 'createBulkPayment']);
 
     Route::middleware('auth:sanctum')->group(function () {
-        // Place specific routes before resource to avoid {garden} binding capturing 'export'
+        // Place specific routes before resource to avoid {payment}/{garden} binding capturing 'export'
         Route::apiResource('disters', DisterController::class);
         Route::post('/payments/create-garden-payment', [PaymentController::class, 'createGardenPayment']);
         Route::post('/payments/pay-for-cards', [PaymentController::class, 'payForCards']);
+        Route::get('/payments/export', [PaymentController::class, 'export']);
         Route::apiResource('payments', PaymentController::class);
         Route::get('/gardens/export', [GardenController::class, 'export']);
         Route::apiResource('gardens', GardenController::class)->except(['store']);
@@ -75,7 +76,6 @@ Route::middleware([ForceJsonResponse::class])->group(function () {
         Route::patch('/users/{id}/change-status', [AuthController::class, 'changeUserStatus']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::post('/change-password', [AuthController::class, 'changePassword']);
-        Route::get('/payments/export', [PaymentController::class, 'export']);
         Route::get('/notifications/export', [NotificationController::class, 'export']);
         Route::delete('/gardens/bulk-delete', [GardenController::class, 'bulkDestroy']);
         Route::patch('/gardens/{id}/status', [GardenController::class, 'updateStatus']);

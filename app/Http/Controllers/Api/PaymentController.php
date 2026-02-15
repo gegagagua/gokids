@@ -723,9 +723,12 @@ class PaymentController extends Controller
      *     )
      * )
      */
-    public function export()
+    public function export(Request $request)
     {
-        return Excel::download(new PaymentsExport, 'payments.xlsx');
+        $dateFrom = $request->query('date_from');
+        $dateTo = $request->query('date_to');
+
+        return Excel::download(new PaymentsExport($dateFrom, $dateTo), 'payments.xlsx');
     }
 
     /**
