@@ -493,7 +493,8 @@ class ProCreditPaymentService
 
     /**
      * Update garden balance after successful payment.
-     * Adds the payment amount to the garden's balance (same logic as create-garden-payment).
+     * Adds garden_percent of the payment amount to the garden's balance,
+     * but ONLY if the garden has a referral (was referred by another garden).
      */
     protected function updateGardenBalance(ProCreditPayment $proCreditPayment)
     {
@@ -502,7 +503,7 @@ class ProCreditPaymentService
 
             // Try to find garden from payment's garden_id
             if ($proCreditPayment->garden_id) {
-                $garden = Garden::find($proCreditPayment->garden_id);
+                $garden = Garden::with('countryData')->find($proCreditPayment->garden_id);
             }
 
             // Fallback: find garden via card → group → garden
@@ -511,7 +512,7 @@ class ProCreditPaymentService
                 if ($card && $card->group_id) {
                     $group = \App\Models\GardenGroup::find($card->group_id);
                     if ($group && $group->garden_id) {
-                        $garden = Garden::find($group->garden_id);
+                        $garden = Garden::with('countryData')->find($group->garden_id);
                     }
                 }
             }
@@ -525,19 +526,45 @@ class ProCreditPaymentService
                 return false;
             }
 
+            // Garden only gets a commission if it has a referral (was referred by another garden)
+            if (empty($garden->referral)) {
+                Log::info('ProCredit updateGardenBalance: skipped — garden has no referral', [
+                    'procredit_payment_id' => $proCreditPayment->id,
+                    'garden_id' => $garden->id,
+                    'garden_name' => $garden->name,
+                ]);
+                return true;
+            }
+
+            // Get garden_percent from country
+            $gardenPercent = 0;
+            if ($garden->countryData) {
+                $gardenPercent = (float) ($garden->countryData->garden_percent ?? 0);
+            }
+
+            if ($gardenPercent <= 0) {
+                Log::info('ProCredit updateGardenBalance: skipped — garden_percent is 0', [
+                    'procredit_payment_id' => $proCreditPayment->id,
+                    'garden_id' => $garden->id,
+                ]);
+                return true;
+            }
+
+            $gardenAmount = round((float) $proCreditPayment->amount * $gardenPercent / 100, 2);
             $oldBalance = $garden->balance ?? 0;
-            $newBalance = $oldBalance + (float) $proCreditPayment->amount;
 
             $garden->update([
-                'balance' => max(0, $newBalance),
+                'balance' => max(0, $oldBalance + $gardenAmount),
             ]);
 
-            Log::info('ProCredit: garden balance updated after payment', [
+            Log::info('ProCredit: garden balance updated after payment (referral commission)', [
                 'procredit_payment_id' => $proCreditPayment->id,
                 'garden_id' => $garden->id,
                 'garden_name' => $garden->name,
-                'amount' => $proCreditPayment->amount,
-                'currency' => $proCreditPayment->currency,
+                'garden_referral' => $garden->referral,
+                'garden_percent' => $gardenPercent,
+                'payment_amount' => $proCreditPayment->amount,
+                'garden_amount' => $gardenAmount,
                 'old_balance' => $oldBalance,
                 'new_balance' => $garden->balance,
             ]);
