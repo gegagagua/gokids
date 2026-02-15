@@ -705,8 +705,10 @@ class PaymentController extends Controller
      *     operationId="exportPayments",
      *     tags={"Payments"},
      *     summary="Export all payments",
-     *     description="Export all payments data to Excel file",
+     *     description="Export all payments data to Excel file. Optionally filter by date range.",
      *     security={{"sanctum":{}}},
+     *     @OA\Parameter(name="date_from", in="query", description="Filter from date (YYYY-MM-DD)", required=false, @OA\Schema(type="string", format="date", example="2026-01-01")),
+     *     @OA\Parameter(name="date_to", in="query", description="Filter to date (YYYY-MM-DD)", required=false, @OA\Schema(type="string", format="date", example="2026-12-31")),
      *     @OA\Response(
      *         response=200,
      *         description="Excel file download",
