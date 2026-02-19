@@ -435,7 +435,7 @@ class GardenController extends Controller
             'city_id' => 'required|exists:cities,id',
             'country_id' => 'nullable|exists:countries,id',
             'phone' => 'required|string|max:255',
-            'email' => 'required|email|unique:gardens,email|unique:users,email',
+            'email' => 'required|email|unique:gardens,email|unique:users,email|unique:disters,email',
             'password' => 'required|string|min:6',
             'otp' => 'required|string|size:6',
             'referral' => 'nullable|string|max:255',
