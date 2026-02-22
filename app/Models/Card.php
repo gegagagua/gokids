@@ -363,6 +363,27 @@ class Card extends Model
         return $this->group->garden->countryData->tariff ?? 0;
     }
 
+    public function getPaymentGatewayInfo()
+    {
+        if (!$this->group || !$this->group->garden || !$this->group->garden->countryData) {
+            return null;
+        }
+
+        $country = $this->group->garden->countryData;
+        $gateway = $country->paymentGateway;
+
+        if (!$gateway) {
+            return null;
+        }
+
+        return [
+            'id'        => $gateway->id,
+            'name'      => $gateway->name,
+            'currency'  => $gateway->currency,
+            'is_active' => $gateway->is_active,
+        ];
+    }
+
     /**
      * Check if free calls should be managed (country has tariff > 0)
      */

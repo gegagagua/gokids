@@ -113,7 +113,7 @@ class CardController extends Controller
     // ყველა ბარათის წამოღება
     public function index(Request $request)
     {
-        $query = Card::with(['group.garden.countryData', 'personType', 'parents', 'people']);
+        $query = Card::with(['group.garden.countryData.paymentGateway', 'personType', 'parents', 'people']);
         
         // Filter by garden_id if authenticated user is a garden user
         if ($request->user() && $request->user()->type === 'garden') {
@@ -204,6 +204,7 @@ class CardController extends Controller
         $cards->getCollection()->transform(function ($card) {
             if ($card->group && $card->group->garden && $card->group->garden->countryData) {
                 $country = $card->group->garden->countryData;
+                $gateway = $country->paymentGateway;
                 $card->country_tariff = [
                     'tariff' => $country->tariff,
                     'formatted_tariff' => $country->formatted_tariff,
@@ -211,6 +212,12 @@ class CardController extends Controller
                     'country_name' => $country->name,
                     'phone_index' => $country->phone_index,
                     'payment_gateway_id' => $country->payment_gateway_id,
+                    'payment_gateway' => $gateway ? [
+                        'id'        => $gateway->id,
+                        'name'      => $gateway->name,
+                        'currency'  => $gateway->currency,
+                        'is_active' => $gateway->is_active,
+                    ] : null,
                 ];
             } else {
                 $card->country_tariff = null;
@@ -317,7 +324,7 @@ class CardController extends Controller
     public function show(Request $request, $id)
     {
         $query = Card::with([
-            'group.garden.countryData', 
+            'group.garden.countryData.paymentGateway', 
             'personType', 
             'parents' => function($query) {
                 $query->select('id', 'first_name', 'last_name', 'status', 'phone', 'code', 'group_id', 'card_id', 'created_at', 'updated_at');
@@ -359,12 +366,21 @@ class CardController extends Controller
         
         // Add country tariff information
         if ($card->group && $card->group->garden && $card->group->garden->countryData) {
+            $country = $card->group->garden->countryData;
+            $gateway = $country->paymentGateway;
             $card->country_tariff = [
-                'tariff' => $card->group->garden->countryData->tariff,
-                'formatted_tariff' => $card->group->garden->countryData->formatted_tariff,
-                'currency' => $card->group->garden->countryData->currency,
-                'country_name' => $card->group->garden->countryData->name,
-                'phone_index' => $card->group->garden->countryData->phone_index,
+                'tariff' => $country->tariff,
+                'formatted_tariff' => $country->formatted_tariff,
+                'currency' => $country->currency,
+                'country_name' => $country->name,
+                'phone_index' => $country->phone_index,
+                'payment_gateway_id' => $country->payment_gateway_id,
+                'payment_gateway' => $gateway ? [
+                    'id'        => $gateway->id,
+                    'name'      => $gateway->name,
+                    'currency'  => $gateway->currency,
+                    'is_active' => $gateway->is_active,
+                ] : null,
             ];
         } else {
             $card->country_tariff = null;
@@ -1718,7 +1734,7 @@ class CardController extends Controller
         }
 
         // Get all cards with this phone number
-        $cards = Card::with(['group.garden.images', 'personType', 'parents', 'people'])
+        $cards = Card::with(['group.garden.images', 'group.garden.countryData.paymentGateway', 'personType', 'parents', 'people'])
             ->where('phone', $request->phone)
             ->where('spam', '!=', 1)
             ->get();
@@ -1748,7 +1764,7 @@ class CardController extends Controller
         }
 
         // Get all people with this phone number
-        $people = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
+        $people = People::with(['personType', 'card.group.garden.images', 'card.group.garden.countryData.paymentGateway', 'card.personType', 'card.parents', 'card.people'])
             ->where('phone', $request->phone)
             ->get();
 
@@ -1797,6 +1813,7 @@ class CardController extends Controller
                 'main_parent' => true,
                 'license' => $card->license,
                 'country_tariff' => $card->getCountryTariff(),
+                'payment_gateway' => $card->getPaymentGatewayInfo(),
                 'free_calls_remaining' => $card->free_calls_remaining,
                 'payment_amount' => $card->getPaymentAmountInCurrency()
             ];
@@ -1840,6 +1857,7 @@ class CardController extends Controller
                     'garden_images' => $person->card->garden_images,
                     'garden' => $person->card->garden,
                     'country_tariff' => $person->card->getCountryTariff(),
+                    'payment_gateway' => $person->card->getPaymentGatewayInfo(),
                     'free_calls_remaining' => $person->card->free_calls_remaining,
                     'payment_amount' => $person->card->getPaymentAmountInCurrency()
                 ];
@@ -2324,7 +2342,7 @@ class CardController extends Controller
             }
 
             // Get ALL cards with this phone number (same as verifyOtp)
-            $cards = Card::with(['group.garden.images', 'personType', 'parents', 'people'])
+            $cards = Card::with(['group.garden.images', 'group.garden.countryData.paymentGateway', 'personType', 'parents', 'people'])
                 ->where('phone', $user->phone)
                 ->where('spam', '!=', 1)
                 ->get();
@@ -2352,7 +2370,7 @@ class CardController extends Controller
 
             // If no cards found, try to find in People table
             if ($cards->isEmpty()) {
-                $people = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
+                $people = People::with(['personType', 'card.group.garden.images', 'card.group.garden.countryData.paymentGateway', 'card.personType', 'card.parents', 'card.people'])
                     ->where('phone', $user->phone)
                     ->get();
                 
@@ -2417,6 +2435,7 @@ class CardController extends Controller
                             'main_parent' => false,
                             'license' => $person->card->license,
                             'country_tariff' => $person->card->getCountryTariff(),
+                            'payment_gateway' => $person->card->getPaymentGatewayInfo(),
                             'free_calls_remaining' => $person->card->free_calls_remaining,
                             'payment_amount' => $person->card->getPaymentAmountInCurrency()
                         ];
@@ -2441,7 +2460,7 @@ class CardController extends Controller
             }
 
             // Get all people with this phone number (same as verifyOtp)
-            $people = People::with(['personType', 'card.group.garden.images', 'card.personType', 'card.parents', 'card.people'])
+            $people = People::with(['personType', 'card.group.garden.images', 'card.group.garden.countryData.paymentGateway', 'card.personType', 'card.parents', 'card.people'])
                 ->where('phone', $user->phone)
                 ->get();
 
@@ -2492,6 +2511,7 @@ class CardController extends Controller
                     'main_parent' => true,
                     'license' => $card->license,
                     'country_tariff' => $card->getCountryTariff(),
+                    'payment_gateway' => $card->getPaymentGatewayInfo(),
                     'free_calls_remaining' => $card->free_calls_remaining,
                     'payment_amount' => $card->getPaymentAmountInCurrency()
                 ];
@@ -2535,6 +2555,7 @@ class CardController extends Controller
                         'garden_images' => $person->card->garden_images,
                         'garden' => $person->card->garden,
                         'country_tariff' => $person->card->getCountryTariff(),
+                        'payment_gateway' => $person->card->getPaymentGatewayInfo(),
                         'free_calls_remaining' => $person->card->free_calls_remaining,
                         'payment_amount' => $person->card->getPaymentAmountInCurrency()
                     ];
