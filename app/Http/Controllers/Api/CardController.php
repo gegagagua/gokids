@@ -203,12 +203,14 @@ class CardController extends Controller
         // Add country tariff information and soft delete info to each card
         $cards->getCollection()->transform(function ($card) {
             if ($card->group && $card->group->garden && $card->group->garden->countryData) {
+                $country = $card->group->garden->countryData;
                 $card->country_tariff = [
-                    'tariff' => $card->group->garden->countryData->tariff,
-                    'formatted_tariff' => $card->group->garden->countryData->formatted_tariff,
-                    'currency' => $card->group->garden->countryData->currency,
-                    'country_name' => $card->group->garden->countryData->name,
-                    'phone_index' => $card->group->garden->countryData->phone_index,
+                    'tariff' => $country->tariff,
+                    'formatted_tariff' => $country->formatted_tariff,
+                    'currency' => $country->currency,
+                    'country_name' => $country->name,
+                    'phone_index' => $country->phone_index,
+                    'payment_gateway_id' => $country->payment_gateway_id,
                 ];
             } else {
                 $card->country_tariff = null;
@@ -1526,24 +1528,35 @@ class CardController extends Controller
             ], 401);
         }
 
-        // Generate and save OTP (use CardOtp for both)
+        // Detect SMS gateway from card's country
+        $smsGatewayId = $this->detectSmsGateway($cards, $people);
+
+        // Generate and save OTP
         $otp = CardOtp::createOtp($request->phone);
 
-        // Send SMS
-        $smsService = new SmsService();
-        $smsResult = $smsService->sendOtp($request->phone, $otp->otp);
+        // Send OTP via the appropriate gateway
+        $smsResult = $this->sendOtpViaGateway($smsGatewayId, $request->phone, $otp->otp);
 
         if (!$smsResult['success']) {
-            // If SMS fails, delete the OTP and return error
             $otp->delete();
             return response()->json([
-                'message' => 'Failed to send OTP. Please try again.'
+                'message' => 'Failed to send OTP. Please try again.',
+                'gateway' => $smsResult['gateway'] ?? null,
+                'reason'  => $smsResult['response'] ?? null,
+                'http_code' => $smsResult['http_code'] ?? null,
             ], 500);
         }
 
+        // Store gateway info and verification_id for sms.to verify flow
+        $otp->update([
+            'sms_gateway_id'  => $smsGatewayId,
+            'verification_id' => $smsResult['verification_id'] ?? null,
+        ]);
+
         return response()->json([
             'message' => 'OTP sent successfully',
-            'phone' => $request->phone
+            'phone' => $request->phone,
+            'gateway' => $smsResult['gateway'] ?? null,
         ]);
     }
 
@@ -1670,11 +1683,10 @@ class CardController extends Controller
         $isSpecialCase = (($request->phone === '597887736' || $request->phone === '995597887736') && $request->otp === '111111');
         
         if (!$isSpecialCase) {
-            // Find the OTP record
             $otpRecord = CardOtp::where('phone', $request->phone)
-                ->where('otp', $request->otp)
                 ->where('used', false)
                 ->where('expires_at', '>', now())
+                ->latest()
                 ->first();
 
             if (!$otpRecord) {
@@ -1683,7 +1695,25 @@ class CardController extends Controller
                 ], 401);
             }
 
-            // Mark OTP as used
+            if ($otpRecord->sms_gateway_id === 2 && $otpRecord->verification_id) {
+                $verifyResult = (new \App\Services\SmsToVerifyService())->verifyCode(
+                    $otpRecord->verification_id,
+                    $request->otp
+                );
+
+                if (!$verifyResult['success']) {
+                    return response()->json([
+                        'message' => 'Invalid or expired OTP'
+                    ], 401);
+                }
+            } else {
+                if ($otpRecord->otp !== $request->otp) {
+                    return response()->json([
+                        'message' => 'Invalid or expired OTP'
+                    ], 401);
+                }
+            }
+
             $otpRecord->update(['used' => true]);
         }
 
@@ -1895,24 +1925,35 @@ class CardController extends Controller
             ], 401);
         }
 
+        // Detect SMS gateway from card's country
+        $smsGatewayId = $this->detectSmsGateway($cards, $people);
+
         // Automatically send OTP
         $otp = \App\Models\CardOtp::createOtp($request->phone, 10);
 
-        // Send OTP via SMS
-        $smsService = new \App\Services\SmsService();
-        $smsResult = $smsService->sendOtp($request->phone, $otp->otp);
+        // Send OTP via the appropriate gateway
+        $smsResult = $this->sendOtpViaGateway($smsGatewayId, $request->phone, $otp->otp);
 
         if (!$smsResult['success']) {
-            // If SMS fails, delete the OTP and return error
             $otp->delete();
             return response()->json([
-                'message' => 'Failed to send OTP. Please try again.'
+                'message' => 'Failed to send OTP. Please try again.',
+                'gateway' => $smsResult['gateway'] ?? null,
+                'reason'  => $smsResult['response'] ?? null,
+                'http_code' => $smsResult['http_code'] ?? null,
             ], 500);
         }
 
+        // Store gateway info and verification_id for sms.to verify flow
+        $otp->update([
+            'sms_gateway_id'  => $smsGatewayId,
+            'verification_id' => $smsResult['verification_id'] ?? null,
+        ]);
+
         return response()->json([
             'message' => 'OTP sent successfully. Please verify to complete login.',
-            'phone' => $request->phone
+            'phone' => $request->phone,
+            'gateway' => $smsResult['gateway'] ?? null,
         ]);
     }
 
@@ -3014,5 +3055,42 @@ class CardController extends Controller
                 'updated_at' => $card->updated_at,
             ]
         ], 200);
+    }
+
+    /**
+     * Resolve sms_gateway_id from a card's garden → country chain.
+     */
+    private function detectSmsGateway($cards, $people): ?int
+    {
+        $card = $cards->first() ?? ($people->first()?->card);
+        if (!$card || !$card->group_id) {
+            return null;
+        }
+
+        $group = \App\Models\GardenGroup::find($card->group_id);
+        if (!$group || !$group->garden_id) {
+            return null;
+        }
+
+        $garden = \App\Models\Garden::find($group->garden_id);
+        if (!$garden || !$garden->country_id) {
+            return null;
+        }
+
+        $country = \App\Models\Country::find($garden->country_id);
+        return $country?->sms_gateway_id;
+    }
+
+    /**
+     * Send OTP using the correct service based on gateway ID.
+     * 1 (or null) = Ubill, 2 = SMS.to
+     */
+    private function sendOtpViaGateway(?int $smsGatewayId, string $phone, string $otp): array
+    {
+        if ($smsGatewayId === 2) {
+            return (new \App\Services\SmsToVerifyService())->sendOtp($phone);
+        }
+
+        return (new \App\Services\SmsService())->sendOtp($phone, $otp);
     }
 }

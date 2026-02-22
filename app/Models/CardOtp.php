@@ -12,6 +12,8 @@ class CardOtp extends Model
         'otp',
         'expires_at',
         'used',
+        'verification_id',
+        'sms_gateway_id',
     ];
 
     protected $casts = [

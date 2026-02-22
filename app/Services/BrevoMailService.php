@@ -40,7 +40,7 @@ class BrevoMailService
 
             $requestData = [
                 'sender' => [
-                    'name' => $fromName ?? 'MyKids Garden System',
+                    'name' => $fromName ?? 'GoKids System',
                     'email' => $fromEmail,
                 ],
                 'to' => [
@@ -152,7 +152,7 @@ class BrevoMailService
             'email' => $email,
         ])->render();
 
-        $subject = 'Garden Registration OTP Code';
+        $subject = 'GoKids Registration OTP Code';
 
         return $this->sendEmail($email, $subject, $htmlContent);
     }
