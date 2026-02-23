@@ -1054,36 +1054,33 @@ class DisterController extends Controller
     public function updateBalance(Request $request, $id)
     {
         $validated = $request->validate([
-            'balance' => 'required|numeric|min:0|max:9999999.99',
+            'balance' => 'required|numeric|min:-9999999.99|max:9999999.99',
             'balance_comment' => 'nullable|string|max:1000',
         ]);
 
         $dister = Dister::findOrFail($id);
 
-        // Store the old balance for comparison
-        $oldBalance = $dister->balance;
-        
-        // Update the balance and balance_comment fields
+        $oldBalance = $dister->balance ?? 0;
+        $amount = $validated['balance'];
+        $newBalance = $oldBalance + $amount;
+
         $dister->update([
-            'balance' => $validated['balance'],
-            'balance_comment' => $validated['balance_comment'] === '' ? null : $validated['balance_comment']
+            'balance' => $newBalance,
+            'balance_comment' => isset($validated['balance_comment']) && $validated['balance_comment'] !== ''
+                ? $validated['balance_comment']
+                : null,
         ]);
 
-        // Create a payment record for the balance change
-        $balanceChange = $validated['balance'] - $oldBalance;
-        
-        if ($balanceChange != 0) {
-            // Generate a unique transaction number for the balance change
+        if ($amount != 0) {
             $transactionNumber = 'AGENT_BALANCE_' . $dister->id . '_' . time();
-            
-            // Create payment record
+
             Payment::create([
                 'transaction_number' => $transactionNumber,
                 'transaction_number_bank' => null,
                 'card_number' => 'AGENT_BALANCE_UPDATE',
-                'card_id' => null, // No specific card for agent balance updates
-                'amount' => abs($balanceChange), // Use absolute value of balance change
-                'currency' => 'GEL', // Default currency
+                'card_id' => null,
+                'amount' => abs($amount),
+                'currency' => 'GEL',
                 'comment' => $validated['balance_comment'] ?? 'Agent balance updated',
                 'type' => 'agent_balance',
             ]);
@@ -1101,8 +1098,10 @@ class DisterController extends Controller
                 'formatted_balance' => $dister->formatted_balance,
                 'updated_at' => $dister->updated_at,
             ],
-            'balance_change' => $balanceChange,
-            'payment_created' => $balanceChange != 0
+            'old_balance' => $oldBalance,
+            'amount' => $amount,
+            'new_balance' => $newBalance,
+            'payment_created' => $amount != 0,
         ], 200);
     }
 }
