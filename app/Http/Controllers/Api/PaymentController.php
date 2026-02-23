@@ -245,6 +245,11 @@ class PaymentController extends Controller
 
         // Attach distribution to each payment
         $paginated->getCollection()->transform(function ($payment) use ($gardens, $countries, $gardenDisterMap) {
+            if (in_array($payment->type, ['garden_balance', 'agent_balance'])) {
+                $payment->distribution = null;
+                return $payment;
+            }
+
             $amount = abs((float) $payment->amount);
 
             // Resolve garden
