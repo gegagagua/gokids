@@ -83,7 +83,7 @@
     
     <div class="footer">
         <p>This is an automated message. Please do not reply to this email.</p>
-        <p>&copy; {{ date('Y') }} MyKids Garden Management System</p>
+        <p>&copy; {{ date('Y') }} GoKids Management System</p>
     </div>
 </body>
 </html>
