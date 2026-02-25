@@ -28,9 +28,7 @@ class ProCreditEcommerceClient
         $this->keyPath = config('services.procredit.key_path');
         $this->caPath = config('services.procredit.ca_path');
 
-        // On localhost/local dev, disable SSL peer verification (test server uses self-signed cert)
-        $isLocal = in_array(request()->getHost(), ['localhost', '127.0.0.1']) || app()->environment('local');
-        $this->verifyPeer = $isLocal ? false : (bool) config('services.procredit.verify_peer', true);
+        $this->verifyPeer = (bool) config('services.procredit.verify_peer', true);
     }
 
     /**
@@ -172,7 +170,8 @@ class ProCreditEcommerceClient
 
         $opts = [
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT => 30,
+            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_TIMEOUT => 20,
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/json',
                 'Accept: application/json',

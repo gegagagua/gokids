@@ -35,17 +35,16 @@ return [
         ],
     ],
 
-    // ProCredit E-commerce Payment Gateway (Internet Shop Integration v1.1). Quipu test/prod.
-    // Common Name on certificate = merchant_id (ECOM_TEST222 in test). Cert files in storage/app/cert/ – used for TLS only, not installed on server (per bank).
-    // Test: API https://3dss2test.quipu.de:8000/order | Merchant portal https://3dss2test.quipu.de:8004/ | TypeRid = 1
+    // ProCredit E-commerce Payment Gateway (hardcoded config for environments
+    // where .env cannot be changed).
     'procredit' => [
-        'merchant_id' => 'ECOM_TEST222', // Common Name on certificate (test). For prod, bank will provide.
-        'order_endpoint' => 'https://3dss2test.quipu.de:8000/order', // Test env API URL
-        'type_rid' => '1', // Order type in test is 1 (doc: TypeRid in test is 1)
-        'verify_peer' => true, // SSL: verify server certificate (use false only for test if self-signed)
-        'cert_path' => storage_path('app/cert/cert.pem'),
-        'key_path' => storage_path('app/cert/key.pem'),
-        'ca_path' => storage_path('app/cert/ca.pem'),
+        'merchant_id' => 'ECOM_TEST222',
+        'order_endpoint' => 'https://3dss2.quipu.de:8000/order',
+        'type_rid' => 'ORD1',
+        'verify_peer' => true,
+        'cert_path' => '/Applications/XAMPP/xamppfiles/htdocs/mykids/storage/app/cert/cert.pem',
+        'key_path' => '/Applications/XAMPP/xamppfiles/htdocs/mykids/storage/app/cert/key.pem',
+        'ca_path' => '/Applications/XAMPP/xamppfiles/htdocs/mykids/storage/app/cert/ca.pem',
     ],
 
     'brevo' => [
