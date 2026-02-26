@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Log;
  */
 class ProCreditEcommerceClient
 {
+    protected string $merchantId;
+
     protected string $orderEndpoint;
 
     protected ?string $certPath;
@@ -23,6 +25,7 @@ class ProCreditEcommerceClient
 
     public function __construct()
     {
+        $this->merchantId = (string) config('services.procredit.merchant_id', '');
         $this->orderEndpoint = rtrim((string) config('services.procredit.order_endpoint', ''), '/');
         $this->certPath = config('services.procredit.cert_path');
         $this->keyPath = config('services.procredit.key_path');
@@ -236,10 +239,22 @@ class ProCreditEcommerceClient
                 return "ProCredit: certificate file not readable: {$path}.";
             }
         }
+
+        // Bank requires certificate CN to match merchant id/login.
+        if (!empty($this->merchantId) && !empty($this->certPath)) {
+            $certContent = @file_get_contents($this->certPath);
+            $certData = $certContent ? @openssl_x509_parse($certContent) : false;
+            $certCn = $certData['subject']['CN'] ?? null;
+            if (!empty($certCn) && strcasecmp((string) $certCn, (string) $this->merchantId) !== 0) {
+                return "ProCredit: certificate CN ({$certCn}) does not match merchant_id ({$this->merchantId}).";
+            }
+        }
+
         Log::info('ProCredit E-commerce: using certificates', [
             'cert_path' => $this->certPath,
             'key_path' => $this->keyPath,
             'ca_path' => $this->caPath,
+            'merchant_id' => $this->merchantId,
         ]);
         return null;
     }

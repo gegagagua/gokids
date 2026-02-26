@@ -38,9 +38,9 @@ return [
     // ProCredit E-commerce Payment Gateway (hardcoded config for environments
     // where .env cannot be changed).
     'procredit' => [
-        'merchant_id' => 'ECOM_TEST222',
-        'order_endpoint' => 'https://3dss2.quipu.de:8000/order',
-        'type_rid' => 'ORD1',
+        'merchant_id' => 'GOKIDS',
+        'order_endpoint' => 'https://3dss2.quipu.de:8443/order',
+        'type_rid' => '225',
         'verify_peer' => true,
         'cert_path' => '/Applications/XAMPP/xamppfiles/htdocs/mykids/storage/app/cert/cert.pem',
         'key_path' => '/Applications/XAMPP/xamppfiles/htdocs/mykids/storage/app/cert/key.pem',
