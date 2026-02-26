@@ -42,9 +42,9 @@ return [
         'order_endpoint' => 'https://3dss2.quipu.de:8443/order',
         'type_rid' => '225',
         'verify_peer' => true,
-        'cert_path' => '/Applications/XAMPP/xamppfiles/htdocs/mykids/storage/app/cert/cert.pem',
-        'key_path' => '/Applications/XAMPP/xamppfiles/htdocs/mykids/storage/app/cert/key.pem',
-        'ca_path' => '/Applications/XAMPP/xamppfiles/htdocs/mykids/storage/app/cert/ca.pem',
+        'cert_path' => '/Applications/XAMPP/xamppfiles/htdocs/mykids/public/certs/cert.pem',
+        'key_path' => '/Applications/XAMPP/xamppfiles/htdocs/mykids/public/certs/key.pem',
+        'ca_path' => '/Applications/XAMPP/xamppfiles/htdocs/mykids/public/certs/ca.pem',
     ],
 
     'brevo' => [
