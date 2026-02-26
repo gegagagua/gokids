@@ -145,6 +145,16 @@ class ProCreditPaymentService
             if ($status === null && $payment->bank_order_id && $payment->bank_order_password) {
                 $details = $this->client->getOrderDetails($payment->bank_order_id, $payment->bank_order_password);
                 if ($details['success'] && isset($details['order']['status'])) {
+                    $apiOrder = $details['order'];
+                    $maskedCardNumber = $apiOrder['srcToken']['displayName'] ?? null;
+
+                    $payment->update([
+                        'payment_details' => array_merge($payment->payment_details ?? [], [
+                            'bank_order' => $apiOrder,
+                            'card_number' => $maskedCardNumber,
+                        ]),
+                    ]);
+
                     $status = $this->mapPgStatus($details['order']['status']);
                 }
             }
@@ -205,6 +215,16 @@ class ProCreditPaymentService
                     'api_order' => $details['order'] ?? null,
                 ]);
                 if ($details['success'] && isset($details['order']['status'])) {
+                    $apiOrder = $details['order'];
+                    $maskedCardNumber = $apiOrder['srcToken']['displayName'] ?? null;
+
+                    $payment->update([
+                        'payment_details' => array_merge($payment->payment_details ?? [], [
+                            'bank_order' => $apiOrder,
+                            'card_number' => $maskedCardNumber,
+                        ]),
+                    ]);
+
                     $resolvedStatus = $this->mapPgStatus($details['order']['status']);
                 }
             }
