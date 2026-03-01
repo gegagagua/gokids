@@ -259,6 +259,8 @@ class CountryController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             @OA\Property(property="name", type="string", example="Georgia"),
+     *             @OA\Property(property="index", type="string", nullable=true, example="+995", description="Country phone index (alias of phone_index)"),
+     *             @OA\Property(property="phone_index", type="string", nullable=true, example="+995", description="Country phone index"),
       *             @OA\Property(property="currency", type="string", example="GEL", description="Country currency code"),
      *             @OA\Property(property="garden_percent", type="number", format="float", example=15.00, description="Garden percentage for this country (0-100)"),
      *             @OA\Property(property="tariff", type="number", format="float", example=10.5),
@@ -275,6 +277,8 @@ class CountryController extends Controller
      *         @OA\JsonContent(
       *             @OA\Property(property="id", type="integer", example=1),
  *             @OA\Property(property="name", type="string", example="Georgia"),
+ *             @OA\Property(property="index", type="string", nullable=true, example="+995"),
+ *             @OA\Property(property="phone_index", type="string", nullable=true, example="+995"),
  *             @OA\Property(property="currency", type="string", example="GEL"),
  *             @OA\Property(property="garden_percent", type="number", format="float", example=15.00),
  *             @OA\Property(property="tariff", type="number", format="float", example=10.5),
