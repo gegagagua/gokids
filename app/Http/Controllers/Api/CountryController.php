@@ -220,6 +220,7 @@ class CountryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:countries,name',
+            'index' => ['nullable', 'string', 'max:10', 'regex:/^\+?[0-9]{1,5}$/'],
             'phone_index' => 'nullable|string|max:10',
             'currency' => 'nullable|string|max:10',
             'sms_gateway_id' => 'nullable|integer|exists:sms_gateways,id',
@@ -327,6 +328,7 @@ class CountryController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255|unique:countries,name,' . $id,
+            'index' => ['nullable', 'string', 'max:10', 'regex:/^\+?[0-9]{1,5}$/'],
             'phone_index' => 'nullable|string|max:10',
             'currency' => 'nullable|string|max:10',
             'sms_gateway_id' => 'nullable|integer|exists:sms_gateways,id',
