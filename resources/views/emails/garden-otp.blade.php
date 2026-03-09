@@ -55,7 +55,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>🌱 Garden Registration</h1>
+        <h1>Registration</h1>
         <p>OTP Verification Code</p>
     </div>
     
@@ -77,13 +77,11 @@
                 <li>If you didn't request this code, please ignore this email</li>
             </ul>
         </div>
-        
-        <p>If you have any questions, please contact our support team.</p>
     </div>
     
     <div class="footer">
         <p>This is an automated message. Please do not reply to this email.</p>
-        <p>&copy; {{ date('Y') }} GoKids Management System</p>
+        <p>&copy; {{ date('Y') }} GoKids</p>
     </div>
 </body>
 </html>

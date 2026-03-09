@@ -6799,6 +6799,18 @@
                                         "type": "string",
                                         "example": "Georgia"
                                     },
+                                    "index": {
+                                        "description": "Country phone index (alias of phone_index)",
+                                        "type": "string",
+                                        "example": "+995",
+                                        "nullable": true
+                                    },
+                                    "phone_index": {
+                                        "description": "Country phone index",
+                                        "type": "string",
+                                        "example": "+995",
+                                        "nullable": true
+                                    },
                                     "currency": {
                                         "description": "Country currency code",
                                         "type": "string",
@@ -6861,6 +6873,16 @@
                                         "name": {
                                             "type": "string",
                                             "example": "Georgia"
+                                        },
+                                        "index": {
+                                            "type": "string",
+                                            "example": "+995",
+                                            "nullable": true
+                                        },
+                                        "phone_index": {
+                                            "type": "string",
+                                            "example": "+995",
+                                            "nullable": true
                                         },
                                         "currency": {
                                             "type": "string",
