@@ -26,8 +26,9 @@ class BrevoMailService
     {
         try {
 
-            $fromEmail = $fromEmail ?? config('mail.from.address');
-            $fromName = $fromName ?? config('mail.from.name');
+            // Hardcoded sender (do not use .env for Brevo sender)
+            $fromEmail = 'service@gokids.kids';
+            $fromName = 'GoKids';
 
             // Validate required fields
             if (empty($fromEmail)) {
