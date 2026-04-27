@@ -460,10 +460,12 @@ class ProCreditPaymentService
             }
 
             $oldLicense = $card->license;
+            $oldFreeCalls = $card->free_calls_remaining;
             $expiryDate = Carbon::now()->addYear()->toDateString();
 
             $card->setLicenseDate($expiryDate);
             $card->save();
+            $card->resetFreeCalls();
 
             Log::info('ProCredit: bulk — card license activated', [
                 'procredit_payment_id' => $proCreditPayment->id,
@@ -471,6 +473,8 @@ class ProCreditPaymentService
                 'old_license' => $oldLicense,
                 'new_license' => $card->license,
                 'expiry_date' => $expiryDate,
+                'old_free_calls' => $oldFreeCalls,
+                'new_free_calls' => $card->fresh()->free_calls_remaining,
             ]);
 
             return true;
@@ -728,10 +732,12 @@ class ProCreditPaymentService
             }
 
             $oldLicense = $card->license;
+            $oldFreeCalls = $card->free_calls_remaining;
             $expiryDate = Carbon::now()->addYear()->toDateString(); // 1 year from now
 
             $card->setLicenseDate($expiryDate);
             $card->save();
+            $card->resetFreeCalls();
 
             Log::info('ProCredit: card license activated after payment', [
                 'procredit_payment_id' => $proCreditPayment->id,
@@ -741,6 +747,8 @@ class ProCreditPaymentService
                 'expiry_date' => $expiryDate,
                 'amount' => $proCreditPayment->amount,
                 'currency' => $proCreditPayment->currency,
+                'old_free_calls' => $oldFreeCalls,
+                'new_free_calls' => $card->fresh()->free_calls_remaining,
             ]);
 
             return true;

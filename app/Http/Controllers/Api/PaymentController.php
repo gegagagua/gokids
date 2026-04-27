@@ -986,9 +986,11 @@ class PaymentController extends Controller
 
             // Activate card license (1 year)
             $oldLicense = $card->license;
+            $oldFreeCalls = $card->free_calls_remaining;
             $expiryDate = \Carbon\Carbon::now()->addYear()->toDateString();
             $card->setLicenseDate($expiryDate);
             $card->save();
+            $card->resetFreeCalls();
 
             $activatedCards[] = [
                 'card_id' => $card->id,
@@ -996,6 +998,8 @@ class PaymentController extends Controller
                 'old_license' => $oldLicense,
                 'new_license' => $card->license,
                 'expiry_date' => $expiryDate,
+                'old_free_calls' => $oldFreeCalls,
+                'new_free_calls' => $card->fresh()->free_calls_remaining,
             ];
         }
 
