@@ -338,6 +338,7 @@ class ProCreditPaymentService
             'success' => 'completed',
             'failed' => 'failed',
             'declined' => 'failed',
+            'refused' => 'failed',
             'error' => 'failed',
             'cancelled' => 'cancelled',
             'canceled' => 'cancelled',
