@@ -341,6 +341,7 @@ class ProCreditPaymentService
             'error' => 'failed',
             'cancelled' => 'cancelled',
             'canceled' => 'cancelled',
+            'expired' => 'cancelled',
         ];
         return $map[$s] ?? 'pending';
     }
